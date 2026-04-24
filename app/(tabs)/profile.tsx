@@ -223,6 +223,20 @@ export default function ProfileScreen() {
           />
         </View>
 
+        {/* ─── 创建菜谱快捷按钮 (REQ-5.3) ─────────────────── */}
+        {!authLoading && isLoggedIn && (
+          <TouchableOpacity
+            style={[styles.createRecipeButton, { backgroundColor: colors.tint }]}
+            onPress={() => router.push('/recipe/create' as any)}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="add-circle-outline" size={22} color="#FFF" />
+            <Text style={[styles.createRecipeText, { fontSize: scaled(15) }]}>
+              {isZh ? '创建菜谱' : 'Create Recipe'}
+            </Text>
+          </TouchableOpacity>
+        )}
+
         {/* ─── Not logged in banner ─────────────────── */}
         {!authLoading && !isLoggedIn && (
           <TouchableOpacity
@@ -463,6 +477,27 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: 8,
     marginBottom: 32,
+  },
+  createRecipeButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginHorizontal: 20,
+    marginTop: 16,
+    paddingVertical: 14,
+    borderRadius: 12,
+    backgroundColor: '#FF6B35',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  createRecipeText: {
+    marginLeft: 8,
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#FFF',
   },
   editProfileBtn: {
     flexDirection: 'row',

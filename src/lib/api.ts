@@ -159,6 +159,9 @@ export interface Comment {
   recipe_id: string;
   content: string;
   rating: number;
+  images?: string[];  // 评论图片
+  parent_id?: string; // 父评论 ID
+  replies?: Comment[]; // 子评论
   created_at: string;
   user?: {
     name: string;
@@ -175,6 +178,8 @@ export interface User {
   favorites_count: number;
   comments_count: number;
   recipes_count: number;  // REQ-4.1: 用户发布的菜谱数
+  followers_count?: number; // REQ-5.4: 粉丝数
+  following_count?: number; // REQ-5.4: 关注数
 }
 
 export interface PaginatedResponse<T> {
@@ -275,6 +280,9 @@ interface BackendComment {
   id: string;
   content: string;
   rating?: number;
+  images?: string[];
+  parentId?: string;
+  replies?: BackendComment[];
   recipeId: string;
   userId: string;
   createdAt: string;
@@ -349,6 +357,9 @@ export function adaptComment(c: BackendComment): Comment {
     recipe_id: c.recipeId,
     content: c.content,
     rating: c.rating ?? 0,
+    images: c.images,
+    parent_id: c.parentId,
+    replies: c.replies?.map(adaptComment),
     created_at: c.createdAt,
     user: c.user
       ? { name: c.user.name ?? 'Anonymous', avatar_url: c.user.avatar ?? '' }
@@ -419,6 +430,58 @@ export const fetchRecipes = async (params?: {
 
 export const fetchRecipeById = async (id: string): Promise<Recipe> => {
   const res = await apiClient.get(`/recipes/${id}`);
+  return adaptRecipe(res.data.data as BackendRecipe);
+};
+
+/**
+ * 创建新菜谱（REQ-5.3：用户自主发布菜谱）
+ * POST /api/recipes
+ * 需要鉴权，authorId 由后端从 token 中获取
+ */
+export interface CreateRecipePayload {
+  titleEn: string;
+  titleZh: string;
+  descriptionEn?: string;
+  descriptionZh?: string;
+  coverImage?: string;
+  categoryId: string;
+  difficulty?: 'EASY' | 'MEDIUM' | 'HARD';
+  cookTimeMin?: number;
+  servings?: number;
+  calories?: number;
+  protein?: number;
+  fat?: number;
+  carbs?: number;
+  fiber?: number;
+  sodium?: number;
+  sugar?: number;
+  isPublished?: boolean;
+  ingredients?: Array<{
+    nameEn: string;
+    nameZh: string;
+    amount: string;
+    unit?: string;
+    isOptional?: boolean;
+  }>;
+  steps?: Array<{
+    stepNumber: number;
+    titleEn?: string;
+    titleZh?: string;
+    contentEn: string;
+    contentZh: string;
+    image?: string;
+    durationMin?: number;
+  }>;
+  tagIds?: string[];
+}
+
+export const createRecipe = async (payload: CreateRecipePayload): Promise<Recipe> => {
+  const token = await getAuthToken();
+  const res = await apiClient.post('/recipes', payload, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
   return adaptRecipe(res.data.data as BackendRecipe);
 };
 
@@ -538,13 +601,17 @@ export const postComment = async (params: {
   recipe_id: string;
   user_id: string;
   content: string;
-  rating: number;
+  rating?: number;
+  images?: string[];
+  parent_id?: string;
 }): Promise<Comment> => {
   const res = await apiClient.post('/comments', {
     recipeId: params.recipe_id,
     userId: params.user_id,
     content: params.content,
     rating: params.rating,
+    images: params.images,
+    parentId: params.parent_id,
   });
   return adaptComment(res.data.data as BackendComment);
 };
@@ -582,7 +649,9 @@ export const fetchUser = async (userId: string): Promise<User> => {
     bio: u.bio ?? '',
     favorites_count: u._count?.favorites ?? 0,
     comments_count: u._count?.comments ?? 0,
-    recipes_count: u._count?.recipes ?? 0,  // REQ-4.1
+    recipes_count: u._count?.recipes ?? 0,
+    followers_count: u._count?.followers ?? 0,
+    following_count: u._count?.following ?? 0,
   };
 };
 
@@ -602,7 +671,9 @@ export const updateUser = async (
     bio: u.bio ?? '',
     favorites_count: u._count?.favorites ?? 0,
     comments_count: u._count?.comments ?? 0,
-    recipes_count: u._count?.recipes ?? 0,  // REQ-4.1,
+    recipes_count: u._count?.recipes ?? 0,
+    followers_count: u._count?.followers ?? 0,
+    following_count: u._count?.following ?? 0,
   };
 };
 
@@ -905,3 +976,92 @@ export const fetchRecipeTrending = async (): Promise<TrendingItem[]> => {
   const items = res.data?.data?.items;
   return Array.isArray(items) ? (items as TrendingItem[]) : [];
 };
+
+
+// ─── 社交功能 (REQ-5.4) ───────────────────────────────────────────────────────
+
+export const followUser = async (userId: string): Promise<void> => {
+  await apiClient.post(`/users/${userId}/follow`);
+};
+
+export const unfollowUser = async (userId: string): Promise<void> => {
+  await apiClient.delete(`/users/${userId}/follow`);
+};
+
+export const fetchFollowers = async (
+  userId: string,
+  page = 1,
+  pageSize = 20
+): Promise<{ users: User[]; pagination: PageMeta }> => {
+  const res = await apiClient.get(`/users/${userId}/followers`, {
+    params: { page, pageSize },
+  });
+  const { followers, pagination } = res.data.data;
+  return {
+    users: followers.map((u: any) => ({
+      id: u.id,
+      name: u.name ?? "",
+      avatar_url: u.avatar ?? `https://i.pravatar.cc/150?u=${u.id}`,
+      bio: u.bio ?? "",
+      email: u.email ?? "",
+      favorites_count: 0,
+      comments_count: 0,
+      recipes_count: 0,
+    })),
+    pagination: {
+      page: pagination.page,
+      pageSize: pagination.pageSize,
+      total: pagination.total,
+      totalPages: pagination.totalPages,
+    },
+  };
+};
+
+export const fetchFollowing = async (
+  userId: string,
+  page = 1,
+  pageSize = 20
+): Promise<{ users: User[]; pagination: PageMeta }> => {
+  const res = await apiClient.get(`/users/${userId}/following`, {
+    params: { page, pageSize },
+  });
+  const { following, pagination } = res.data.data;
+  return {
+    users: following.map((u: any) => ({
+      id: u.id,
+      name: u.name ?? "",
+      avatar_url: u.avatar ?? `https://i.pravatar.cc/150?u=${u.id}`,
+      bio: u.bio ?? "",
+      email: u.email ?? "",
+      favorites_count: 0,
+      comments_count: 0,
+      recipes_count: 0,
+    })),
+    pagination: {
+      page: pagination.page,
+      pageSize: pagination.pageSize,
+      total: pagination.total,
+      totalPages: pagination.totalPages,
+    },
+  };
+};
+
+export const fetchFeed = async (
+  page = 1,
+  pageSize = 20
+): Promise<RecipesPage> => {
+  const res = await apiClient.get("/api/feed", {
+    params: { page, pageSize },
+  });
+  const { recipes, pagination } = res.data.data;
+  return {
+    data: recipes.map(adaptRecipe),
+    pagination: {
+      page: pagination.page,
+      pageSize: pagination.pageSize,
+      total: pagination.total,
+      totalPages: pagination.totalPages,
+    },
+  };
+};
+
