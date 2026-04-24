@@ -205,6 +205,12 @@ export default function ProfileScreen() {
         {/* ─── Stats ───────────────────────────────── */}
         <View style={[styles.statsRow, { backgroundColor: colors.card }]}>
           <StatCard
+            icon="document-text"
+            value={user?.recipes_count ?? 0}
+            label={isZh ? '发布' : 'Recipes'}
+          />
+          <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
+          <StatCard
             icon="heart"
             value={user?.favorites_count ?? 0}
             label={t('profile.favorites')}
