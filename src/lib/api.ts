@@ -946,8 +946,12 @@ export interface ViewHistoryApiItem extends BackendRecipe {
   viewedAt: string;
 }
 
+export interface ViewHistoryRecipe extends Recipe {
+  history_id: string;
+}
+
 export interface ViewHistoryPage {
-  data: Recipe[];
+  data: ViewHistoryRecipe[];
   pagination: PageMeta;
 }
 
@@ -966,6 +970,7 @@ export const fetchViewHistory = async (
   return {
     data: items.map((item) => ({
       ...adaptRecipe(item),
+      history_id: item.historyId,
       created_at: item.viewedAt,
     })),
     pagination,
@@ -976,8 +981,8 @@ export const saveViewHistoryRemote = async (recipeId: string): Promise<void> => 
   await apiClient.post('/history', { recipeId });
 };
 
-export const deleteViewHistoryRemote = async (recipeId: string): Promise<void> => {
-  await apiClient.delete('/history', { data: { recipeId } });
+export const deleteViewHistoryRemote = async (historyId: string, recipeId?: string): Promise<void> => {
+  await apiClient.delete('/history', { data: { historyId, recipeId } });
 };
 
 export const clearViewHistoryRemote = async (): Promise<void> => {

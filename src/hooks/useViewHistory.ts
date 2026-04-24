@@ -4,8 +4,8 @@ import {
   deleteViewHistoryRemote,
   fetchViewHistory,
   PAGE_SIZE,
-  Recipe,
   ViewHistoryPage,
+  ViewHistoryRecipe,
 } from '../lib/api';
 
 export const useViewHistory = () => {
@@ -23,8 +23,8 @@ export const useViewHistory = () => {
 
 export const useDeleteViewHistory = () => {
   const queryClient = useQueryClient();
-  return useMutation<void, Error, string>({
-    mutationFn: (recipeId) => deleteViewHistoryRemote(recipeId),
+  return useMutation<void, Error, { historyId: string; recipeId?: string }>({
+    mutationFn: ({ historyId, recipeId }) => deleteViewHistoryRemote(historyId, recipeId),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['view-history'] }),
   });
 };
@@ -37,5 +37,5 @@ export const useClearViewHistory = () => {
   });
 };
 
-export const flattenHistoryPages = (pages?: ViewHistoryPage[]): Recipe[] =>
+export const flattenHistoryPages = (pages?: ViewHistoryPage[]): ViewHistoryRecipe[] =>
   (pages ?? []).flatMap((page) => page.data);

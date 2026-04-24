@@ -44,8 +44,8 @@ export default function RecentHistoryScreen() {
 
   const items = useMemo(() => flattenHistoryPages(data?.pages), [data]);
 
-  const handleRemove = async (recipeId: string) => {
-    await deleteMutation.mutateAsync(recipeId);
+  const handleRemove = async (historyId: string, recipeId: string) => {
+    await deleteMutation.mutateAsync({ historyId, recipeId });
   };
 
   const handleClear = () => {
@@ -125,7 +125,9 @@ export default function RecentHistoryScreen() {
                     </Text>
                   </View>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.deleteBtn} onPress={() => handleRemove(item.id)}>
+                <TouchableOpacity
+                  style={styles.deleteBtn}
+                  onPress={() => handleRemove(item.history_id, item.id)}>
                   <Ionicons name="trash-outline" size={18} color="#ef4444" />
                 </TouchableOpacity>
               </View>
