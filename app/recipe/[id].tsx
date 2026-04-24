@@ -37,7 +37,7 @@ import { ListFooter } from '../../src/components/ListFooter';
 import { ShareCard, SHARE_CARD_HEIGHT, SHARE_CARD_WIDTH } from '../../src/components/ShareCard';
 import { useShareRecipe } from '../../src/hooks/useShareRecipe';
 import { getUserId, getUserName, saveViewHistoryItem } from '../../src/lib/storage';
-import { fetchLikeStatus, fetchFavoriteStatus, fetchRelated, Comment } from '../../src/lib/api';
+import { fetchLikeStatus, fetchFavoriteStatus, fetchRelated, saveViewHistoryRemote, Comment } from '../../src/lib/api';
 
 const HERO_HEIGHT = 280;
 
@@ -130,7 +130,11 @@ export default function RecipeDetailScreen() {
       description_zh: recipe.description_zh,
       cover_image: recipe.cover_image,
     }).catch(() => {});
-  }, [recipe]);
+
+    if (userId && userId !== 'guest') {
+      saveViewHistoryRemote(recipe.id).catch(() => {});
+    }
+  }, [recipe, userId]);
   const {
     data: commentsData,
     isLoading: commentsLoading,

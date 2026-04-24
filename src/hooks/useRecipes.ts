@@ -34,6 +34,7 @@ export const useRecipes = (params?: {
   category?: string;
   difficulty?: string;
   search?: string;
+  sort?: 'recommended' | 'latest' | 'popular';
   tagId?: string;
 }) => {
   return useQuery({
@@ -68,6 +69,7 @@ export const useInfiniteRecipes = (params?: {
   category?: string;
   difficulty?: string;
   search?: string;
+  sort?: 'recommended' | 'latest' | 'popular';
   tagId?: string;
 }) => {
   return useInfiniteQuery({

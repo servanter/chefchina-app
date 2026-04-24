@@ -237,14 +237,15 @@
     "favorites": "Favorites {{count}}"
   },
   "recentHistory": {
-    "title": "Recent History",
+    "title": "Browsing History",
     "emptyTitle": "No browsing history",
     "emptyDesc": "Open some recipe detail pages and your recent views will show up here automatically.",
     "noDescription": "No description yet",
     "viewedAt": "Viewed at {{time}}",
     "clearTitle": "Clear recent history",
     "clearConfirm": "Are you sure you want to clear all browsing history?",
-    "clearAction": "Clear all"
+    "clearAction": "Clear all",
+    "unknownRecipe": "Recipe unavailable"
   },
   "settings": {
     "title": "Settings",

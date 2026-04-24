@@ -63,6 +63,7 @@ export default function ExploreScreen() {
   const [selectedCategory, setSelectedCategory] = useState(params.category ?? 'all');
   const [selectedDifficulty, setSelectedDifficulty] = useState(params.difficulty ?? 'all');
   const [selectedTag, setSelectedTag] = useState<string | undefined>(params.tagId);
+  const [selectedSort, setSelectedSort] = useState<'recommended' | 'latest' | 'popular'>('recommended');
   const [refreshing, setRefreshing] = useState(false);
 
   // ─── Search Panel state (FEAT-20260422-23) ─────────────────────────────────
@@ -92,6 +93,7 @@ export default function ExploreScreen() {
   const filterQuery = useInfiniteRecipes({
     category: selectedCategory !== 'all' ? selectedCategory : undefined,
     difficulty: selectedDifficulty !== 'all' ? selectedDifficulty : undefined,
+    sort: selectedSort,
     tagId: selectedTag,
   });
   const searchQuery = useRecipeSearch(isSearchMode ? committedQuery : '');
@@ -454,6 +456,34 @@ export default function ExploreScreen() {
             </View>
           )}
 
+          {!isSearchMode && (
+            <View style={styles.sortRow}>
+              {[
+                { key: 'recommended', label: isZh ? '综合' : 'Recommended' },
+                { key: 'latest', label: isZh ? '最新' : 'Latest' },
+                { key: 'popular', label: isZh ? '最热' : 'Popular' },
+              ].map((item) => (
+                <TouchableOpacity
+                  key={item.key}
+                  style={[
+                    styles.sortChip,
+                    selectedSort === item.key && styles.sortChipActive,
+                  ]}
+                  onPress={() => setSelectedSort(item.key as 'recommended' | 'latest' | 'popular')}
+                >
+                  <Text
+                    style={[
+                      styles.sortChipText,
+                      selectedSort === item.key && styles.sortChipTextActive,
+                    ]}
+                  >
+                    {item.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
+
           {/* ─── Results count ──────────────────────────── */}
           {!isLoading && (
             <View style={styles.resultRow}>
@@ -631,6 +661,30 @@ const styles = StyleSheet.create({
   },
   chipList: {
     paddingRight: 20,
+  },
+  sortRow: {
+    flexDirection: 'row',
+    gap: 8,
+    paddingHorizontal: 20,
+    paddingTop: 2,
+    paddingBottom: 6,
+  },
+  sortChip: {
+    backgroundColor: COLORS.inputBg,
+    borderRadius: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+  },
+  sortChipActive: {
+    backgroundColor: COLORS.primary,
+  },
+  sortChipText: {
+    fontSize: 12,
+    color: COLORS.textSecondary,
+    fontWeight: '600',
+  },
+  sortChipTextActive: {
+    color: '#FFF',
   },
   resultRow: {
     paddingHorizontal: 20,

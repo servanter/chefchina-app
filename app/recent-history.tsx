@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import {
   Alert,
   FlatList,
@@ -14,67 +14,38 @@ import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useFontScale } from '@/hooks/useFontScale';
-import { fetchRecipeById, Recipe } from '@/lib/api';
 import {
-  clearViewHistory,
-  getViewHistory,
-  removeViewHistoryItem,
-  ViewHistoryItem,
-} from '@/lib/storage';
-
-interface HistoryRecipe extends Partial<Recipe> {
-  id: string;
-  viewed_at: string;
-  fallback: boolean;
-}
-
-const toHistoryRecipe = (item: ViewHistoryItem): HistoryRecipe => ({
-  id: item.recipeId,
-  viewed_at: item.viewedAt,
-  fallback: true,
-  title: item.title || '',
-  title_zh: item.title_zh || '',
-  description: item.description || '',
-  description_zh: item.description_zh || '',
-  cover_image: item.cover_image || 'https://images.unsplash.com/photo-1563245372-f21724e3856d?w=800&q=80',
-});
+  flattenHistoryPages,
+  useClearViewHistory,
+  useDeleteViewHistory,
+  useViewHistory,
+} from '@/hooks/useViewHistory';
+import { EmptyState } from '@/components/EmptyState';
+import { ListFooter } from '@/components/ListFooter';
 
 export default function RecentHistoryScreen() {
   const router = useRouter();
   const { t, i18n } = useTranslation();
   const { colors } = useTheme();
   const { scaled } = useFontScale();
-  const [items, setItems] = useState<HistoryRecipe[]>([]);
-  const [loading, setLoading] = useState(true);
+  const isZh = i18n.language.startsWith('zh');
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    try {
-      const history = await getViewHistory();
-      const recipes = await Promise.all(
-        history.map(async (item: ViewHistoryItem) => {
-          const fallback = toHistoryRecipe(item);
-          try {
-            const recipe = await fetchRecipeById(item.recipeId);
-            return { ...recipe, viewed_at: item.viewedAt, fallback: false } as HistoryRecipe;
-          } catch {
-            return fallback;
-          }
-        }),
-      );
-      setItems(recipes);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const {
+    data,
+    isLoading,
+    refetch,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    error,
+  } = useViewHistory();
+  const deleteMutation = useDeleteViewHistory();
+  const clearMutation = useClearViewHistory();
 
-  useEffect(() => {
-    load();
-  }, [load]);
+  const items = useMemo(() => flattenHistoryPages(data?.pages), [data]);
 
   const handleRemove = async (recipeId: string) => {
-    await removeViewHistoryItem(recipeId);
-    setItems((prev) => prev.filter((item) => item.id !== recipeId));
+    await deleteMutation.mutateAsync(recipeId);
   };
 
   const handleClear = () => {
@@ -84,48 +55,13 @@ export default function RecentHistoryScreen() {
         text: t('recentHistory.clearAction'),
         style: 'destructive',
         onPress: async () => {
-          await clearViewHistory();
-          setItems([]);
+          await clearMutation.mutateAsync();
         },
       },
     ]);
   };
 
-  const renderItem = ({ item }: { item: HistoryRecipe }) => {
-    const title = i18n.language.startsWith('zh') ? item.title_zh || item.title : item.title || item.title_zh;
-    const description = i18n.language.startsWith('zh')
-      ? item.description_zh || item.description
-      : item.description || item.description_zh;
-
-    return (
-      <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}> 
-        <TouchableOpacity style={styles.cardMain} onPress={() => router.push(`/recipe/${item.id}`)}>
-          <Image source={{ uri: item.cover_image }} style={styles.cover} />
-          <View style={styles.body}>
-            <Text style={[styles.title, { color: colors.text, fontSize: scaled(16) }]} numberOfLines={2}>
-              {title || t('recentHistory.unknownRecipe')}
-            </Text>
-            <Text style={[styles.desc, { color: colors.subText }]} numberOfLines={2}>
-              {description || t('recentHistory.noDescription')}
-            </Text>
-            <Text style={[styles.time, { color: colors.subText }]}>
-              {t('recentHistory.viewedAt', { time: new Date(item.viewed_at).toLocaleString() })}
-            </Text>
-            {item.fallback ? (
-              <Text style={[styles.fallbackHint, { color: colors.subText }]}>
-                {t('recentHistory.cachedHint')}
-              </Text>
-            ) : null}
-          </View>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.deleteBtn} onPress={() => handleRemove(item.id)}>
-          <Ionicons name="trash-outline" size={18} color="#ef4444" />
-        </TouchableOpacity>
-      </View>
-    );
-  };
-
-  const listEmpty = useMemo(() => !loading && items.length === 0, [loading, items.length]);
+  const listEmpty = !isLoading && items.length === 0;
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.safeAreaBg }]}> 
@@ -141,16 +77,60 @@ export default function RecentHistoryScreen() {
 
       {listEmpty ? (
         <View style={styles.emptyWrap}>
-          <Ionicons name="time-outline" size={56} color={colors.subText} />
-          <Text style={[styles.emptyTitle, { color: colors.text }]}>{t('recentHistory.emptyTitle')}</Text>
-          <Text style={[styles.emptyDesc, { color: colors.subText }]}>{t('recentHistory.emptyDesc')}</Text>
+          <EmptyState
+            icon="time-outline"
+            title={t('recentHistory.emptyTitle')}
+            subtitle={t('recentHistory.emptyDesc')}
+          />
         </View>
       ) : (
         <FlatList
           data={items}
           keyExtractor={(item) => item.id}
-          renderItem={renderItem}
           contentContainerStyle={styles.listContent}
+          onEndReached={() => {
+            if (!isFetchingNextPage && hasNextPage) fetchNextPage();
+          }}
+          onEndReachedThreshold={0.4}
+          ListFooterComponent={
+            <ListFooter
+              isFetchingNextPage={isFetchingNextPage}
+              hasNextPage={!!hasNextPage}
+              error={error}
+              onRetry={() => fetchNextPage()}
+              hasItems={items.length > 0}
+            />
+          }
+          refreshing={isLoading}
+          onRefresh={refetch}
+          renderItem={({ item }) => {
+            const title = isZh ? item.title_zh || item.title : item.title || item.title_zh;
+            const description = isZh
+              ? item.description_zh || item.description
+              : item.description || item.description_zh;
+
+            return (
+              <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}> 
+                <TouchableOpacity style={styles.cardMain} onPress={() => router.push(`/recipe/${item.id}`)}>
+                  <Image source={{ uri: item.cover_image }} style={styles.cover} />
+                  <View style={styles.body}>
+                    <Text style={[styles.title, { color: colors.text, fontSize: scaled(16) }]} numberOfLines={2}>
+                      {title || t('recentHistory.unknownRecipe')}
+                    </Text>
+                    <Text style={[styles.desc, { color: colors.subText }]} numberOfLines={2}>
+                      {description || t('recentHistory.noDescription')}
+                    </Text>
+                    <Text style={[styles.time, { color: colors.subText }]}>
+                      {t('recentHistory.viewedAt', { time: new Date(item.created_at).toLocaleString() })}
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.deleteBtn} onPress={() => handleRemove(item.id)}>
+                  <Ionicons name="trash-outline" size={18} color="#ef4444" />
+                </TouchableOpacity>
+              </View>
+            );
+          }}
         />
       )}
     </SafeAreaView>
@@ -169,7 +149,7 @@ const styles = StyleSheet.create({
   },
   headerBtn: { width: 32, alignItems: 'center' },
   headerTitle: { fontWeight: '700' },
-  listContent: { padding: 16, gap: 12 },
+  listContent: { padding: 16, gap: 12, paddingBottom: 32 },
   card: { borderWidth: 1, borderRadius: 16, flexDirection: 'row', alignItems: 'center', overflow: 'hidden' },
   cardMain: { flex: 1, flexDirection: 'row' },
   cover: { width: 96, height: 96, backgroundColor: '#eee' },
@@ -177,9 +157,6 @@ const styles = StyleSheet.create({
   title: { fontWeight: '700' },
   desc: { fontSize: 13, lineHeight: 18 },
   time: { fontSize: 12 },
-  fallbackHint: { fontSize: 12 },
   deleteBtn: { width: 48, alignItems: 'center', justifyContent: 'center' },
-  emptyWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24, gap: 12 },
-  emptyTitle: { fontSize: 18, fontWeight: '700' },
-  emptyDesc: { fontSize: 14, lineHeight: 20, textAlign: 'center' },
+  emptyWrap: { flex: 1, justifyContent: 'center', padding: 24 },
 });

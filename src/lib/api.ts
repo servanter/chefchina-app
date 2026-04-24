@@ -53,6 +53,7 @@ apiClient.interceptors.request.use(
     const url = config.url ?? '';
     const needsAuth =
       url.startsWith('/notifications') ||
+      url.startsWith('/history') ||
       url.includes('/push-token') ||
       url.includes('/recipes/mine');
     if (needsAuth) {
@@ -387,6 +388,8 @@ export interface RecipesPage {
   hasMore: boolean;
 }
 
+export type RecipeSort = 'recommended' | 'latest' | 'popular';
+
 export const fetchRecipes = async (params?: {
   page?: number;
   pageSize?: number;
@@ -394,7 +397,7 @@ export const fetchRecipes = async (params?: {
   category?: string;
   difficulty?: string;
   search?: string;
-  sort?: string;
+  sort?: RecipeSort;
   tagId?: string;
 }): Promise<RecipesPage> => {
   const res = await apiClient.get('/recipes', {
@@ -937,6 +940,48 @@ export const markAllNotificationsRead = async (userId: string): Promise<number> 
     params: { userId },
   });
   return res.data.data.updated ?? 0;
+};
+
+export interface ViewHistoryApiItem extends BackendRecipe {
+  viewedAt: string;
+}
+
+export interface ViewHistoryPage {
+  data: Recipe[];
+  pagination: PageMeta;
+}
+
+export const fetchViewHistory = async (
+  page = 1,
+  pageSize = PAGE_SIZE,
+): Promise<ViewHistoryPage> => {
+  const res = await apiClient.get('/history', {
+    params: { page, pageSize },
+  });
+  const { items, pagination } = res.data.data as {
+    items: ViewHistoryApiItem[];
+    pagination: PageMeta;
+  };
+
+  return {
+    data: items.map((item) => ({
+      ...adaptRecipe(item),
+      created_at: item.viewedAt,
+    })),
+    pagination,
+  };
+};
+
+export const saveViewHistoryRemote = async (recipeId: string): Promise<void> => {
+  await apiClient.post('/history', { recipeId });
+};
+
+export const deleteViewHistoryRemote = async (recipeId: string): Promise<void> => {
+  await apiClient.delete('/history', { data: { recipeId } });
+};
+
+export const clearViewHistoryRemote = async (): Promise<void> => {
+  await apiClient.delete('/history', { data: { clearAll: true } });
 };
 
 export const updatePushToken = async (

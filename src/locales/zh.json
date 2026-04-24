@@ -237,14 +237,15 @@
     "favorites": "收藏 {{count}}"
   },
   "recentHistory": {
-    "title": "最近浏览",
+    "title": "浏览历史",
     "emptyTitle": "暂无浏览记录",
     "emptyDesc": "去逛逛菜谱详情页，这里会自动记录你最近看过的内容。",
     "noDescription": "暂无描述",
     "viewedAt": "浏览于 {{time}}",
     "clearTitle": "清空最近浏览",
     "clearConfirm": "确定清空全部浏览记录吗？",
-    "clearAction": "一键清空"
+    "clearAction": "一键清空",
+    "unknownRecipe": "菜谱已不存在"
   },
   "settings": {
     "title": "设置",
