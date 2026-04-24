@@ -89,6 +89,20 @@ function AppNavigator() {
           presentation: 'modal',
         }}
       />
+      <Stack.Screen
+        name="my-recipes"
+        options={{
+          headerShown: false,
+          presentation: 'card',
+        }}
+      />
+      <Stack.Screen
+        name="recent-history"
+        options={{
+          headerShown: false,
+          presentation: 'card',
+        }}
+      />
     </Stack>
   );
 }

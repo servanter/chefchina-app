@@ -53,7 +53,8 @@ apiClient.interceptors.request.use(
     const url = config.url ?? '';
     const needsAuth =
       url.startsWith('/notifications') ||
-      url.includes('/push-token');
+      url.includes('/push-token') ||
+      url.includes('/recipes/mine');
     if (needsAuth) {
       try {
         const token = await getAuthToken();
@@ -433,6 +434,36 @@ export const fetchRecipeById = async (id: string): Promise<Recipe> => {
   return adaptRecipe(res.data.data as BackendRecipe);
 };
 
+export interface MyRecipesPage {
+  data: Recipe[];
+  pagination: PageMeta;
+}
+
+export const fetchMyRecipes = async (
+  page = 1,
+  pageSize = PAGE_SIZE,
+  status?: 'all' | 'draft' | 'published',
+): Promise<MyRecipesPage> => {
+  const res = await apiClient.get('/recipes/mine', {
+    params: {
+      page,
+      pageSize,
+      status: status && status !== 'all' ? status : undefined,
+    },
+  });
+  const { recipes, pagination } = res.data.data;
+  const adapted = (recipes as BackendRecipe[]).map(adaptRecipe);
+  return {
+    data: adapted,
+    pagination: {
+      page: pagination?.page ?? page,
+      pageSize: pagination?.pageSize ?? pageSize,
+      total: pagination?.total ?? adapted.length,
+      totalPages: pagination?.totalPages ?? 1,
+    },
+  };
+};
+
 /**
  * 创建新菜谱（REQ-5.3：用户自主发布菜谱）
  * POST /api/recipes
@@ -483,6 +514,32 @@ export const createRecipe = async (payload: CreateRecipePayload): Promise<Recipe
     },
   });
   return adaptRecipe(res.data.data as BackendRecipe);
+};
+
+export const updateRecipe = async (
+  recipeId: string,
+  payload: Partial<CreateRecipePayload>,
+): Promise<Recipe> => {
+  const token = await getAuthToken();
+  const res = await apiClient.patch(`/recipes/${recipeId}`, payload, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  return adaptRecipe(res.data.data as BackendRecipe);
+};
+
+export const deleteRecipe = async (recipeId: string): Promise<void> => {
+  const token = await getAuthToken();
+  await apiClient.delete(`/recipes/${recipeId}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+};
+
+export const republishRecipe = async (recipeId: string): Promise<Recipe> => {
+  return updateRecipe(recipeId, { isPublished: true });
 };
 
 /**
@@ -707,6 +764,7 @@ function adaptAuthUser(u: BackendAuthUser): User {
     bio: u.bio ?? '',
     favorites_count: u._count?.favorites ?? 0,
     comments_count: u._count?.comments ?? 0,
+    recipes_count: 0,
   };
 }
 
@@ -1062,6 +1120,10 @@ export const fetchFeed = async (
       total: pagination.total,
       totalPages: pagination.totalPages,
     },
+    page: pagination.page,
+    limit: pagination.pageSize,
+    total: pagination.total,
+    hasMore: pagination.page < pagination.totalPages,
   };
 };
 

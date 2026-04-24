@@ -101,6 +101,8 @@
     "title": "Profile",
     "favorites": "Favorites",
     "comments": "Comments",
+    "myRecipes": "My Recipes",
+    "recentHistory": "Recent History",
     "language": "Language",
     "languageSwitch": "Switch Language",
     "logout": "Log Out",
@@ -211,6 +213,38 @@
   "network": {
     "offline": "You're offline — content may be out of date",
     "restored": "Back online"
+  },
+  "myRecipes": {
+    "title": "My Recipes",
+    "tabs": {
+      "all": "All",
+      "draft": "Drafts",
+      "published": "Published",
+      "offline": "Offline"
+    },
+    "statusDraft": "Draft",
+    "statusPublished": "Published",
+    "emptyTitle": "No recipes yet",
+    "emptyByStatus": {
+      "all": "You haven't created any recipes yet.",
+      "draft": "No draft recipes right now.",
+      "published": "No published recipes right now.",
+      "offline": "No offline recipes right now."
+    },
+    "noDescription": "No description yet",
+    "likes": "Likes {{count}}",
+    "comments": "Comments {{count}}",
+    "favorites": "Favorites {{count}}"
+  },
+  "recentHistory": {
+    "title": "Recent History",
+    "emptyTitle": "No browsing history",
+    "emptyDesc": "Open some recipe detail pages and your recent views will show up here automatically.",
+    "noDescription": "No description yet",
+    "viewedAt": "Viewed at {{time}}",
+    "clearTitle": "Clear recent history",
+    "clearConfirm": "Are you sure you want to clear all browsing history?",
+    "clearAction": "Clear all"
   },
   "settings": {
     "title": "Settings",

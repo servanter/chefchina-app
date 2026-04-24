@@ -29,9 +29,9 @@ const COLORS = {
   border: '#F0EDE8',
 };
 
-// 静态 COLORS 作为 legacy fallback —— 实际渲染以 useTheme() 为准。
-// 这是为了最小化本次 diff：绝大多数 styles 仍走 StyleSheet，但所有出现在页面主层级
-// 的 Text/View 颜色会通过内联 style 覆盖，保证 dark 主题生效。
+// 静态 COLORS 作为 legacy fallback -- 实际渲染以 useTheme() 为准。
+// 这是为了最小化本次 diff:绝大多数 styles 仍走 StyleSheet,但所有出现在页面主层级
+// 的 Text/View 颜色会通过内联 style 覆盖,保证 dark 主题生效。
 
 interface StatCardProps {
   icon: keyof typeof Ionicons.glyphMap;
@@ -253,7 +253,17 @@ export default function ProfileScreen() {
         )}
 
         {/* ─── Menu ────────────────────────────────── */}
-        <View style={[styles.section, { backgroundColor: colors.card }]}>
+        <View style={[styles.section, { backgroundColor: colors.card }]}> 
+          <MenuRow
+            icon="document-text-outline"
+            label={t('profile.myRecipes')}
+            onPress={() => router.push('/my-recipes')}
+          />
+          <MenuRow
+            icon="time-outline"
+            label={t('profile.recentHistory')}
+            onPress={() => router.push('/recent-history')}
+          />
           <MenuRow
             icon="language-outline"
             label={t('profile.language')}
