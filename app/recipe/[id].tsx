@@ -12,6 +12,7 @@ import {
   KeyboardAvoidingView,
   Alert,
   RefreshControl,
+  Image,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -19,6 +20,7 @@ import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import Toast from 'react-native-toast-message';
 import { useQuery } from '@tanstack/react-query';
+import * as ImagePicker from 'expo-image-picker';
 import { useRecipeById, useInfiniteComments, useToggleLike, useToggleFavorite, usePostComment } from '../../src/hooks/useRecipes';
 import { StepItem } from '../../src/components/StepItem';
 import { CommentItem } from '../../src/components/CommentItem';
@@ -35,7 +37,7 @@ import { ListFooter } from '../../src/components/ListFooter';
 import { ShareCard, SHARE_CARD_HEIGHT, SHARE_CARD_WIDTH } from '../../src/components/ShareCard';
 import { useShareRecipe } from '../../src/hooks/useShareRecipe';
 import { getUserId, getUserName } from '../../src/lib/storage';
-import { fetchLikeStatus, fetchFavoriteStatus, fetchRelated } from '../../src/lib/api';
+import { fetchLikeStatus, fetchFavoriteStatus, fetchRelated, Comment } from '../../src/lib/api';
 
 const HERO_HEIGHT = 280;
 
@@ -71,6 +73,8 @@ export default function RecipeDetailScreen() {
   const [userRating, setUserRating] = useState(0);
   const [userId, setUserId] = useState('guest');
   const [userName, setUserName] = useState<string | null>(null);
+  const [commentImages, setCommentImages] = useState<string[]>([]); // 评论图片
+  const [replyingTo, setReplyingTo] = useState<Comment | null>(null); // 回复对象
 
   // Image viewer：全屏查看器（需求 11）
   const [viewerVisible, setViewerVisible] = useState(false);
@@ -204,7 +208,8 @@ export default function RecipeDetailScreen() {
 
   const handlePostComment = useCallback(async () => {
     if (!commentText.trim()) return;
-    if (userRating === 0) {
+    // 回复评论不需要评分
+    if (!replyingTo && userRating === 0) {
       Alert.alert(t('recipe.selectRating'));
       return;
     }
@@ -213,15 +218,49 @@ export default function RecipeDetailScreen() {
         recipe_id: id ?? '',
         user_id: userId,
         content: commentText.trim(),
-        rating: userRating,
+        rating: replyingTo ? undefined : userRating,
+        images: commentImages.length > 0 ? commentImages : undefined,
+        parent_id: replyingTo?.id,
       });
       setCommentText('');
       setUserRating(0);
+      setCommentImages([]);
+      setReplyingTo(null);
       Toast.show({ type: 'success', text1: t('recipe.commentPosted'), visibilityTime: 1500 });
     } catch {
       Toast.show({ type: 'error', text1: t('common.error'), visibilityTime: 2000 });
     }
-  }, [commentText, userRating, id, userId, t]);
+  }, [commentText, userRating, commentImages, replyingTo, id, userId, t, postCommentMutation]);
+
+  const handlePickImage = useCallback(async () => {
+    if (commentImages.length >= 9) {
+      Alert.alert('最多上传9张图片');
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsMultipleSelection: false,
+      quality: 0.8,
+      base64: true,
+    });
+    if (!result.canceled && result.assets[0].base64) {
+      const base64Image = `data:image/jpeg;base64,${result.assets[0].base64}`;
+      setCommentImages(prev => [...prev, base64Image]);
+    }
+  }, [commentImages]);
+
+  const handleRemoveImage = useCallback((index: number) => {
+    setCommentImages(prev => prev.filter((_, i) => i !== index));
+  }, []);
+
+  const handleReply = useCallback((comment: Comment) => {
+    setReplyingTo(comment);
+    setUserRating(0);
+  }, []);
+
+  const handleCancelReply = useCallback(() => {
+    setReplyingTo(null);
+  }, []);
 
   const handleShare = useCallback(async () => {
     if (!recipe) return;
@@ -660,33 +699,79 @@ export default function RecipeDetailScreen() {
               <View style={styles.tabContent}>
                 {/* Post comment */}
                 <View style={styles.commentInput}>
-                  <View style={styles.commentRatingRow}>
-                    <Text style={styles.commentRatingLabel}>{t('recipe.selectRating')}: </Text>
-                    <RatingStars
-                      rating={userRating}
-                      size={22}
-                      onRate={setUserRating}
-                    />
-                  </View>
+                  {/* 回复提示 */}
+                  {replyingTo && (
+                    <View style={styles.replyingBox}>
+                      <Text style={styles.replyingText}>
+                        回复给 {replyingTo.user?.name ?? 'User'}
+                      </Text>
+                      <TouchableOpacity onPress={handleCancelReply}>
+                        <Ionicons name="close" size={18} color="#666" />
+                      </TouchableOpacity>
+                    </View>
+                  )}
+
+                  {/* 评分（仅在非回复时显示） */}
+                  {!replyingTo && (
+                    <View style={styles.commentRatingRow}>
+                      <Text style={styles.commentRatingLabel}>{t('recipe.selectRating')}: </Text>
+                      <RatingStars
+                        rating={userRating}
+                        size={22}
+                        onRate={setUserRating}
+                      />
+                    </View>
+                  )}
+
                   <TextInput
                     style={styles.commentTextInput}
-                    placeholder={t('recipe.writeComment')}
+                    placeholder={replyingTo ? '写下你的回复...' : t('recipe.writeComment')}
                     placeholderTextColor="#AAA"
                     value={commentText}
                     onChangeText={setCommentText}
                     multiline
                     maxLength={500}
                   />
-                  <TouchableOpacity
-                    style={[
-                      styles.postBtn,
-                      (!commentText.trim() || userRating === 0) && styles.postBtnDisabled,
-                    ]}
-                    onPress={handlePostComment}
-                    disabled={!commentText.trim() || userRating === 0}
-                  >
-                    <Text style={styles.postBtnText}>{t('recipe.postComment')}</Text>
-                  </TouchableOpacity>
+
+                  {/* 评论图片预览 */}
+                  {commentImages.length > 0 && (
+                    <ScrollView horizontal style={styles.commentImagesPreview}>
+                      {commentImages.map((img, idx) => (
+                        <View key={idx} style={styles.previewImageContainer}>
+                          <Image source={{ uri: img }} style={styles.previewImage} />
+                          <TouchableOpacity
+                            style={styles.removeImageBtn}
+                            onPress={() => handleRemoveImage(idx)}
+                          >
+                            <Ionicons name="close-circle" size={20} color="#FFF" />
+                          </TouchableOpacity>
+                        </View>
+                      ))}
+                    </ScrollView>
+                  )}
+
+                  <View style={styles.commentActions}>
+                    <TouchableOpacity
+                      style={styles.imagePickerBtn}
+                      onPress={handlePickImage}
+                    >
+                      <Ionicons name="image-outline" size={24} color={COLORS.primary} />
+                      {commentImages.length > 0 && (
+                        <Text style={styles.imageCount}>{commentImages.length}</Text>
+                      )}
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      style={[
+                        styles.postBtn,
+                        (!commentText.trim() || (!replyingTo && userRating === 0)) && styles.postBtnDisabled,
+                      ]}
+                      onPress={handlePostComment}
+                      disabled={!commentText.trim() || (!replyingTo && userRating === 0)}
+                    >
+                      <Text style={styles.postBtnText}>{t('recipe.postComment')}</Text>
+                    </TouchableOpacity>
+                  </View>
                 </View>
 
                 {/* Comments list */}
@@ -704,7 +789,11 @@ export default function RecipeDetailScreen() {
                 ) : (
                   <>
                     {comments.map((comment) => (
-                      <CommentItem key={comment.id} comment={comment} />
+                      <CommentItem 
+                        key={comment.id} 
+                        comment={comment}
+                        onReply={handleReply}
+                      />
                     ))}
                     <ListFooter
                       isFetchingNextPage={isFetchingMoreComments}
@@ -1136,6 +1225,62 @@ const styles = StyleSheet.create({
     color: '#FFF',
     fontSize: 14,
     fontWeight: '700',
+  },
+  replyingBox: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: '#FFF0E8',
+    padding: 8,
+    borderRadius: 8,
+    marginBottom: 10,
+  },
+  replyingText: {
+    fontSize: 13,
+    color: COLORS.textSecondary,
+  },
+  commentImagesPreview: {
+    flexDirection: 'row',
+    marginBottom: 10,
+  },
+  previewImageContainer: {
+    position: 'relative',
+    marginRight: 8,
+  },
+  previewImage: {
+    width: 60,
+    height: 60,
+    borderRadius: 8,
+  },
+  removeImageBtn: {
+    position: 'absolute',
+    top: -5,
+    right: -5,
+  },
+  commentActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  imagePickerBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 8,
+    position: 'relative',
+  },
+  imageCount: {
+    position: 'absolute',
+    top: 2,
+    right: 2,
+    backgroundColor: COLORS.primary,
+    color: '#FFF',
+    fontSize: 10,
+    fontWeight: 'bold',
+    borderRadius: 8,
+    width: 16,
+    height: 16,
+    textAlign: 'center',
+    lineHeight: 16,
   },
   metaBar: {
     flexDirection: 'row',
