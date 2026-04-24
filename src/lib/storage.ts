@@ -11,6 +11,7 @@ const KEYS = {
   FAVORITES: 'favorites',
   ONBOARDING_DONE: 'onboarding_done',
   SEARCH_HISTORY: 'search_history_v1',
+  VIEW_HISTORY: 'view_history_v1',
   THEME: 'theme',
   FONT_SIZE: 'font_size',
   I18N_LANG: 'i18n_lang',
@@ -28,6 +29,7 @@ export const PROTECTED_STORAGE_KEYS: readonly string[] = [
 ] as const;
 
 const SEARCH_HISTORY_LIMIT = 10;
+const VIEW_HISTORY_LIMIT = 50;
 
 // ─── Generic helpers ──────────────────────────────────────────────────────────
 
@@ -161,6 +163,39 @@ export const removeSearchHistoryItem = async (query: string): Promise<string[]> 
 
 export const clearSearchHistory = async (): Promise<void> => {
   await removeKey(KEYS.SEARCH_HISTORY);
+};
+
+export interface ViewHistoryItem {
+  recipeId: string;
+  viewedAt: string;
+}
+
+export const getViewHistory = async (): Promise<ViewHistoryItem[]> => {
+  const list = await getJSON<ViewHistoryItem[]>(KEYS.VIEW_HISTORY);
+  return Array.isArray(list) ? list : [];
+};
+
+export const saveViewHistoryItem = async (recipeId: string): Promise<ViewHistoryItem[]> => {
+  if (!recipeId) return getViewHistory();
+  const existing = await getViewHistory();
+  const filtered = existing.filter((item) => item.recipeId !== recipeId);
+  const next: ViewHistoryItem[] = [
+    { recipeId, viewedAt: new Date().toISOString() },
+    ...filtered,
+  ].slice(0, VIEW_HISTORY_LIMIT);
+  await storeJSON(KEYS.VIEW_HISTORY, next);
+  return next;
+};
+
+export const removeViewHistoryItem = async (recipeId: string): Promise<ViewHistoryItem[]> => {
+  const existing = await getViewHistory();
+  const next = existing.filter((item) => item.recipeId !== recipeId);
+  await storeJSON(KEYS.VIEW_HISTORY, next);
+  return next;
+};
+
+export const clearViewHistory = async (): Promise<void> => {
+  await removeKey(KEYS.VIEW_HISTORY);
 };
 
 // BUG-004 修复：clearAll 必须遵循 PROTECTED_STORAGE_KEYS 白名单，

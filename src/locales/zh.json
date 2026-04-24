@@ -101,6 +101,8 @@
     "title": "个人中心",
     "favorites": "收藏",
     "comments": "评论",
+    "myRecipes": "我的菜谱",
+    "recentHistory": "最近浏览",
     "language": "语言",
     "languageSwitch": "切换语言",
     "logout": "退出登录",
@@ -211,6 +213,38 @@
   "network": {
     "offline": "当前离线，内容可能过期",
     "restored": "网络已恢复"
+  },
+  "myRecipes": {
+    "title": "我的菜谱",
+    "tabs": {
+      "all": "全部",
+      "draft": "草稿",
+      "published": "已发布",
+      "offline": "已下线"
+    },
+    "statusDraft": "草稿",
+    "statusPublished": "已发布",
+    "emptyTitle": "还没有菜谱",
+    "emptyByStatus": {
+      "all": "你还没有创建任何菜谱，先去发布第一道作品吧。",
+      "draft": "当前没有草稿菜谱。",
+      "published": "当前没有已发布菜谱。",
+      "offline": "当前没有已下线菜谱。"
+    },
+    "noDescription": "暂无描述",
+    "likes": "点赞 {{count}}",
+    "comments": "评论 {{count}}",
+    "favorites": "收藏 {{count}}"
+  },
+  "recentHistory": {
+    "title": "最近浏览",
+    "emptyTitle": "暂无浏览记录",
+    "emptyDesc": "去逛逛菜谱详情页，这里会自动记录你最近看过的内容。",
+    "noDescription": "暂无描述",
+    "viewedAt": "浏览于 {{time}}",
+    "clearTitle": "清空最近浏览",
+    "clearConfirm": "确定清空全部浏览记录吗？",
+    "clearAction": "一键清空"
   },
   "settings": {
     "title": "设置",

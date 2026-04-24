@@ -53,7 +53,8 @@ apiClient.interceptors.request.use(
     const url = config.url ?? '';
     const needsAuth =
       url.startsWith('/notifications') ||
-      url.includes('/push-token');
+      url.includes('/push-token') ||
+      url.includes('/recipes/mine');
     if (needsAuth) {
       try {
         const token = await getAuthToken();
@@ -433,6 +434,39 @@ export const fetchRecipeById = async (id: string): Promise<Recipe> => {
   return adaptRecipe(res.data.data as BackendRecipe);
 };
 
+export interface MyRecipesPage {
+  data: Recipe[];
+  pagination: PageMeta;
+}
+
+export const fetchMyRecipes = async (
+  page = 1,
+  pageSize = PAGE_SIZE,
+  status?: 'all' | 'draft' | 'published' | 'offline',
+): Promise<MyRecipesPage> => {
+  const res = await apiClient.get('/recipes/mine', {
+    params: {
+      page,
+      pageSize,
+      status: status && status !== 'all' && status !== 'offline' ? status : undefined,
+    },
+  });
+  const { recipes, pagination } = res.data.data;
+  const adapted = (recipes as BackendRecipe[]).map(adaptRecipe).map((recipe) => ({
+    ...recipe,
+    is_published: status === 'offline' ? false : recipe.is_published,
+  }));
+  return {
+    data: status === 'offline' ? [] : adapted,
+    pagination: {
+      page: pagination?.page ?? page,
+      pageSize: pagination?.pageSize ?? pageSize,
+      total: status === 'offline' ? 0 : (pagination?.total ?? adapted.length),
+      totalPages: status === 'offline' ? 0 : (pagination?.totalPages ?? 1),
+    },
+  };
+};
+
 /**
  * 创建新菜谱（REQ-5.3：用户自主发布菜谱）
  * POST /api/recipes
@@ -707,6 +741,7 @@ function adaptAuthUser(u: BackendAuthUser): User {
     bio: u.bio ?? '',
     favorites_count: u._count?.favorites ?? 0,
     comments_count: u._count?.comments ?? 0,
+    recipes_count: 0,
   };
 }
 

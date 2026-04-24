@@ -36,7 +36,7 @@ import {
 import { ListFooter } from '../../src/components/ListFooter';
 import { ShareCard, SHARE_CARD_HEIGHT, SHARE_CARD_WIDTH } from '../../src/components/ShareCard';
 import { useShareRecipe } from '../../src/hooks/useShareRecipe';
-import { getUserId, getUserName } from '../../src/lib/storage';
+import { getUserId, getUserName, saveViewHistoryItem } from '../../src/lib/storage';
 import { fetchLikeStatus, fetchFavoriteStatus, fetchRelated, Comment } from '../../src/lib/api';
 
 const HERO_HEIGHT = 280;
@@ -120,6 +120,11 @@ export default function RecipeDetailScreen() {
   }, [id]);
 
   const { data: recipe, isLoading, error, refetch: refetchRecipe } = useRecipeById(id ?? '');
+
+  useEffect(() => {
+    if (!recipe?.id) return;
+    saveViewHistoryItem(recipe.id).catch(() => {});
+  }, [recipe?.id]);
   const {
     data: commentsData,
     isLoading: commentsLoading,
