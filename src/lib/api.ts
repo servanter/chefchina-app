@@ -423,6 +423,58 @@ export const fetchRecipeById = async (id: string): Promise<Recipe> => {
 };
 
 /**
+ * 创建新菜谱（REQ-5.3：用户自主发布菜谱）
+ * POST /api/recipes
+ * 需要鉴权，authorId 由后端从 token 中获取
+ */
+export interface CreateRecipePayload {
+  titleEn: string;
+  titleZh: string;
+  descriptionEn?: string;
+  descriptionZh?: string;
+  coverImage?: string;
+  categoryId: string;
+  difficulty?: 'EASY' | 'MEDIUM' | 'HARD';
+  cookTimeMin?: number;
+  servings?: number;
+  calories?: number;
+  protein?: number;
+  fat?: number;
+  carbs?: number;
+  fiber?: number;
+  sodium?: number;
+  sugar?: number;
+  isPublished?: boolean;
+  ingredients?: Array<{
+    nameEn: string;
+    nameZh: string;
+    amount: string;
+    unit?: string;
+    isOptional?: boolean;
+  }>;
+  steps?: Array<{
+    stepNumber: number;
+    titleEn?: string;
+    titleZh?: string;
+    contentEn: string;
+    contentZh: string;
+    image?: string;
+    durationMin?: number;
+  }>;
+  tagIds?: string[];
+}
+
+export const createRecipe = async (payload: CreateRecipePayload): Promise<Recipe> => {
+  const token = await getAuthToken();
+  const res = await apiClient.post('/recipes', payload, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  return adaptRecipe(res.data.data as BackendRecipe);
+};
+
+/**
  * 拉当前菜谱的"相关推荐"（同 category 的其他已发布菜谱）。
  * 后端：GET /api/recipes/[id]/related → { items: BackendRecipe[] }
  * 需求 15。
