@@ -13,6 +13,9 @@ import {
   fetchCommentsPaged,
   fetchMyRecipes,
   postComment,
+  updateRecipe,
+  deleteRecipe,
+  republishRecipe,
   PAGE_SIZE,
   Recipe,
   Comment,
@@ -133,7 +136,7 @@ export const useRecipeById = (id: string) => {
   });
 };
 
-export const useMyRecipes = (status: 'all' | 'draft' | 'published' | 'offline' = 'all') => {
+export const useMyRecipes = (status: 'all' | 'draft' | 'published' = 'all') => {
   return useInfiniteQuery({
     queryKey: ['my-recipes', status],
     queryFn: async ({ pageParam = 1 }) => fetchMyRecipes(pageParam as number, PAGE_SIZE, status),
@@ -143,6 +146,42 @@ export const useMyRecipes = (status: 'all' | 'draft' | 'published' | 'offline' =
         ? lastPage.pagination.page + 1
         : undefined,
     staleTime: 1000 * 60,
+  });
+};
+
+export const useUpdateRecipe = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ recipeId, payload }: { recipeId: string; payload: any }) =>
+      updateRecipe(recipeId, payload),
+    onSuccess: (recipe) => {
+      queryClient.invalidateQueries({ queryKey: ['my-recipes'] });
+      queryClient.invalidateQueries({ queryKey: ['recipe', recipe.id] });
+      queryClient.invalidateQueries({ queryKey: ['recipes'] });
+    },
+  });
+};
+
+export const useDeleteRecipe = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (recipeId: string) => deleteRecipe(recipeId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['my-recipes'] });
+      queryClient.invalidateQueries({ queryKey: ['recipes'] });
+    },
+  });
+};
+
+export const useRepublishRecipe = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (recipeId: string) => republishRecipe(recipeId),
+    onSuccess: (recipe) => {
+      queryClient.invalidateQueries({ queryKey: ['my-recipes'] });
+      queryClient.invalidateQueries({ queryKey: ['recipe', recipe.id] });
+      queryClient.invalidateQueries({ queryKey: ['recipes'] });
+    },
   });
 };
 

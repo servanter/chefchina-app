@@ -123,8 +123,14 @@ export default function RecipeDetailScreen() {
 
   useEffect(() => {
     if (!recipe?.id) return;
-    saveViewHistoryItem(recipe.id).catch(() => {});
-  }, [recipe?.id]);
+    saveViewHistoryItem(recipe.id, {
+      title: recipe.title,
+      title_zh: recipe.title_zh,
+      description: recipe.description,
+      description_zh: recipe.description_zh,
+      cover_image: recipe.cover_image,
+    }).catch(() => {});
+  }, [recipe]);
   const {
     data: commentsData,
     isLoading: commentsLoading,

@@ -442,27 +442,24 @@ export interface MyRecipesPage {
 export const fetchMyRecipes = async (
   page = 1,
   pageSize = PAGE_SIZE,
-  status?: 'all' | 'draft' | 'published' | 'offline',
+  status?: 'all' | 'draft' | 'published',
 ): Promise<MyRecipesPage> => {
   const res = await apiClient.get('/recipes/mine', {
     params: {
       page,
       pageSize,
-      status: status && status !== 'all' && status !== 'offline' ? status : undefined,
+      status: status && status !== 'all' ? status : undefined,
     },
   });
   const { recipes, pagination } = res.data.data;
-  const adapted = (recipes as BackendRecipe[]).map(adaptRecipe).map((recipe) => ({
-    ...recipe,
-    is_published: status === 'offline' ? false : recipe.is_published,
-  }));
+  const adapted = (recipes as BackendRecipe[]).map(adaptRecipe);
   return {
-    data: status === 'offline' ? [] : adapted,
+    data: adapted,
     pagination: {
       page: pagination?.page ?? page,
       pageSize: pagination?.pageSize ?? pageSize,
-      total: status === 'offline' ? 0 : (pagination?.total ?? adapted.length),
-      totalPages: status === 'offline' ? 0 : (pagination?.totalPages ?? 1),
+      total: pagination?.total ?? adapted.length,
+      totalPages: pagination?.totalPages ?? 1,
     },
   };
 };
@@ -517,6 +514,32 @@ export const createRecipe = async (payload: CreateRecipePayload): Promise<Recipe
     },
   });
   return adaptRecipe(res.data.data as BackendRecipe);
+};
+
+export const updateRecipe = async (
+  recipeId: string,
+  payload: Partial<CreateRecipePayload>,
+): Promise<Recipe> => {
+  const token = await getAuthToken();
+  const res = await apiClient.patch(`/recipes/${recipeId}`, payload, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  return adaptRecipe(res.data.data as BackendRecipe);
+};
+
+export const deleteRecipe = async (recipeId: string): Promise<void> => {
+  const token = await getAuthToken();
+  await apiClient.delete(`/recipes/${recipeId}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+};
+
+export const republishRecipe = async (recipeId: string): Promise<Recipe> => {
+  return updateRecipe(recipeId, { isPublished: true });
 };
 
 /**
@@ -1097,6 +1120,10 @@ export const fetchFeed = async (
       total: pagination.total,
       totalPages: pagination.totalPages,
     },
+    page: pagination.page,
+    limit: pagination.pageSize,
+    total: pagination.total,
+    hasMore: pagination.page < pagination.totalPages,
   };
 };
 

@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import {
+  Alert,
   View,
   Text,
   StyleSheet,
@@ -13,11 +14,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '@/contexts/ThemeContext';
-import { useMyRecipes } from '@/hooks/useRecipes';
+import { useDeleteRecipe, useMyRecipes, useRepublishRecipe } from '@/hooks/useRecipes';
 import { useFontScale } from '@/hooks/useFontScale';
 import type { Recipe } from '@/lib/api';
 
-const STATUS_TABS = ['all', 'draft', 'published', 'offline'] as const;
+const STATUS_TABS = ['all', 'draft', 'published'] as const;
 type StatusTab = typeof STATUS_TABS[number];
 
 export default function MyRecipesScreen() {
@@ -27,11 +28,86 @@ export default function MyRecipesScreen() {
   const { scaled } = useFontScale();
   const [status, setStatus] = useState<StatusTab>('all');
   const query = useMyRecipes(status);
+  const deleteMutation = useDeleteRecipe();
+  const republishMutation = useRepublishRecipe();
 
   const recipes = useMemo(
     () => (query.data?.pages ?? []).flatMap((page) => page.data),
     [query.data],
   );
+
+  const handleContinueEdit = (item: Recipe) => {
+    router.push({
+      pathname: '/recipe/create',
+      params: { recipeId: item.id, mode: 'edit' },
+    });
+  };
+
+  const handleDelete = (item: Recipe) => {
+    Alert.alert(
+      t('common.confirm'),
+      t('myRecipes.deleteConfirm', { title: i18n.language.startsWith('zh') ? item.title_zh : item.title }),
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        {
+          text: t('myRecipes.actions.delete'),
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deleteMutation.mutateAsync(item.id);
+            } catch (error: any) {
+              Alert.alert(t('common.error'), error?.message || t('common.operationFailed'));
+            }
+          },
+        },
+      ],
+    );
+  };
+
+  const handleRepublish = async (item: Recipe) => {
+    try {
+      await republishMutation.mutateAsync(item.id);
+    } catch (error: any) {
+      Alert.alert(t('common.error'), error?.message || t('common.operationFailed'));
+    }
+  };
+
+  const renderActions = (item: Recipe) => {
+    const canEdit = !item.is_published;
+    const canRepublish = !item.is_published;
+
+    return (
+      <View style={styles.actionsRow}>
+        {canEdit ? (
+          <TouchableOpacity
+            style={[styles.actionBtn, { borderColor: colors.border, backgroundColor: colors.card }]}
+            onPress={() => handleContinueEdit(item)}
+          >
+            <Ionicons name="create-outline" size={16} color={colors.text} />
+            <Text style={[styles.actionText, { color: colors.text }]}>{t('myRecipes.actions.continueEdit')}</Text>
+          </TouchableOpacity>
+        ) : null}
+
+        {canRepublish ? (
+          <TouchableOpacity
+            style={[styles.actionBtn, { borderColor: colors.tint, backgroundColor: `${colors.tint}14` }]}
+            onPress={() => handleRepublish(item)}
+          >
+            <Ionicons name="cloud-upload-outline" size={16} color={colors.tint} />
+            <Text style={[styles.actionText, { color: colors.tint }]}>{t('myRecipes.actions.republish')}</Text>
+          </TouchableOpacity>
+        ) : null}
+
+        <TouchableOpacity
+          style={[styles.actionBtn, { borderColor: '#fecaca', backgroundColor: '#fef2f2' }]}
+          onPress={() => handleDelete(item)}
+        >
+          <Ionicons name="trash-outline" size={16} color="#dc2626" />
+          <Text style={[styles.actionText, { color: '#dc2626' }]}>{t('myRecipes.actions.delete')}</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  };
 
   const renderItem = ({ item }: { item: Recipe }) => {
     const statusLabel = item.is_published
@@ -40,32 +116,34 @@ export default function MyRecipesScreen() {
     const badgeColor = item.is_published ? '#16a34a' : '#f59e0b';
 
     return (
-      <TouchableOpacity
-        style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}
-        onPress={() => router.push(`/recipe/${item.id}`)}
-      >
-        <Image source={{ uri: item.cover_image }} style={styles.cover} />
-        <View style={styles.content}>
-          <View style={styles.headerRow}>
-            <Text style={[styles.title, { color: colors.text, fontSize: scaled(16) }]} numberOfLines={2}>
-              {i18n.language.startsWith('zh') ? item.title_zh : item.title}
+      <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}> 
+        <TouchableOpacity style={styles.cardMain} onPress={() => router.push(`/recipe/${item.id}`)}>
+          <Image source={{ uri: item.cover_image }} style={styles.cover} />
+          <View style={styles.content}>
+            <View style={styles.headerRow}>
+              <Text style={[styles.title, { color: colors.text, fontSize: scaled(16) }]} numberOfLines={2}>
+                {i18n.language.startsWith('zh') ? item.title_zh : item.title}
+              </Text>
+              <View style={[styles.badge, { backgroundColor: `${badgeColor}18` }]}>
+                <Text style={[styles.badgeText, { color: badgeColor }]}>{statusLabel}</Text>
+              </View>
+            </View>
+            <Text style={[styles.meta, { color: colors.subText }]} numberOfLines={2}>
+              {(i18n.language.startsWith('zh') ? item.description_zh : item.description) || t('myRecipes.noDescription')}
             </Text>
-            <View style={[styles.badge, { backgroundColor: `${badgeColor}18` }]}>
-              <Text style={[styles.badgeText, { color: badgeColor }]}>{statusLabel}</Text>
+            <View style={styles.statsRow}>
+              <Text style={[styles.stat, { color: colors.subText }]}>{t('myRecipes.likes', { count: item.likes_count })}</Text>
+              <Text style={[styles.stat, { color: colors.subText }]}>{t('myRecipes.comments', { count: item.comments_count })}</Text>
+              <Text style={[styles.stat, { color: colors.subText }]}>{t('myRecipes.favorites', { count: item.favorites_count })}</Text>
             </View>
           </View>
-          <Text style={[styles.meta, { color: colors.subText }]} numberOfLines={2}>
-            {(i18n.language.startsWith('zh') ? item.description_zh : item.description) || t('myRecipes.noDescription')}
-          </Text>
-          <View style={styles.statsRow}>
-            <Text style={[styles.stat, { color: colors.subText }]}>{t('myRecipes.likes', { count: item.likes_count })}</Text>
-            <Text style={[styles.stat, { color: colors.subText }]}>{t('myRecipes.comments', { count: item.comments_count })}</Text>
-            <Text style={[styles.stat, { color: colors.subText }]}>{t('myRecipes.favorites', { count: item.favorites_count })}</Text>
-          </View>
-        </View>
-      </TouchableOpacity>
+        </TouchableOpacity>
+        {renderActions(item)}
+      </View>
     );
   };
+
+  const busy = deleteMutation.isPending || republishMutation.isPending;
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.safeAreaBg }]}> 
@@ -117,7 +195,7 @@ export default function MyRecipesScreen() {
           onEndReached={() => query.hasNextPage && !query.isFetchingNextPage && query.fetchNextPage()}
           onEndReachedThreshold={0.3}
           ListFooterComponent={
-            query.isFetchingNextPage ? <ActivityIndicator color={colors.tint} style={{ marginVertical: 16 }} /> : null
+            busy || query.isFetchingNextPage ? <ActivityIndicator color={colors.tint} style={{ marginVertical: 16 }} /> : null
           }
         />
       )}
@@ -140,7 +218,8 @@ const styles = StyleSheet.create({
   tabsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, padding: 16 },
   tab: { borderWidth: 1, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 8 },
   listContent: { paddingHorizontal: 16, paddingBottom: 24, gap: 12 },
-  card: { flexDirection: 'row', borderWidth: 1, borderRadius: 16, overflow: 'hidden' },
+  card: { borderWidth: 1, borderRadius: 16, overflow: 'hidden' },
+  cardMain: { flexDirection: 'row' },
   cover: { width: 110, height: 110, backgroundColor: '#eee' },
   content: { flex: 1, padding: 12, gap: 8 },
   headerRow: { gap: 8 },
@@ -150,6 +229,17 @@ const styles = StyleSheet.create({
   meta: { fontSize: 13, lineHeight: 18 },
   statsRow: { flexDirection: 'row', gap: 12, flexWrap: 'wrap' },
   stat: { fontSize: 12 },
+  actionsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, padding: 12, paddingTop: 0 },
+  actionBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    borderWidth: 1,
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+  },
+  actionText: { fontSize: 12, fontWeight: '700' },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24, gap: 12 },
   emptyTitle: { fontSize: 18, fontWeight: '700' },
   emptyText: { fontSize: 14, textAlign: 'center', lineHeight: 20 },

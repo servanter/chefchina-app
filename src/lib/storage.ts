@@ -165,22 +165,47 @@ export const clearSearchHistory = async (): Promise<void> => {
   await removeKey(KEYS.SEARCH_HISTORY);
 };
 
-export interface ViewHistoryItem {
+export interface ViewHistorySnapshot {
+  title?: string;
+  title_zh?: string;
+  description?: string;
+  description_zh?: string;
+  cover_image?: string;
+}
+
+export interface ViewHistoryItem extends ViewHistorySnapshot {
   recipeId: string;
   viewedAt: string;
 }
 
-export const getViewHistory = async (): Promise<ViewHistoryItem[]> => {
-  const list = await getJSON<ViewHistoryItem[]>(KEYS.VIEW_HISTORY);
-  return Array.isArray(list) ? list : [];
+const isValidViewHistoryItem = (item: unknown): item is ViewHistoryItem => {
+  if (!item || typeof item !== 'object') return false;
+  const candidate = item as Record<string, unknown>;
+  return typeof candidate.recipeId === 'string' && typeof candidate.viewedAt === 'string';
 };
 
-export const saveViewHistoryItem = async (recipeId: string): Promise<ViewHistoryItem[]> => {
+export const getViewHistory = async (): Promise<ViewHistoryItem[]> => {
+  const list = await getJSON<unknown[]>(KEYS.VIEW_HISTORY);
+  return Array.isArray(list) ? list.filter(isValidViewHistoryItem) : [];
+};
+
+export const saveViewHistoryItem = async (
+  recipeId: string,
+  snapshot?: ViewHistorySnapshot,
+): Promise<ViewHistoryItem[]> => {
   if (!recipeId) return getViewHistory();
   const existing = await getViewHistory();
   const filtered = existing.filter((item) => item.recipeId !== recipeId);
   const next: ViewHistoryItem[] = [
-    { recipeId, viewedAt: new Date().toISOString() },
+    {
+      recipeId,
+      viewedAt: new Date().toISOString(),
+      title: snapshot?.title,
+      title_zh: snapshot?.title_zh,
+      description: snapshot?.description,
+      description_zh: snapshot?.description_zh,
+      cover_image: snapshot?.cover_image,
+    },
     ...filtered,
   ].slice(0, VIEW_HISTORY_LIMIT);
   await storeJSON(KEYS.VIEW_HISTORY, next);
