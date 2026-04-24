@@ -1,0 +1,882 @@
+import axios, { AxiosError, AxiosRequestConfig } from 'axios';
+import { Platform } from 'react-native';
+import { getAuthToken } from './storage';
+
+// 根据平台自动选择 API 地址
+// EXPO_PUBLIC_API_BASE 可覆盖默认值，上线时建议用该环境变量指向生产域名
+// - Web / iOS 模拟器：localhost:3000
+// - Android 模拟器：10.0.2.2:3000（映射宿主机 localhost）
+// - 真机扫码调试：改成 Mac 的局域网 IP，例如 http://192.168.0.104:3000/api
+const BASE_URL =
+  process.env.EXPO_PUBLIC_API_BASE ||
+  (Platform.OS === 'android'
+    ? 'http://10.0.2.2:3000/api'
+    : 'http://localhost:3000/api');
+
+// ─── 分页常量（FEAT-20260421-11）─────────────────────────────────────────────
+export const PAGE_SIZE = 20;
+
+// ─── 网络错误判断 + 重试策略（FEAT-20260421-13）────────────────────────────
+export const isNetworkError = (error: unknown): boolean => {
+  if (!error) return false;
+  const err = error as AxiosError & { message?: string };
+  if (err.code === 'ERR_NETWORK' || err.code === 'ECONNABORTED') return true;
+  if (!err.response && (err.request || err.message?.toLowerCase().includes('network'))) {
+    return true;
+  }
+  return false;
+};
+
+const isServerError = (error: unknown): boolean => {
+  const err = error as AxiosError;
+  const status = err?.response?.status;
+  return typeof status === 'number' && status >= 500 && status < 600;
+};
+
+const MAX_RETRY = 2;
+const RETRY_DELAYS = [500, 1500];
+
+type RetriableConfig = AxiosRequestConfig & { _retryCount?: number };
+
+export const apiClient = axios.create({
+  baseURL: BASE_URL,
+  timeout: 10000,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+apiClient.interceptors.request.use(
+  async (config) => {
+    // 需要鉴权的接口（通知相关 + push-token）自动附上 Bearer token。
+    // 其他请求不加，保持对老 API 的向后兼容（登录/注册自己返回 token，不需要）。
+    const url = config.url ?? '';
+    const needsAuth =
+      url.startsWith('/notifications') ||
+      url.includes('/push-token');
+    if (needsAuth) {
+      try {
+        const token = await getAuthToken();
+        if (token) {
+          config.headers = config.headers ?? {};
+          (config.headers as Record<string, string>).Authorization = `Bearer ${token}`;
+        }
+      } catch {
+        // storage 读失败就不加头，后端 401 调用方会看到
+      }
+    }
+    return config;
+  },
+  (error) => Promise.reject(error),
+);
+
+apiClient.interceptors.response.use(
+  (response) => response,
+  async (error: AxiosError) => {
+    const config = error.config as RetriableConfig | undefined;
+
+    // 仅对幂等 GET 请求做自动重试；写操作绝不重试（防重复提交）
+    const method = (config?.method ?? 'get').toLowerCase();
+    const shouldRetry =
+      config &&
+      method === 'get' &&
+      (isNetworkError(error) || isServerError(error));
+
+    if (shouldRetry) {
+      config._retryCount = config._retryCount ?? 0;
+      if (config._retryCount < MAX_RETRY) {
+        const delay = RETRY_DELAYS[config._retryCount] ?? 1500;
+        config._retryCount += 1;
+        await new Promise((resolve) => setTimeout(resolve, delay));
+        return apiClient.request(config);
+      }
+    }
+
+    const message =
+      (error?.response?.data as any)?.error ??
+      error?.message ??
+      'Unknown error';
+    const wrapped = new Error(message) as Error & { isNetworkError?: boolean };
+    wrapped.isNetworkError = isNetworkError(error);
+    return Promise.reject(wrapped);
+  },
+);
+
+// ─── App 内部使用的统一类型（前端视角）─────────────────────────────────────────
+
+export interface Ingredient {
+  name: string;
+  name_zh: string;
+  amount: string;
+  unit?: string;
+}
+
+export interface Step {
+  order: number;
+  description: string;
+  description_zh: string;
+  image?: string;
+  duration_min?: number;
+}
+
+export interface Recipe {
+  id: string;
+  title: string;
+  title_zh: string;
+  description: string;
+  description_zh: string;
+  cover_image: string;
+  category: string;
+  category_slug?: string;
+  // 需求 15：difficulty 可能为 null（菜谱未指定难度）→ App 端按 null 隐藏对应 icon
+  difficulty: 'easy' | 'medium' | 'hard' | null;
+  cook_time: number;
+  prep_time: number;
+  servings: number;
+  calories?: number;
+  ingredients: Ingredient[];
+  steps: Step[];
+  likes_count: number;
+  comments_count: number;
+  favorites_count: number;
+  avg_rating: number;
+  ratings_count: number;
+  is_published: boolean;
+  created_at: string;
+  tags: { id: string; label: string; label_zh: string }[];
+}
+
+export interface Comment {
+  id: string;
+  user_id: string;
+  recipe_id: string;
+  content: string;
+  rating: number;
+  created_at: string;
+  user?: {
+    name: string;
+    avatar_url: string;
+  };
+}
+
+export interface User {
+  id: string;
+  email: string;
+  name: string;
+  avatar_url: string;
+  bio: string;
+  favorites_count: number;
+  comments_count: number;
+}
+
+export interface PaginatedResponse<T> {
+  data: T[];
+  page: number;
+  limit: number;
+  total: number;
+  hasMore: boolean;
+}
+
+// ─── 分类 ─────────────────────────────────────────────────────────────────────
+
+export interface Category {
+  id: string;
+  label: string;
+  label_zh: string;
+  slug: string;
+  recipesCount: number;
+}
+
+interface BackendCategory {
+  id: string;
+  nameEn: string;
+  nameZh: string;
+  slug: string;
+  _count?: { recipes: number };
+}
+
+export function adaptCategory(c: BackendCategory): Category {
+  return {
+    id: c.id,
+    label: c.nameEn,
+    label_zh: c.nameZh,
+    slug: c.slug,
+    recipesCount: c._count?.recipes ?? 0,
+  };
+}
+
+export const fetchCategories = async (): Promise<Category[]> => {
+  const res = await apiClient.get('/categories');
+  const cats = res.data.data as BackendCategory[];
+  return cats.map(adaptCategory);
+};
+
+// ─── 后台 API 原始类型（Prisma 返回格式）────────────────────────────────────────
+
+interface BackendIngredient {
+  id: string;
+  nameEn: string;
+  nameZh: string;
+  amount: string;
+  unit?: string;
+  isOptional: boolean;
+}
+
+interface BackendStep {
+  id: string;
+  stepNumber: number;
+  titleEn?: string;
+  titleZh?: string;
+  contentEn: string;
+  contentZh: string;
+  image?: string;
+  durationMin?: number;
+}
+
+interface BackendRecipe {
+  id: string;
+  titleEn: string;
+  titleZh: string;
+  descriptionEn?: string;
+  descriptionZh?: string;
+  coverImage?: string;
+  // 需求 15：以下 4 个 meta 字段均允许 null（对应 Prisma 的 nullable 列）
+  difficulty?: 'EASY' | 'MEDIUM' | 'HARD' | null;
+  cookTimeMin?: number | null;
+  servings?: number | null;
+  calories?: number | null;
+  isPublished: boolean;
+  createdAt: string;
+  category?: { id: string; nameEn: string; nameZh: string; slug: string };
+  steps?: BackendStep[];
+  ingredients?: BackendIngredient[];
+  tags?: { tag: { id: string; nameEn: string; nameZh: string } }[];
+  _count?: { likes: number; comments: number; favorites: number };
+  avgRating?: number;
+  ratingsCount?: number;
+}
+
+interface BackendComment {
+  id: string;
+  content: string;
+  rating?: number;
+  recipeId: string;
+  userId: string;
+  createdAt: string;
+  user?: { id: string; name?: string; avatar?: string };
+}
+
+// ─── 适配器：后台格式 → App 前端格式 ──────────────────────────────────────────
+
+function adaptDifficulty(d: string | null | undefined): 'easy' | 'medium' | 'hard' | null {
+  // 需求 15：DB 中 difficulty 可能为 null —— 保留为 null，App 端详情页按 null 隐藏
+  // 对应 meta icon。RecipeCard 中的 DifficultyBadge 会对 null 做兜底（fallback 'easy'）
+  // 以保证卡片列表视觉一致。
+  if (!d) return null;
+  return d.toLowerCase() as 'easy' | 'medium' | 'hard';
+}
+
+export function adaptRecipe(r: BackendRecipe): Recipe {
+  return {
+    id: r.id,
+    title: r.titleEn,
+    title_zh: r.titleZh,
+    description: r.descriptionEn ?? '',
+    description_zh: r.descriptionZh ?? '',
+    cover_image: r.coverImage ?? 'https://images.unsplash.com/photo-1563245372-f21724e3856d?w=800&q=80',
+    category: r.category?.nameEn ?? '',
+    category_slug: r.category?.slug ?? '',
+    difficulty: adaptDifficulty(r.difficulty),
+    // null → 0：由 App 详情页按 > 0 条件隐藏对应 icon
+    cook_time: r.cookTimeMin ?? 0,
+    prep_time: 0,
+    servings: r.servings ?? 0,
+    calories: r.calories ?? undefined,
+    ingredients: (r.ingredients ?? []).map((i) => ({
+      name: i.nameEn,
+      name_zh: i.nameZh,
+      amount: i.amount,
+      unit: i.unit,
+    })),
+    steps: (r.steps ?? []).map((s) => ({
+      order: s.stepNumber,
+      description: s.contentEn,
+      description_zh: s.contentZh,
+      image: s.image,
+      duration_min: s.durationMin,
+    })),
+    likes_count: r._count?.likes ?? 0,
+    comments_count: r._count?.comments ?? 0,
+    favorites_count: r._count?.favorites ?? 0,
+    avg_rating: r.avgRating ?? 0,
+    ratings_count: r.ratingsCount ?? 0,
+    is_published: r.isPublished,
+    created_at: r.createdAt,
+    tags: (r.tags ?? []).map((t) => ({
+      id: t.tag.id,
+      label: t.tag.nameEn,
+      label_zh: t.tag.nameZh,
+    })),
+  };
+}
+
+export function adaptComment(c: BackendComment): Comment {
+  return {
+    id: c.id,
+    user_id: c.userId,
+    recipe_id: c.recipeId,
+    content: c.content,
+    rating: c.rating ?? 0,
+    created_at: c.createdAt,
+    user: c.user
+      ? { name: c.user.name ?? 'Anonymous', avatar_url: c.user.avatar ?? '' }
+      : undefined,
+  };
+}
+
+// ─── API 函数（调用后台，数据经过适配）────────────────────────────────────────
+
+export interface PageMeta {
+  page: number;
+  pageSize: number;
+  total: number;
+  totalPages: number;
+}
+
+export interface RecipesPage {
+  data: Recipe[];
+  pagination: PageMeta;
+  // Legacy flat fields (kept for backward compat with non-infinite consumers)
+  page: number;
+  limit: number;
+  total: number;
+  hasMore: boolean;
+}
+
+export const fetchRecipes = async (params?: {
+  page?: number;
+  pageSize?: number;
+  limit?: number;
+  category?: string;
+  difficulty?: string;
+  search?: string;
+  sort?: string;
+  tagId?: string;
+}): Promise<RecipesPage> => {
+  const res = await apiClient.get('/recipes', {
+    params: {
+      page: params?.page ?? 1,
+      pageSize: params?.pageSize ?? params?.limit ?? PAGE_SIZE,
+      categoryId: params?.category && params.category !== 'all' ? params.category : undefined,
+      difficulty: params?.difficulty && params.difficulty !== 'all'
+        ? params.difficulty.toUpperCase()
+        : undefined,
+      search: params?.search,
+      published: true,
+      sort: params?.sort,
+      tagId: params?.tagId,
+    },
+  });
+  const body = res.data; // { success: true, data: { recipes, pagination } }
+  const { recipes, pagination } = body.data;
+  const meta: PageMeta = {
+    page: pagination.page,
+    pageSize: pagination.pageSize,
+    total: pagination.total,
+    totalPages: pagination.totalPages,
+  };
+  return {
+    data: (recipes as BackendRecipe[]).map(adaptRecipe),
+    pagination: meta,
+    page: meta.page,
+    limit: meta.pageSize,
+    total: meta.total,
+    hasMore: meta.page < meta.totalPages,
+  };
+};
+
+export const fetchRecipeById = async (id: string): Promise<Recipe> => {
+  const res = await apiClient.get(`/recipes/${id}`);
+  return adaptRecipe(res.data.data as BackendRecipe);
+};
+
+/**
+ * 拉当前菜谱的"相关推荐"（同 category 的其他已发布菜谱）。
+ * 后端：GET /api/recipes/[id]/related → { items: BackendRecipe[] }
+ * 需求 15。
+ */
+export const fetchRelated = async (
+  recipeId: string,
+  limit = 6,
+): Promise<Recipe[]> => {
+  const res = await apiClient.get(`/recipes/${recipeId}/related`, {
+    params: { limit },
+  });
+  const items = res.data?.data?.items;
+  if (!Array.isArray(items)) return [];
+  return (items as BackendRecipe[]).map(adaptRecipe);
+};
+
+export const fetchFeaturedRecipes = async (): Promise<Recipe[]> => {
+  const res = await apiClient.get('/recipes', {
+    params: { page: 1, pageSize: 5, published: true, sort: 'hot' },
+  });
+  const { recipes } = res.data.data;
+  return (recipes as BackendRecipe[]).map(adaptRecipe);
+};
+
+export const toggleLike = async (
+  recipeId: string,
+  userId: string,
+): Promise<{ liked: boolean; likes_count: number }> => {
+  const res = await apiClient.post(`/likes/${recipeId}`, { userId });
+  return { liked: res.data.data.liked, likes_count: res.data.data.count };
+};
+
+export const fetchFavorites = async (userId: string): Promise<Recipe[]> => {
+  const res = await apiClient.get('/favorites', { params: { userId } });
+  const { recipes } = res.data.data;
+  return (recipes as BackendRecipe[]).map(adaptRecipe);
+};
+
+export interface FavoritesPage {
+  data: Recipe[];
+  pagination: PageMeta;
+}
+
+export const fetchFavoritesPaged = async (
+  userId: string,
+  page = 1,
+  pageSize = PAGE_SIZE,
+): Promise<FavoritesPage> => {
+  const res = await apiClient.get('/favorites', {
+    params: { userId, page, pageSize },
+  });
+  const { recipes, pagination } = res.data.data;
+  // 后端 /api/favorites 若不返回 pagination，则退回单页伪分页
+  const total = pagination?.total ?? (recipes?.length ?? 0);
+  const totalPages =
+    pagination?.totalPages ??
+    Math.max(1, Math.ceil(total / pageSize));
+  return {
+    data: (recipes as BackendRecipe[]).map(adaptRecipe),
+    pagination: {
+      page: pagination?.page ?? page,
+      pageSize: pagination?.pageSize ?? pageSize,
+      total,
+      totalPages,
+    },
+  };
+};
+
+export const toggleFavorite = async (
+  recipeId: string,
+  userId: string,
+): Promise<{ favorited: boolean }> => {
+  const res = await apiClient.post(`/favorites/${recipeId}`, { userId });
+  return { favorited: res.data.data.favorited };
+};
+
+export const fetchComments = async (recipeId: string): Promise<Comment[]> => {
+  const res = await apiClient.get('/comments', { params: { recipeId } });
+  const { comments } = res.data.data;
+  return (comments as BackendComment[]).map(adaptComment);
+};
+
+export interface CommentsPage {
+  data: Comment[];
+  pagination: PageMeta;
+}
+
+export const fetchCommentsPaged = async (
+  recipeId: string,
+  page = 1,
+  pageSize = PAGE_SIZE,
+): Promise<CommentsPage> => {
+  const res = await apiClient.get('/comments', {
+    params: { recipeId, page, pageSize },
+  });
+  const { comments, pagination } = res.data.data;
+  const total = pagination?.total ?? (comments?.length ?? 0);
+  const totalPages =
+    pagination?.totalPages ??
+    Math.max(1, Math.ceil(total / pageSize));
+  return {
+    data: (comments as BackendComment[]).map(adaptComment),
+    pagination: {
+      page: pagination?.page ?? page,
+      pageSize: pagination?.pageSize ?? pageSize,
+      total,
+      totalPages,
+    },
+  };
+};
+
+export const postComment = async (params: {
+  recipe_id: string;
+  user_id: string;
+  content: string;
+  rating: number;
+}): Promise<Comment> => {
+  const res = await apiClient.post('/comments', {
+    recipeId: params.recipe_id,
+    userId: params.user_id,
+    content: params.content,
+    rating: params.rating,
+  });
+  return adaptComment(res.data.data as BackendComment);
+};
+
+export const upsertUser = async (params: {
+  email: string;
+  name?: string;
+}): Promise<User> => {
+  const res = await apiClient.post('/users', params);
+  const u = res.data.data;
+  return {
+    id: u.id,
+    email: u.email,
+    name: u.name ?? '',
+    avatar_url: u.avatar && u.avatar.length > 0
+      ? u.avatar
+      : `https://i.pravatar.cc/150?u=${u.id}`,
+    bio: u.bio ?? '',
+    favorites_count: u._count?.favorites ?? 0,
+    comments_count: u._count?.comments ?? 0,
+  };
+};
+
+export const fetchUser = async (userId: string): Promise<User> => {
+  const res = await apiClient.get(`/users/${userId}`);
+  const u = res.data.data;
+  return {
+    id: u.id,
+    email: u.email,
+    name: u.name ?? '',
+    avatar_url: u.avatar && u.avatar.length > 0
+      ? u.avatar
+      : `https://i.pravatar.cc/150?u=${u.id}`,
+    bio: u.bio ?? '',
+    favorites_count: u._count?.favorites ?? 0,
+    comments_count: u._count?.comments ?? 0,
+  };
+};
+
+export const updateUser = async (
+  userId: string,
+  data: { name?: string; bio?: string; avatar?: string; locale?: string },
+): Promise<User> => {
+  const res = await apiClient.patch(`/users/${userId}`, data);
+  const u = res.data.data;
+  return {
+    id: u.id,
+    email: u.email,
+    name: u.name ?? '',
+    avatar_url: u.avatar && u.avatar.length > 0
+      ? u.avatar
+      : `https://i.pravatar.cc/150?u=${u.id}`,
+    bio: u.bio ?? '',
+    favorites_count: u._count?.favorites ?? 0,
+    comments_count: u._count?.comments ?? 0,
+  };
+};
+
+// ─── 认证：邮箱 + 密码（FEAT-20260421-02）────────────────────────────────────
+
+interface BackendAuthUser {
+  id: string;
+  email: string;
+  name?: string | null;
+  avatar?: string | null;
+  bio?: string | null;
+  role?: 'USER' | 'ADMIN';
+  locale?: string;
+  _count?: { favorites?: number; comments?: number };
+}
+
+export interface AuthResult {
+  user: User;
+  token: string;
+}
+
+function adaptAuthUser(u: BackendAuthUser): User {
+  return {
+    id: u.id,
+    email: u.email,
+    name: u.name ?? '',
+    avatar_url:
+      u.avatar && u.avatar.length > 0
+        ? u.avatar
+        : `https://i.pravatar.cc/150?u=${u.id}`,
+    bio: u.bio ?? '',
+    favorites_count: u._count?.favorites ?? 0,
+    comments_count: u._count?.comments ?? 0,
+  };
+}
+
+// BUG-20260422-04 修复：共享的响应拦截器会把 axios 错误包成只有 message 的
+// 普通 Error，`response.data.code` / `retryAfter` 全丢掉。这里用
+// `validateStatus: () => true` 把 4xx/5xx 也当成"成功响应"拿到完整 body，
+// 然后手动抛出带 `code` + `response.data` 的错误，供 login.tsx / register.tsx
+// 的 catch 按 error code 走 i18n。不触碰拦截器本身（Dev1 Sprint 2 会动）。
+export interface AuthApiError extends Error {
+  code?: string;
+  response?: { status: number; data: any };
+}
+
+async function postAuth(path: '/auth/login' | '/auth/register', body: {
+  email: string
+  password: string
+}): Promise<AuthResult> {
+  const res = await apiClient.post(path, body, {
+    validateStatus: () => true,
+  });
+  const data = res.data ?? {};
+  if (!data.success) {
+    const err = new Error(data.error ?? 'Request failed') as AuthApiError;
+    if (typeof data.code === 'string') err.code = data.code;
+    err.response = { status: res.status, data };
+    throw err;
+  }
+  const { user, token } = data.data as {
+    user: BackendAuthUser;
+    token: string;
+  };
+  return { user: adaptAuthUser(user), token };
+}
+
+export const login = async (
+  email: string,
+  password: string,
+): Promise<AuthResult> => postAuth('/auth/login', { email, password });
+
+export const register = async (
+  email: string,
+  password: string,
+): Promise<AuthResult> => postAuth('/auth/register', { email, password });
+
+
+export interface Tag {
+  id: string;
+  label: string;
+  label_zh: string;
+}
+
+export const fetchTags = async (): Promise<Tag[]> => {
+  const res = await apiClient.get('/tags');
+  const { tags } = res.data.data;
+  return tags.map((t: { id: string; nameEn: string; nameZh: string }) => ({
+    id: t.id,
+    label: t.nameEn,
+    label_zh: t.nameZh,
+  }));
+};
+
+export const fetchLikeStatus = async (
+  recipeId: string,
+  userId: string,
+): Promise<{ liked: boolean; count: number }> => {
+  const res = await apiClient.get(`/likes/${recipeId}`, { params: { userId } });
+  return { liked: res.data.data.liked, count: res.data.data.count };
+};
+
+export const fetchFavoriteStatus = async (
+  recipeId: string,
+  userId: string,
+): Promise<{ favorited: boolean }> => {
+  const res = await apiClient.get(`/favorites/${recipeId}`, { params: { userId } });
+  return { favorited: res.data.data.favorited };
+};
+
+// ─── Notifications ────────────────────────────────────────────────────────────
+
+export type NotificationType =
+  | 'COMMENT_REPLY'
+  | 'RECIPE_LIKED'
+  | 'RECIPE_FAVORITED'
+  | 'SUBMISSION_APPROVED'
+  | 'SYSTEM';
+
+export interface Notification {
+  id: string;
+  type: NotificationType;
+  title: string;
+  body: string;
+  payload: Record<string, any> | null;
+  read: boolean;
+  created_at: string;
+}
+
+interface BackendNotification {
+  id: string;
+  userId: string;
+  type: NotificationType;
+  title: string;
+  body: string;
+  payload: Record<string, any> | null;
+  readAt: string | null;
+  createdAt: string;
+}
+
+function adaptNotification(n: BackendNotification): Notification {
+  return {
+    id: n.id,
+    type: n.type,
+    title: n.title,
+    body: n.body,
+    payload: n.payload ?? null,
+    read: !!n.readAt,
+    created_at: n.createdAt,
+  };
+}
+
+export interface NotificationsPage {
+  data: Notification[];
+  unreadCount: number;
+  page: number;
+  limit: number;
+  total: number;
+  hasMore: boolean;
+}
+
+export const fetchNotifications = async (
+  userId: string,
+  page = 1,
+  unreadOnly = false,
+): Promise<NotificationsPage> => {
+  const res = await apiClient.get('/notifications', {
+    params: { userId, page, pageSize: 20, unreadOnly: unreadOnly ? true : undefined },
+  });
+  const { notifications, unreadCount, pagination } = res.data.data as {
+    notifications: BackendNotification[];
+    unreadCount: number;
+    pagination: { page: number; pageSize: number; total: number; totalPages: number };
+  };
+  return {
+    data: notifications.map(adaptNotification),
+    unreadCount,
+    page: pagination.page,
+    limit: pagination.pageSize,
+    total: pagination.total,
+    hasMore: pagination.page < pagination.totalPages,
+  };
+};
+
+export const fetchUnreadCount = async (userId: string): Promise<number> => {
+  const res = await apiClient.get('/notifications', {
+    params: { userId, unreadOnly: true, page: 1, pageSize: 1 },
+  });
+  return res.data.data.unreadCount ?? 0;
+};
+
+export const markNotificationRead = async (id: string): Promise<Notification> => {
+  const res = await apiClient.patch(`/notifications/${id}`);
+  return adaptNotification(res.data.data as BackendNotification);
+};
+
+export const deleteNotification = async (id: string): Promise<void> => {
+  await apiClient.delete(`/notifications/${id}`);
+};
+
+export const markAllNotificationsRead = async (userId: string): Promise<number> => {
+  const res = await apiClient.post('/notifications/read-all', null, {
+    params: { userId },
+  });
+  return res.data.data.updated ?? 0;
+};
+
+export const updatePushToken = async (
+  userId: string,
+  token: string,
+): Promise<void> => {
+  await apiClient.patch(`/users/${userId}/push-token`, { expoPushToken: token });
+};
+
+// ─── Share ────────────────────────────────────────────────────────────────────
+
+export interface ShareStats {
+  total: number;
+  byChannel: { channel: string; count: number }[];
+}
+
+export const recordShare = async (params: {
+  recipeId: string;
+  userId?: string | null;
+  channel?: string | null;
+}): Promise<void> => {
+  await apiClient.post('/share', params);
+};
+
+export const fetchShareStats = async (recipeId: string): Promise<ShareStats> => {
+  const res = await apiClient.get('/share', { params: { recipeId } });
+  return res.data.data as ShareStats;
+};
+
+// ─── Search trending / log (FEAT-20260422-23) ────────────────────────────────
+//
+// 后端 /api/search-log：POST { query, userId? } 累加 Redis ZSET 24h/7d 窗口。
+// 后端 /api/search-trending：GET ?window=24h|7d 返回 { items: [{ query, count }] }。
+// 记录失败不要影响搜索体验 —— catch 掉吞日志即可。
+
+export interface TrendingItem {
+  query: string;
+  count: number;
+}
+
+export const logSearch = async (query: string, userId?: string | null): Promise<void> => {
+  try {
+    await apiClient.post('/search-log', { query, userId: userId ?? null });
+  } catch {
+    // 埋点失败不影响主流程
+  }
+};
+
+export const fetchSearchTrending = async (
+  win: '24h' | '7d' = '24h',
+): Promise<TrendingItem[]> => {
+  const res = await apiClient.get('/search-trending', { params: { window: win } });
+  const items = res.data?.data?.items;
+  return Array.isArray(items) ? (items as TrendingItem[]) : [];
+};
+
+// ─── Recipe search v2 · cursor 分页 + SQL 版 trending（2026/04/23）─────────────
+//
+// 新版搜索 API 独立路径：
+//   GET /api/recipes/search?q=&cursor=&limit=
+//   GET /api/search/trending （不分 window，服务端固定 7d）
+// 与老的 Redis 版 /api/search-log + /api/search-trending 并存。
+// App 的搜索面板热词继续用 Redis 版（实时，分 24h/7d），搜索结果落到新版 API。
+
+export interface RecipeSearchPage {
+  data: Recipe[];
+  nextCursor: string | null;
+  total?: number;
+}
+
+export const fetchRecipeSearch = async (
+  q: string,
+  cursor?: string | null,
+  limit = PAGE_SIZE,
+): Promise<RecipeSearchPage> => {
+  const res = await apiClient.get('/recipes/search', {
+    params: {
+      q,
+      cursor: cursor ?? undefined,
+      limit,
+    },
+  });
+  const body = res.data?.data ?? {};
+  const items = Array.isArray(body.items) ? (body.items as BackendRecipe[]) : [];
+  const pagination = body.pagination ?? {};
+  return {
+    data: items.map(adaptRecipe),
+    nextCursor: pagination.nextCursor ?? null,
+    total: typeof pagination.total === 'number' ? pagination.total : undefined,
+  };
+};
+
+export const fetchRecipeTrending = async (): Promise<TrendingItem[]> => {
+  const res = await apiClient.get('/search/trending');
+  const items = res.data?.data?.items;
+  return Array.isArray(items) ? (items as TrendingItem[]) : [];
+};

@@ -1,0 +1,40 @@
+{
+  "expo": {
+    "name": "ChefChina",
+    "slug": "chefchina",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "scheme": "chefchina",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#FFFDF9"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.chefchina.app",
+      "_note_associatedDomains": "TODO: enable Universal Links by adding `associatedDomains: [\"applinks:chefchina.app\"]` once the apple-app-site-association file is hosted at https://chefchina.app/.well-known/apple-app-site-association."
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#FFFDF9"
+      },
+      "package": "com.chefchina.app",
+      "edgeToEdgeEnabled": true,
+      "predictiveBackGestureEnabled": false,
+      "_note_intentFilters": "TODO: enable App Links by adding `intentFilters` with `autoVerify: true` targeting https://chefchina.app/s/* and verifying assetlinks.json on the web host."
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-font"
+    ]
+  }
+}

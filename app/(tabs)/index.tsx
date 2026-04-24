@@ -1,0 +1,407 @@
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
+import {
+  View,
+  Text,
+  ScrollView,
+  TextInput,
+  TouchableOpacity,
+  FlatList,
+  StyleSheet,
+  useWindowDimensions,
+  RefreshControl,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
+import { Ionicons } from '@expo/vector-icons';
+import { RecipeCard } from '../../src/components/RecipeCard';
+import { CategoryChip } from '../../src/components/CategoryChip';
+import { SkeletonCard, SkeletonList } from '../../src/components/Skeleton';
+import { ListFooter } from '../../src/components/ListFooter';
+import { useFeaturedRecipes, useInfiniteRecipes, useCategories } from '../../src/hooks/useRecipes';
+import { useUnreadCount } from '../../src/hooks/useNotifications';
+import { getUserId } from '../../src/lib/storage';
+import { changeLanguage } from '../../src/lib/i18n';
+
+const COLORS = {
+  primary: '#E85D26',
+  background: '#FFFDF9',
+  text: '#1A1A1A',
+  textSecondary: '#666',
+  inputBg: '#F5F2EE',
+  white: '#FFFFFF',
+};
+
+export default function HomeScreen() {
+  const { t, i18n } = useTranslation();
+  const router = useRouter();
+  const { width } = useWindowDimensions();
+  // Cap at 390 so grid doesn't overstretch on web
+  const effectiveWidth = Math.min(width, 390);
+  const isZh = i18n.language === 'zh';
+
+  const [searchText, setSearchText] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [refreshing, setRefreshing] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    getUserId().then((uid) => setUserId(uid));
+  }, []);
+
+  const { data: unreadCount = 0 } = useUnreadCount(userId);
+
+  const {
+    data: featuredData,
+    isLoading: featuredLoading,
+    refetch: refetchFeatured,
+  } = useFeaturedRecipes();
+
+  const {
+    data: quickData,
+    isLoading: quickLoading,
+    refetch: refetchQuick,
+    fetchNextPage: fetchNextQuick,
+    hasNextPage: hasNextQuick,
+    isFetchingNextPage: isFetchingNextQuick,
+    error: quickError,
+  } = useInfiniteRecipes({ difficulty: 'easy' });
+
+  const quickRecipes = useMemo(
+    () => (quickData?.pages ?? []).flatMap((p) => p.data),
+    [quickData],
+  );
+
+  const handleLoadMoreQuick = useCallback(() => {
+    if (!isFetchingNextQuick && hasNextQuick) fetchNextQuick();
+  }, [isFetchingNextQuick, hasNextQuick, fetchNextQuick]);
+
+  const { data: categories = [] } = useCategories();
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await Promise.all([refetchFeatured(), refetchQuick()]);
+    setRefreshing(false);
+  }, [refetchFeatured, refetchQuick]);
+
+  const toggleLanguage = async () => {
+    await changeLanguage(isZh ? 'en' : 'zh');
+  };
+
+  const handleSearch = () => {
+    if (searchText.trim()) {
+      router.push({ pathname: '/(tabs)/explore', params: { search: searchText } });
+    }
+  };
+
+  const handleCategoryPress = (categoryId: string) => {
+    setSelectedCategory(categoryId);
+    router.push({ pathname: '/(tabs)/explore', params: { category: categoryId } });
+  };
+
+  return (
+    <SafeAreaView style={styles.safeArea} edges={['top']}>
+      <ScrollView
+        style={styles.scroll}
+        showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.primary} />}
+        onScroll={({ nativeEvent }) => {
+          // 滚到底 80% 时自动拉下一页（Quick 列表）
+          const { layoutMeasurement, contentOffset, contentSize } = nativeEvent;
+          const reachedEnd =
+            layoutMeasurement.height + contentOffset.y >=
+            contentSize.height - contentSize.height * 0.5;
+          if (reachedEnd) handleLoadMoreQuick();
+        }}
+        scrollEventThrottle={250}
+      >
+        {/* ─── Header ──────────────────────────────────────── */}
+        <View style={styles.header}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.welcomeText}>{t('home.welcome')}</Text>
+            <Text style={styles.subtitleText}>{t('home.subtitle')}</Text>
+          </View>
+
+          <View style={styles.headerActions}>
+            <TouchableOpacity
+              style={styles.bellBtn}
+              onPress={() => router.push('/notifications')}
+              accessibilityLabel={t('notifications.title')}
+            >
+              <Ionicons name="notifications-outline" size={20} color={COLORS.text} />
+              {unreadCount > 0 && (
+                <View style={styles.bellBadge}>
+                  <Text style={styles.bellBadgeText}>
+                    {unreadCount > 99 ? '99+' : unreadCount}
+                  </Text>
+                </View>
+              )}
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.langBtn} onPress={toggleLanguage}>
+              <Text style={styles.langBtnText}>🌐</Text>
+              <Text style={styles.langBtnLabel}>{isZh ? 'EN' : '中'}</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* ─── Search ──────────────────────────────────────── */}
+        <View style={styles.searchRow}>
+          <View style={styles.searchBox}>
+            <Ionicons name="search-outline" size={18} color="#999" style={styles.searchIcon} />
+            <TextInput
+              style={styles.searchInput}
+              placeholder={t('common.search')}
+              placeholderTextColor="#AAA"
+              value={searchText}
+              onChangeText={setSearchText}
+              onSubmitEditing={handleSearch}
+              returnKeyType="search"
+            />
+            {searchText.length > 0 && (
+              <TouchableOpacity onPress={() => setSearchText('')}>
+                <Ionicons name="close-circle" size={18} color="#BBB" />
+              </TouchableOpacity>
+            )}
+          </View>
+        </View>
+
+        {/* ─── Categories ──────────────────────────────────── */}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.categoryList}
+        >
+          {categories.map((cat) => (
+            <CategoryChip
+              key={cat.id}
+              label={isZh ? cat.label_zh : cat.label}
+              isSelected={selectedCategory === cat.id}
+              onPress={() => handleCategoryPress(cat.id)}
+            />
+          ))}
+        </ScrollView>
+
+        {/* ─── Featured Recipes ────────────────────────────── */}
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>{t('home.featuredTitle')}</Text>
+          <TouchableOpacity onPress={() => router.push('/(tabs)/explore')}>
+            <Text style={styles.seeAll}>{t('home.seeAll')}</Text>
+          </TouchableOpacity>
+        </View>
+
+        {featuredLoading ? (
+          <FlatList
+            data={[0, 1, 2]}
+            keyExtractor={(i) => String(i)}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.featuredList}
+            renderItem={() => (
+              <View style={{ width: effectiveWidth * 0.72, marginRight: 12 }}>
+                <SkeletonCard />
+              </View>
+            )}
+          />
+        ) : (
+          <FlatList
+            data={featuredData ?? []}
+            keyExtractor={(item) => item.id}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.featuredList}
+            renderItem={({ item }) => (
+              <RecipeCard
+                recipe={item}
+                variant="featured"
+                onPress={() => router.push(`/recipe/${item.id}`)}
+              />
+            )}
+          />
+        )}
+
+        {/* ─── Quick & Easy ─────────────────────────────────── */}
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>{t('home.quickEasyTitle')}</Text>
+          <TouchableOpacity onPress={() => router.push({ pathname: '/(tabs)/explore', params: { difficulty: 'easy' } })}>
+            <Text style={styles.seeAll}>{t('home.seeAll')}</Text>
+          </TouchableOpacity>
+        </View>
+
+        {quickLoading ? (
+          <SkeletonList count={6} />
+        ) : (
+          <>
+            <View style={[styles.gridContainer, { maxWidth: effectiveWidth, alignSelf: 'center', width: '100%' }]}>
+              {quickRecipes.map((item) => (
+                <RecipeCard
+                  key={item.id}
+                  recipe={item}
+                  variant="grid"
+                  onPress={() => router.push(`/recipe/${item.id}`)}
+                />
+              ))}
+            </View>
+            <ListFooter
+              isFetchingNextPage={isFetchingNextQuick}
+              hasNextPage={!!hasNextQuick}
+              error={quickError}
+              onRetry={() => fetchNextQuick()}
+              hasItems={quickRecipes.length > 0}
+            />
+          </>
+        )}
+
+        <View style={{ height: 24 }} />
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: COLORS.background,
+  },
+  scroll: {
+    flex: 1,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 8,
+  },
+  welcomeText: {
+    fontSize: 24,
+    fontWeight: '800',
+    color: COLORS.text,
+    letterSpacing: -0.5,
+  },
+  subtitleText: {
+    fontSize: 14,
+    color: COLORS.textSecondary,
+    marginTop: 3,
+  },
+  langBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.white,
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderWidth: 1,
+    borderColor: '#F0EDE8',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+  },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  bellBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: COLORS.white,
+    borderWidth: 1,
+    borderColor: '#F0EDE8',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+  },
+  bellBadge: {
+    position: 'absolute',
+    top: -2,
+    right: -2,
+    minWidth: 16,
+    height: 16,
+    paddingHorizontal: 4,
+    borderRadius: 8,
+    backgroundColor: COLORS.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1.5,
+    borderColor: COLORS.background,
+  },
+  bellBadgeText: {
+    color: '#FFF',
+    fontSize: 9,
+    fontWeight: '800',
+  },
+  langBtnText: {
+    fontSize: 16,
+    marginRight: 4,
+  },
+  langBtnLabel: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: COLORS.primary,
+  },
+  searchRow: {
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+  },
+  searchBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.inputBg,
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  searchIcon: {
+    marginRight: 8,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 14,
+    color: COLORS.text,
+    padding: 0,
+  },
+  categoryList: {
+    paddingHorizontal: 20,
+    paddingVertical: 4,
+    paddingBottom: 12,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    marginTop: 8,
+    marginBottom: 14,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: COLORS.text,
+    letterSpacing: -0.3,
+  },
+  seeAll: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: COLORS.primary,
+  },
+  featuredList: {
+    paddingLeft: 20,
+    paddingRight: 8,
+    paddingBottom: 8,
+  },
+  gridContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    paddingHorizontal: 16,
+    gap: 12,
+  },
+});
