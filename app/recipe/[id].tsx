@@ -566,6 +566,65 @@ export default function RecipeDetailScreen() {
                     <Text style={styles.ingredientAmount}>{ing.amount}</Text>
                   </View>
                 ))}
+                
+                {/* 营养成分显示 (REQ-4.4) */}
+                {(recipe.protein || recipe.fat || recipe.carbs || recipe.fiber || recipe.sodium || recipe.sugar) && (
+                  <View style={styles.nutritionSection}>
+                    <Text style={styles.nutritionTitle}>
+                      {isZh ? '营养信息' : 'Nutrition Facts'}
+                    </Text>
+                    <View style={styles.nutritionGrid}>
+                      {recipe.protein != null && (
+                        <View style={styles.nutritionItem}>
+                          <Text style={styles.nutritionLabel}>
+                            {isZh ? '蛋白质' : 'Protein'}
+                          </Text>
+                          <Text style={styles.nutritionValue}>{recipe.protein}g</Text>
+                        </View>
+                      )}
+                      {recipe.fat != null && (
+                        <View style={styles.nutritionItem}>
+                          <Text style={styles.nutritionLabel}>
+                            {isZh ? '脂肪' : 'Fat'}
+                          </Text>
+                          <Text style={styles.nutritionValue}>{recipe.fat}g</Text>
+                        </View>
+                      )}
+                      {recipe.carbs != null && (
+                        <View style={styles.nutritionItem}>
+                          <Text style={styles.nutritionLabel}>
+                            {isZh ? '碳水' : 'Carbs'}
+                          </Text>
+                          <Text style={styles.nutritionValue}>{recipe.carbs}g</Text>
+                        </View>
+                      )}
+                      {recipe.fiber != null && (
+                        <View style={styles.nutritionItem}>
+                          <Text style={styles.nutritionLabel}>
+                            {isZh ? '纤维' : 'Fiber'}
+                          </Text>
+                          <Text style={styles.nutritionValue}>{recipe.fiber}g</Text>
+                        </View>
+                      )}
+                      {recipe.sodium != null && (
+                        <View style={styles.nutritionItem}>
+                          <Text style={styles.nutritionLabel}>
+                            {isZh ? '钠' : 'Sodium'}
+                          </Text>
+                          <Text style={styles.nutritionValue}>{recipe.sodium}mg</Text>
+                        </View>
+                      )}
+                      {recipe.sugar != null && (
+                        <View style={styles.nutritionItem}>
+                          <Text style={styles.nutritionLabel}>
+                            {isZh ? '糖' : 'Sugar'}
+                          </Text>
+                          <Text style={styles.nutritionValue}>{recipe.sugar}g</Text>
+                        </View>
+                      )}
+                    </View>
+                  </View>
+                )}
               </View>
             )}
 
@@ -998,6 +1057,45 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: COLORS.textSecondary,
     fontWeight: '500',
+  },
+  // 营养成分样式 (REQ-4.4)
+  nutritionSection: {
+    marginTop: 20,
+    padding: 16,
+    backgroundColor: '#F8F9FA',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E9ECEF',
+  },
+  nutritionTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: COLORS.text,
+    marginBottom: 16,
+  },
+  nutritionGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  nutritionItem: {
+    width: '47%',
+    backgroundColor: '#FFF',
+    padding: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#DEE2E6',
+  },
+  nutritionLabel: {
+    fontSize: 12,
+    color: COLORS.textSecondary,
+    marginBottom: 4,
+    fontWeight: '500',
+  },
+  nutritionValue: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: COLORS.primary,
   },
   commentInput: {
     backgroundColor: COLORS.cardBg,

@@ -52,6 +52,7 @@ export const useAuth = () => {
               bio: bio ?? DEFAULT_BIO,
               favorites_count: 0,
               comments_count: 0,
+              recipes_count: 0,  // REQ-4.1
             },
             isLoading: false,
             isLoggedIn: true,

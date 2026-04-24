@@ -134,6 +134,13 @@ export interface Recipe {
   prep_time: number;
   servings: number;
   calories?: number;
+  // 营养成分 (REQ-4.4)
+  protein?: number;      // 蛋白质(g)
+  fat?: number;          // 脂肪(g)
+  carbs?: number;        // 碳水化合物(g)
+  fiber?: number;        // 纤维(g)
+  sodium?: number;       // 钠(mg)
+  sugar?: number;        // 糖(g)
   ingredients: Ingredient[];
   steps: Step[];
   likes_count: number;
@@ -167,6 +174,7 @@ export interface User {
   bio: string;
   favorites_count: number;
   comments_count: number;
+  recipes_count: number;  // REQ-4.1: 用户发布的菜谱数
 }
 
 export interface PaginatedResponse<T> {
@@ -245,6 +253,13 @@ interface BackendRecipe {
   cookTimeMin?: number | null;
   servings?: number | null;
   calories?: number | null;
+  // 营养成分 (REQ-4.4)
+  protein?: number | null;
+  fat?: number | null;
+  carbs?: number | null;
+  fiber?: number | null;
+  sodium?: number | null;
+  sugar?: number | null;
   isPublished: boolean;
   createdAt: string;
   category?: { id: string; nameEn: string; nameZh: string; slug: string };
@@ -292,6 +307,13 @@ export function adaptRecipe(r: BackendRecipe): Recipe {
     prep_time: 0,
     servings: r.servings ?? 0,
     calories: r.calories ?? undefined,
+    // 营养成分 (REQ-4.4)
+    protein: r.protein ?? undefined,
+    fat: r.fat ?? undefined,
+    carbs: r.carbs ?? undefined,
+    fiber: r.fiber ?? undefined,
+    sodium: r.sodium ?? undefined,
+    sugar: r.sugar ?? undefined,
     ingredients: (r.ingredients ?? []).map((i) => ({
       name: i.nameEn,
       name_zh: i.nameZh,
@@ -543,6 +565,7 @@ export const upsertUser = async (params: {
     bio: u.bio ?? '',
     favorites_count: u._count?.favorites ?? 0,
     comments_count: u._count?.comments ?? 0,
+    recipes_count: u._count?.recipes ?? 0,  // REQ-4.1
   };
 };
 
@@ -559,6 +582,7 @@ export const fetchUser = async (userId: string): Promise<User> => {
     bio: u.bio ?? '',
     favorites_count: u._count?.favorites ?? 0,
     comments_count: u._count?.comments ?? 0,
+    recipes_count: u._count?.recipes ?? 0,  // REQ-4.1
   };
 };
 
@@ -578,6 +602,7 @@ export const updateUser = async (
     bio: u.bio ?? '',
     favorites_count: u._count?.favorites ?? 0,
     comments_count: u._count?.comments ?? 0,
+    recipes_count: u._count?.recipes ?? 0,  // REQ-4.1,
   };
 };
 
