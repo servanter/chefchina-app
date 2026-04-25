@@ -943,6 +943,7 @@ export const markAllNotificationsRead = async (userId: string): Promise<number> 
 };
 
 export interface ViewHistoryApiItem extends BackendRecipe {
+  historyId: string;
   viewedAt: string;
 }
 
