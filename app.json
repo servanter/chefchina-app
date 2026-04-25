@@ -16,6 +16,9 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.chefchina.app",
+      "infoPlist": {
+        "NSMotionUsageDescription": "Shake to discover random recipes"
+      },
       "_note_associatedDomains": "TODO: enable Universal Links by adding `associatedDomains: [\"applinks:chefchina.app\"]` once the apple-app-site-association file is hosted at https://chefchina.app/.well-known/apple-app-site-association."
     },
     "android": {

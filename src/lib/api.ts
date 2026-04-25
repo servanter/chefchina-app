@@ -1210,7 +1210,8 @@ export const fetchRankingRecipes = async (
   const res = await apiClient.get('/recipes/ranking', {
     params: { period, limit },
   });
-  const items = res.data.data as (BackendRecipe & { rank: number; score: number })[];
+  const wrapper = res.data.data as { recipes: (BackendRecipe & { rank: number; score: number })[] };
+  const items = wrapper.recipes ?? [];
   return items.map((item) => ({
     ...adaptRecipe(item),
     rank: item.rank,
@@ -1225,5 +1226,8 @@ export const fetchRandomRecipe = async (params?: {
   difficulty?: string;
 }): Promise<Recipe> => {
   const res = await apiClient.get('/recipes/random', { params });
-  return adaptRecipe(res.data.data as BackendRecipe);
+  const wrapper = res.data.data as { recipes: BackendRecipe[] };
+  const arr = wrapper.recipes ?? [];
+  if (arr.length === 0) throw new Error('No random recipe found');
+  return adaptRecipe(arr[0]);
 };

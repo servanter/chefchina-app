@@ -15,6 +15,7 @@ import { fetchRandomRecipe, Recipe } from '../lib/api';
 import { LazyImage } from './LazyImage';
 import { useShakeDetection } from '../hooks/useShakeDetection';
 import { triggerHaptic } from '../lib/haptics';
+import { useTheme } from '../contexts/ThemeContext';
 
 interface WhatToEatProps {
   tintColor?: string;
@@ -27,6 +28,7 @@ export const WhatToEatButton: React.FC<WhatToEatProps> = ({
   const router = useRouter();
   const queryClient = useQueryClient();
   const isZh = i18n.language === 'zh';
+  const { colors } = useTheme();
 
   const [showResult, setShowResult] = useState(false);
   const [resultRecipe, setResultRecipe] = useState<Recipe | null>(null);
@@ -113,6 +115,7 @@ export const WhatToEatButton: React.FC<WhatToEatProps> = ({
         style={[
           styles.resultCard,
           {
+            backgroundColor: colors.card,
             transform: [
               { perspective: 800 },
               { rotateY },
@@ -172,8 +175,7 @@ export const WhatToEatButton: React.FC<WhatToEatProps> = ({
         },
       ]}
     >
-      <TouchableOpacity
-        style={[styles.rollButton, { borderColor: tintColor }]}
+      <TouchableOpacity style={[styles.rollButton, { borderColor: tintColor, backgroundColor: colors.card }]}
         onPress={handleRoll}
         disabled={loading}
         activeOpacity={0.8}
@@ -183,7 +185,7 @@ export const WhatToEatButton: React.FC<WhatToEatProps> = ({
           <Text style={[styles.rollTitle, { color: tintColor }]}>
             {isZh ? '今天吃什么？' : "What's for dinner?"}
           </Text>
-          <Text style={styles.rollSubtitle}>
+          <Text style={[styles.rollSubtitle, { color: colors.subText }]}>
             {loading
               ? (isZh ? '正在选择...' : 'Picking...')
               : (isZh ? '摇一摇或点击试试手气' : 'Shake or tap to try your luck')

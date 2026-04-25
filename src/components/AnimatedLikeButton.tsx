@@ -29,6 +29,8 @@ export const AnimatedLikeButton: React.FC<AnimatedLikeButtonProps> = ({
   const scaleAnim = useRef(new Animated.Value(1)).current;
 
   const handlePress = useCallback(() => {
+    scaleAnim.stopAnimation();
+    scaleAnim.setValue(1);
     // scale bounce animation
     Animated.sequence([
       Animated.spring(scaleAnim, {

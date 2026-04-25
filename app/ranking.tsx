@@ -5,6 +5,7 @@ import {
   FlatList,
   TouchableOpacity,
   StyleSheet,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -40,7 +41,7 @@ export default function RankingScreen() {
         onPress={() => router.push(`/recipe/${item.id}`)}
         activeOpacity={0.85}
       >
-        <View style={[styles.rankCol, isTop3 && styles.rankColTop3]}>
+        <View style={[styles.rankCol, { backgroundColor: colors.inputBg }, isTop3 && { backgroundColor: colors.card }]}>
           <Text style={[styles.rankText, isTop3 && styles.rankTextTop3]}>
             {badge}
           </Text>
@@ -84,13 +85,27 @@ export default function RankingScreen() {
         <View style={{ width: 36 }} />
       </View>
 
+      {isLoading ? (
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <ActivityIndicator size="large" color={colors.tint} />
+        </View>
+      ) : (
       <FlatList
         data={ranking}
         keyExtractor={(item) => item.id}
         renderItem={renderItem}
-        contentContainerStyle={styles.list}
+        contentContainerStyle={[styles.list, ranking.length === 0 && { flex: 1 }]}
         showsVerticalScrollIndicator={false}
+        ListEmptyComponent={
+          <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', paddingTop: 60 }}>
+            <Ionicons name="trophy-outline" size={48} color={colors.subText} />
+            <Text style={{ marginTop: 12, fontSize: 14, color: colors.subText }}>
+              {isZh ? '暂无排行数据' : 'No ranking data yet'}
+            </Text>
+          </View>
+        }
       />
+      )}
     </SafeAreaView>
   );
 }

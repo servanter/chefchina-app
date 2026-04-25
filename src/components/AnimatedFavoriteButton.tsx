@@ -30,6 +30,9 @@ export const AnimatedFavoriteButton: React.FC<AnimatedFavoriteButtonProps> = ({
   const scaleAnim = useRef(new Animated.Value(1)).current;
 
   const handlePress = useCallback(() => {
+    // Stop any in-flight animations to prevent stacking
+    rotateAnim.stopAnimation();
+    scaleAnim.stopAnimation();
     // rotate + scale animation for "drop in" effect
     rotateAnim.setValue(0);
     scaleAnim.setValue(1);
