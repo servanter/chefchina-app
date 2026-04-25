@@ -23,16 +23,7 @@ import {
 } from '../src/hooks/useNotifications';
 import { getUserId } from '../src/lib/storage';
 import type { Notification, NotificationType } from '../src/lib/api';
-
-const COLORS = {
-  primary: '#E85D26',
-  background: '#FFFDF9',
-  text: '#1A1A1A',
-  textSecondary: '#666',
-  white: '#FFFFFF',
-  border: '#F0EDE8',
-  unreadBg: '#FFF7F1',
-};
+import { useTheme } from '../src/contexts/ThemeContext';
 
 const ICONS: Record<NotificationType, keyof typeof Ionicons.glyphMap> = {
   COMMENT_REPLY: 'chatbubble-ellipses-outline',
@@ -63,10 +54,23 @@ function formatRelativeTime(iso: string, isZh: boolean): string {
   return new Date(iso).toLocaleDateString();
 }
 
+const COLORS = { primary: '#E85D26', background: '#FFFDF9', text: '#1A1A1A', textSecondary: '#666', inputBg: '#F5F2EE', border: '#E8E4DF', card: '#FFF', tint: '#E85D26', unreadBg: '#FFF5F0' };
 export default function NotificationsScreen() {
   const { t, i18n } = useTranslation();
   const router = useRouter();
   const isZh = i18n.language === 'zh';
+  const { colors } = useTheme();
+
+  // Derive COLORS from theme for backward compat
+  const COLORS = useMemo(() => ({
+    primary: colors.tint,
+    background: colors.bg,
+    text: colors.text,
+    textSecondary: colors.subText,
+    white: colors.card,
+    border: colors.border,
+    unreadBg: colors.chipBg,
+  }), [colors]);
 
   const [userId, setUserId] = useState<string | null>(null);
   const [resolvedAuth, setResolvedAuth] = useState(false);

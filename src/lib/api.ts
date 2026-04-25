@@ -1195,3 +1195,35 @@ export const fetchFeed = async (
   };
 };
 
+
+// ─── Ranking (需求 3) ─────────────────────────────────────────────────────────
+
+export interface RankedRecipe extends Recipe {
+  rank: number;
+  score: number;
+}
+
+export const fetchRankingRecipes = async (
+  period: 'week' | 'month' = 'week',
+  limit = 10,
+): Promise<RankedRecipe[]> => {
+  const res = await apiClient.get('/recipes/ranking', {
+    params: { period, limit },
+  });
+  const items = res.data.data as (BackendRecipe & { rank: number; score: number })[];
+  return items.map((item) => ({
+    ...adaptRecipe(item),
+    rank: item.rank,
+    score: item.score,
+  }));
+};
+
+// ─── Random (需求 9) ──────────────────────────────────────────────────────────
+
+export const fetchRandomRecipe = async (params?: {
+  categoryId?: string;
+  difficulty?: string;
+}): Promise<Recipe> => {
+  const res = await apiClient.get('/recipes/random', { params });
+  return adaptRecipe(res.data.data as BackendRecipe);
+};

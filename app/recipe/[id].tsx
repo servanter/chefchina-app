@@ -25,6 +25,11 @@ import { useRecipeById, useInfiniteComments, useToggleLike, useToggleFavorite, u
 import { StepItem } from '../../src/components/StepItem';
 import { CommentItem } from '../../src/components/CommentItem';
 import { RatingStars } from '../../src/components/RatingStars';
+import { AnimatedLikeButton } from '../../src/components/AnimatedLikeButton';
+import { AnimatedFavoriteButton } from '../../src/components/AnimatedFavoriteButton';
+import { AnimatedRatingStars } from '../../src/components/AnimatedRatingStars';
+import { triggerHaptic } from '../../src/lib/haptics';
+import { useBounce } from '../../src/hooks/useBounce';
 import { EmptyState } from '../../src/components/EmptyState';
 import { LazyImage } from '../../src/components/LazyImage';
 import { ImageViewer } from '../../src/components/ImageViewer';
@@ -41,6 +46,7 @@ import { fetchLikeStatus, fetchFavoriteStatus, fetchRelated, saveViewHistoryRemo
 import { ReportModal } from '../../src/components/ReportModal';
 import type { ReportTargetType } from '../../src/lib/api';
 
+const COLORS = { primary: '#E85D26', background: '#FFFDF9', text: '#1A1A1A', textSecondary: '#666', inputBg: '#F5F2EE', border: '#E8E4DF', card: '#FFF', tint: '#E85D26' };
 const HERO_HEIGHT = 280;
 
 // 需求 11：Hero 封面在 cover_image 缺失时也要能点开查看器。统一兜底 URL
@@ -48,14 +54,7 @@ const HERO_HEIGHT = 280;
 const DEFAULT_COVER_FALLBACK =
   'https://images.unsplash.com/photo-1563245372-f21724e3856d?w=800&q=80';
 
-const COLORS = {
-  primary: '#E85D26',
-  background: '#FFFDF9',
-  text: '#1A1A1A',
-  textSecondary: '#666',
-  cardBg: '#FFFFFF',
-  border: '#F0EDE8',
-};
+import { useTheme } from '../../src/contexts/ThemeContext';
 
 type TabId = 'ingredients' | 'steps' | 'comments';
 
@@ -63,6 +62,16 @@ export default function RecipeDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { t, i18n } = useTranslation();
   const router = useRouter();
+  const { colors: themeColors } = useTheme();
+
+  const COLORS = {
+    primary: themeColors.tint,
+    background: themeColors.bg,
+    text: themeColors.text,
+    textSecondary: themeColors.subText,
+    cardBg: themeColors.card,
+    border: themeColors.border,
+  };
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const effectiveWidth = Math.min(width, 390);
@@ -70,6 +79,8 @@ export default function RecipeDetailScreen() {
 
   const [activeTab, setActiveTab] = useState<TabId>('ingredients');
   const [liked, setLiked] = useState(false);
+  const { scale: likeScale, bounce: likeBounce } = useBounce();
+  const { scale: favScale, bounce: favBounce } = useBounce();
   const [favorited, setFavorited] = useState(false);
   const [commentText, setCommentText] = useState('');
   const [userRating, setUserRating] = useState(0);
@@ -174,6 +185,7 @@ export default function RecipeDetailScreen() {
     setRefreshing(true);
     await Promise.all([refetchRecipe(), refetchComments()]);
     setRefreshing(false);
+    triggerHaptic('light');
   }, [refetchRecipe, refetchComments]);
 
   const handleLoadMoreComments = useCallback(() => {
@@ -192,6 +204,8 @@ export default function RecipeDetailScreen() {
     setLiked(nextLiked);
     try {
       await toggleLikeMutation.mutateAsync({ recipeId: recipe.id, userId });
+      triggerHaptic(nextLiked ? 'success' : 'light');
+      likeBounce();
       Toast.show({
         type: 'success',
         text1: nextLiked ? t('recipe.likeSuccess') : t('recipe.unlikeSuccess'),
@@ -199,6 +213,7 @@ export default function RecipeDetailScreen() {
       });
     } catch {
       setLiked((prev) => !prev); // revert
+      triggerHaptic('error');
       Toast.show({
         type: 'error',
         text1: t('common.error'),
@@ -213,6 +228,8 @@ export default function RecipeDetailScreen() {
     setFavorited(nextFavorited);
     try {
       await toggleFavoriteMutation.mutateAsync({ recipeId: recipe.id, userId });
+      triggerHaptic(nextFavorited ? 'success' : 'light');
+      favBounce();
       Toast.show({
         type: 'success',
         text1: nextFavorited ? t('recipe.favoriteSuccess') : t('recipe.unfavoriteSuccess'),
@@ -220,6 +237,7 @@ export default function RecipeDetailScreen() {
       });
     } catch {
       setFavorited((prev) => !prev);
+      triggerHaptic('error');
       Toast.show({
         type: 'error',
         text1: t('common.error'),
@@ -248,6 +266,7 @@ export default function RecipeDetailScreen() {
       setUserRating(0);
       setCommentImages([]);
       setReplyingTo(null);
+      triggerHaptic('success');
       Toast.show({ type: 'success', text1: t('recipe.commentPosted'), visibilityTime: 1500 });
     } catch {
       Toast.show({ type: 'error', text1: t('common.error'), visibilityTime: 2000 });
@@ -392,11 +411,13 @@ export default function RecipeDetailScreen() {
               />
             </TouchableOpacity>
             <TouchableOpacity style={styles.backBtn} onPress={handleFavorite}>
+              <Animated.View style={{ transform: [{ scale: favScale }] }}>
               <Ionicons
                 name={favorited ? 'bookmark' : 'bookmark-outline'}
                 size={20}
                 color={favorited ? COLORS.primary : COLORS.text}
               />
+              </Animated.View>
             </TouchableOpacity>
             <TouchableOpacity style={styles.backBtn} onPress={handleReportRecipe}>
               <Ionicons name="flag-outline" size={20} color={COLORS.text} />
@@ -546,7 +567,7 @@ export default function RecipeDetailScreen() {
 
             {/* Rating row */}
             <View style={styles.ratingRow}>
-              <RatingStars rating={recipe.avg_rating} size={16} readonly />
+              <AnimatedRatingStars rating={recipe.avg_rating} size={16} readonly animated />
               <Text style={styles.ratingValue}>{recipe.avg_rating.toFixed(1)}</Text>
               <Text style={styles.ratingCount}>
                 {t('recipe.ratingLabel', { count: recipe.ratings_count })}
@@ -595,33 +616,29 @@ export default function RecipeDetailScreen() {
 
             {/* Like & Favorite actions */}
             <View style={styles.actionRow}>
-              <TouchableOpacity
-                style={[styles.actionBtn, liked && styles.actionBtnActive]}
+              <AnimatedLikeButton
+                liked={liked}
+                label={`${t('recipe.likes')} · ${recipe.likes_count}`}
                 onPress={handleLike}
-              >
-                <Ionicons
-                  name={liked ? 'heart' : 'heart-outline'}
-                  size={18}
-                  color={liked ? '#FFF' : COLORS.primary}
-                />
-                <Text style={[styles.actionBtnText, liked && styles.actionBtnTextActive]}>
-                  {t('recipe.likes')} · {recipe.likes_count}
-                </Text>
-              </TouchableOpacity>
+                tintColor={COLORS.primary}
+                size={18}
+                style={styles.actionBtn}
+                labelStyle={styles.actionBtnText}
+                activeStyle={styles.actionBtnActive}
+                activeLabelStyle={styles.actionBtnTextActive}
+              />
 
-              <TouchableOpacity
-                style={[styles.actionBtn, favorited && styles.actionBtnFav]}
+              <AnimatedFavoriteButton
+                favorited={favorited}
+                label={favorited ? t('recipe.favoritedLabel') : t('recipe.favoriteLabel')}
                 onPress={handleFavorite}
-              >
-                <Ionicons
-                  name={favorited ? 'bookmark' : 'bookmark-outline'}
-                  size={18}
-                  color={favorited ? '#FFF' : COLORS.primary}
-                />
-                <Text style={[styles.actionBtnText, favorited && styles.actionBtnTextActive]}>
-                  {favorited ? t('recipe.favoritedLabel') : t('recipe.favoriteLabel')}
-                </Text>
-              </TouchableOpacity>
+                tintColor={COLORS.primary}
+                size={18}
+                style={styles.actionBtn}
+                labelStyle={styles.actionBtnText}
+                activeStyle={styles.actionBtnFav}
+                activeLabelStyle={styles.actionBtnTextActive}
+              />
             </View>
 
             {/* ── Tabs ── */}
@@ -1077,7 +1094,7 @@ const styles = StyleSheet.create({
   },
   infoChips: {
     flexDirection: 'row',
-    backgroundColor: COLORS.cardBg,
+    backgroundColor: COLORS.card,
     borderRadius: 14,
     padding: 16,
     marginBottom: 16,
@@ -1242,7 +1259,7 @@ const styles = StyleSheet.create({
     color: COLORS.primary,
   },
   commentInput: {
-    backgroundColor: COLORS.cardBg,
+    backgroundColor: COLORS.card,
     borderRadius: 14,
     padding: 14,
     marginBottom: 16,

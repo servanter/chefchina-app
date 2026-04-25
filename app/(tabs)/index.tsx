@@ -18,11 +18,19 @@ import { RecipeCard } from '../../src/components/RecipeCard';
 import { CategoryChip } from '../../src/components/CategoryChip';
 import { SkeletonCard, SkeletonList } from '../../src/components/Skeleton';
 import { ListFooter } from '../../src/components/ListFooter';
+import { WhatToEatButton } from '../../src/components/WhatToEat';
+import { LazyImage } from '../../src/components/LazyImage';
 import { useFeaturedRecipes, useInfiniteRecipes, useCategories } from '../../src/hooks/useRecipes';
 import { useUnreadCount } from '../../src/hooks/useNotifications';
 import { getUserId } from '../../src/lib/storage';
 import { changeLanguage } from '../../src/lib/i18n';
+import { triggerHaptic } from '../../src/lib/haptics';
+import { fetchRankingRecipes, RankedRecipe } from '../../src/lib/api';
+import { useQuery } from '@tanstack/react-query';
+import { useTheme } from '../../src/contexts/ThemeContext';
 
+// Fallback values used in StyleSheet.create (static, can't use hooks)
+// Dynamic theming applied via inline styles in JSX
 const COLORS = {
   primary: '#E85D26',
   background: '#FFFDF9',
@@ -36,6 +44,16 @@ export default function HomeScreen() {
   const { t, i18n } = useTranslation();
   const router = useRouter();
   const { width } = useWindowDimensions();
+  const { colors: themeColors } = useTheme();
+
+  const COLORS = {
+    primary: themeColors.tint,
+    background: themeColors.bg,
+    text: themeColors.text,
+    textSecondary: themeColors.subText,
+    inputBg: themeColors.inputBg,
+    white: themeColors.card,
+  };
   // Cap at 390 so grid doesn't overstretch on web
   const effectiveWidth = Math.min(width, 390);
   const isZh = i18n.language === 'zh';
@@ -78,10 +96,18 @@ export default function HomeScreen() {
 
   const { data: categories = [] } = useCategories();
 
+  // Weekly ranking (REQ-3)
+  const { data: rankingData = [] } = useQuery<RankedRecipe[]>({
+    queryKey: ['ranking', 'week'],
+    queryFn: () => fetchRankingRecipes('week'),
+    staleTime: 1000 * 60 * 30, // 30 min
+  });
+
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     await Promise.all([refetchFeatured(), refetchQuick()]);
     setRefreshing(false);
+    triggerHaptic('light');
   }, [refetchFeatured, refetchQuick]);
 
   const toggleLanguage = async () => {
@@ -182,6 +208,9 @@ export default function HomeScreen() {
           ))}
         </ScrollView>
 
+        {/* ─── What to Eat Today? (REQ-9) ──────────────────── */}
+        <WhatToEatButton tintColor={COLORS.primary} />
+
         {/* ─── Featured Recipes ────────────────────────────── */}
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>{t('home.featuredTitle')}</Text>
@@ -218,6 +247,43 @@ export default function HomeScreen() {
               />
             )}
           />
+        )}
+
+        {/* ─── Weekly Hot Ranking (REQ-3) ──────────────────── */}
+        {rankingData.length > 0 && (
+          <>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>{t('home.weeklyHot')}</Text>
+              <TouchableOpacity onPress={() => router.push('/ranking')}>
+                <Text style={styles.seeAll}>{t('home.seeAll')}</Text>
+              </TouchableOpacity>
+            </View>
+            <FlatList
+              data={rankingData.slice(0, 5)}
+              keyExtractor={(item) => item.id}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.featuredList}
+              renderItem={({ item, index }) => {
+                const rankBadge = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `${index + 1}`;
+                return (
+                  <TouchableOpacity
+                    style={styles.rankingCard}
+                    onPress={() => router.push(`/recipe/${item.id}`)}
+                    activeOpacity={0.85}
+                  >
+                    <View style={styles.rankBadge}>
+                      <Text style={styles.rankBadgeText}>{rankBadge}</Text>
+                    </View>
+                    <LazyImage uri={item.cover_image} style={styles.rankingImage} />
+                    <Text style={styles.rankingTitle} numberOfLines={1}>
+                      {isZh ? item.title_zh : item.title}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              }}
+            />
+          </>
         )}
 
         {/* ─── Quick & Easy ─────────────────────────────────── */}
@@ -403,5 +469,49 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     paddingHorizontal: 16,
     gap: 12,
+  },
+  // Ranking card styles (REQ-3)
+  rankingCard: {
+    width: 130,
+    marginRight: 12,
+    borderRadius: 12,
+    overflow: 'hidden',
+    backgroundColor: COLORS.white,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+  },
+  rankBadge: {
+    position: 'absolute',
+    top: 6,
+    left: 6,
+    zIndex: 10,
+    minWidth: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: COLORS.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 4,
+  },
+  rankBadgeText: {
+    color: '#FFF',
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  rankingImage: {
+    width: 130,
+    height: 90,
+    borderTopLeftRadius: 12,
+    borderTopRightRadius: 12,
+  },
+  rankingTitle: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: COLORS.text,
+    paddingHorizontal: 8,
+    paddingVertical: 6,
   },
 });

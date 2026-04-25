@@ -13,16 +13,10 @@ import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { setOnboardingDone } from '../src/lib/storage';
 import { changeLanguage } from '../src/lib/i18n';
+import { useTheme } from '../src/contexts/ThemeContext';
 
 const { width } = Dimensions.get('window');
 const EFFECTIVE_WIDTH = Math.min(width, 390);
-
-const COLORS = {
-  primary: '#E85D26',
-  background: '#FFFDF9',
-  text: '#1A1A1A',
-  textSecondary: '#666',
-};
 
 type Step = 1 | 2 | 3;
 
@@ -32,6 +26,7 @@ const STEP_ICONS: Record<Step, string> = {
   3: '🚀',
 };
 
+const COLORS = { primary: '#E85D26', background: '#FFFDF9', text: '#1A1A1A', textSecondary: '#666', inputBg: '#F5F2EE', border: '#E8E4DF', card: '#FFF', tint: '#E85D26' };
 const STEP_BG_COLORS: Record<Step, string> = {
   1: '#FFF0E8',
   2: '#E8F4FF',
@@ -47,6 +42,7 @@ const STEP_ACCENT: Record<Step, string> = {
 export default function OnboardingScreen() {
   const { t } = useTranslation();
   const router = useRouter();
+  const { colors } = useTheme();
   const [step, setStep] = useState<Step>(1);
   const [selectedLang, setSelectedLang] = useState<'en' | 'zh' | null>(null);
 
@@ -73,11 +69,11 @@ export default function OnboardingScreen() {
   const bgColor = STEP_BG_COLORS[step];
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.bg }]} edges={['top', 'bottom']}>
       {/* Skip button */}
       {step < 3 && (
         <TouchableOpacity style={styles.skipBtn} onPress={handleSkip}>
-          <Text style={styles.skipText}>{t('onboarding.skip')}</Text>
+          <Text style={[styles.skipText, { color: colors.subText }]}>{t('onboarding.skip')}</Text>
         </TouchableOpacity>
       )}
 
@@ -91,8 +87,8 @@ export default function OnboardingScreen() {
         {/* Step content */}
         {step === 1 && (
           <View style={styles.textBlock}>
-            <Text style={styles.stepTitle}>{t('onboarding.step1Title')}</Text>
-            <Text style={styles.stepSubtitle}>{t('onboarding.step1Subtitle')}</Text>
+            <Text style={[styles.stepTitle, { color: colors.text }]}>{t('onboarding.step1Title')}</Text>
+            <Text style={[styles.stepSubtitle, { color: colors.subText }]}>{t('onboarding.step1Subtitle')}</Text>
 
             {/* Feature pills */}
             <View style={styles.featureList}>
@@ -101,9 +97,9 @@ export default function OnboardingScreen() {
                 { icon: 'language-outline' as const, text: 'Chinese & English bilingual' },
                 { icon: 'people-outline' as const, text: 'Global community' },
               ].map((f, i) => (
-                <View key={i} style={styles.featurePill}>
+                <View key={i} style={[styles.featurePill, { backgroundColor: colors.inputBg }]}>
                   <Ionicons name={f.icon} size={16} color={accent} />
-                  <Text style={styles.featurePillText}>{f.text}</Text>
+                  <Text style={[styles.featurePillText, { color: colors.text }]}>{f.text}</Text>
                 </View>
               ))}
             </View>
@@ -112,21 +108,22 @@ export default function OnboardingScreen() {
 
         {step === 2 && (
           <View style={styles.textBlock}>
-            <Text style={styles.stepTitle}>{t('onboarding.step2Title')}</Text>
-            <Text style={styles.stepSubtitle}>{t('onboarding.step2Subtitle')}</Text>
+            <Text style={[styles.stepTitle, { color: colors.text }]}>{t('onboarding.step2Title')}</Text>
+            <Text style={[styles.stepSubtitle, { color: colors.subText }]}>{t('onboarding.step2Subtitle')}</Text>
 
             {/* Language selection */}
             <View style={styles.langRow}>
               <TouchableOpacity
                 style={[
                   styles.langBtn,
+                  { backgroundColor: colors.card, borderColor: colors.border },
                   selectedLang === 'en' && { backgroundColor: accent, borderColor: accent },
                 ]}
                 onPress={() => handleLanguageSelect('en')}
                 activeOpacity={0.8}
               >
                 <Text style={styles.langBtnFlag}>🇺🇸</Text>
-                <Text style={[styles.langBtnText, selectedLang === 'en' && { color: '#FFF' }]}>
+                <Text style={[styles.langBtnText, { color: colors.text }, selectedLang === 'en' && { color: '#FFF' }]}>
                   {t('onboarding.selectEnglish')}
                 </Text>
                 {selectedLang === 'en' && (
@@ -137,13 +134,14 @@ export default function OnboardingScreen() {
               <TouchableOpacity
                 style={[
                   styles.langBtn,
+                  { backgroundColor: colors.card, borderColor: colors.border },
                   selectedLang === 'zh' && { backgroundColor: accent, borderColor: accent },
                 ]}
                 onPress={() => handleLanguageSelect('zh')}
                 activeOpacity={0.8}
               >
                 <Text style={styles.langBtnFlag}>🇨🇳</Text>
-                <Text style={[styles.langBtnText, selectedLang === 'zh' && { color: '#FFF' }]}>
+                <Text style={[styles.langBtnText, { color: colors.text }, selectedLang === 'zh' && { color: '#FFF' }]}>
                   {t('onboarding.selectChinese')}
                 </Text>
                 {selectedLang === 'zh' && (
@@ -156,8 +154,8 @@ export default function OnboardingScreen() {
 
         {step === 3 && (
           <View style={styles.textBlock}>
-            <Text style={styles.stepTitle}>{t('onboarding.step3Title')}</Text>
-            <Text style={styles.stepSubtitle}>{t('onboarding.step3Subtitle')}</Text>
+            <Text style={[styles.stepTitle, { color: colors.text }]}>{t('onboarding.step3Title')}</Text>
+            <Text style={[styles.stepSubtitle, { color: colors.subText }]}>{t('onboarding.step3Subtitle')}</Text>
           </View>
         )}
       </View>

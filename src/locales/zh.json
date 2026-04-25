@@ -23,7 +23,13 @@
     "subtitle": "今天想做什么菜？",
     "featuredTitle": "精选菜谱",
     "quickEasyTitle": "快手菜",
+    "weeklyHot": "🔥 本周热榜",
+    "whatToEat": "今天吃什么？🎲",
+    "whatToEatHint": "点击或摇一摇发现美食",
     "seeAll": "查看全部"
+  },
+  "ranking": {
+    "title": "🏆 每周热榜"
   },
   "explore": {
     "title": "探索菜谱",
@@ -33,7 +39,8 @@
     "resultsCount": "找到 {{count}} 道菜",
     "pullToRefresh": "下拉刷新",
     "noResults": "没有找到菜谱",
-    "noResultsHint": "换个筛选条件试试"
+    "noResultsHint": "换个筛选条件试试",
+    "collections": "📚 精选专题"
   },
   "search": {
     "recent": "最近搜索",
@@ -368,5 +375,12 @@
     "sodium_label": "钠(mg)",
     "sugar_label": "糖(g)",
     "tags": "标签"
+  },
+  "collections": {
+    "featuredTitle": "📚 精选专题",
+    "recipesUnit": "道菜谱",
+    "by": "由",
+    "noRecipes": "该合集暂无菜谱",
+    "recipesCount": "{{count}} 道菜谱"
   }
 }
