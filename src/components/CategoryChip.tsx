@@ -4,11 +4,7 @@ import {
   Text,
   StyleSheet,
 } from 'react-native';
-
-const COLORS = {
-  primary: '#E85D26',
-  primaryLight: '#FFF0E8',
-};
+import { useTheme } from '../contexts/ThemeContext';
 
 interface CategoryChipProps {
   label: string;
@@ -21,13 +17,25 @@ export const CategoryChip: React.FC<CategoryChipProps> = ({
   isSelected,
   onPress,
 }) => {
+  const { colors } = useTheme();
+
   return (
     <TouchableOpacity
-      style={[styles.chip, isSelected && styles.chipSelected]}
+      style={[
+        styles.chip,
+        { backgroundColor: colors.inputBg },
+        isSelected && { backgroundColor: colors.chipBg, borderColor: colors.tint },
+      ]}
       onPress={onPress}
       activeOpacity={0.7}
     >
-      <Text style={[styles.chipText, isSelected && styles.chipTextSelected]}>
+      <Text
+        style={[
+          styles.chipText,
+          { color: colors.subText },
+          isSelected && { color: colors.tint, fontWeight: '700' },
+        ]}
+      >
         {label}
       </Text>
     </TouchableOpacity>
@@ -39,22 +47,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
-    backgroundColor: '#F5F2EE',
     marginRight: 8,
     borderWidth: 1.5,
     borderColor: 'transparent',
   },
-  chipSelected: {
-    backgroundColor: COLORS.primaryLight,
-    borderColor: COLORS.primary,
-  },
   chipText: {
     fontSize: 13,
     fontWeight: '500',
-    color: '#666',
-  },
-  chipTextSelected: {
-    color: COLORS.primary,
-    fontWeight: '700',
   },
 });

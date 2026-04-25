@@ -17,7 +17,9 @@ import { SkeletonList } from '../../src/components/Skeleton';
 import { ListFooter } from '../../src/components/ListFooter';
 import { useInfiniteFavoritesList } from '../../src/hooks/useRecipes';
 import { getUserId } from '../../src/lib/storage';
+import { useTheme } from '../../src/contexts/ThemeContext';
 
+// Fallback values for static StyleSheet.create
 const COLORS = {
   primary: '#E85D26',
   background: '#FFFDF9',
@@ -27,6 +29,7 @@ const COLORS = {
 export default function FavoritesScreen() {
   const { t } = useTranslation();
   const router = useRouter();
+  const { colors: themeColors } = useTheme();
   // null = still reading from storage, string = resolved (may be 'guest')
   const [userId, setUserId] = useState<string | null>(null);
 

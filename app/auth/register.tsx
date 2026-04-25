@@ -16,24 +16,27 @@ import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import Toast from 'react-native-toast-message';
 import { useAuth } from '../../src/hooks/useAuth';
-
-const COLORS = {
-  primary: '#E85D26',
-  background: '#FFFDF9',
-  text: '#1A1A1A',
-  textSecondary: '#666',
-  inputBg: '#F5F2EE',
-  border: '#E8E4DF',
-};
+import { useTheme } from '../../src/contexts/ThemeContext';
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 // 密码至少 8 位，且同时包含字母和数字
 const PASSWORD_REGEX = /^(?=.*[A-Za-z])(?=.*\d).{8,}$/;
 
+const COLORS = { primary: '#E85D26', background: '#FFFDF9', text: '#1A1A1A', textSecondary: '#666', inputBg: '#F5F2EE', border: '#E8E4DF', card: '#FFF', tint: '#E85D26' };
 export default function RegisterScreen() {
   const { t } = useTranslation();
   const router = useRouter();
   const { register, isLoading } = useAuth();
+  const { colors } = useTheme();
+
+  const COLORS = {
+    primary: colors.tint,
+    background: colors.bg,
+    text: colors.text,
+    textSecondary: colors.subText,
+    inputBg: colors.inputBg,
+    border: colors.border,
+  };
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');

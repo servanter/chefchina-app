@@ -2,12 +2,7 @@ import React from 'react';
 import { View, Text, ActivityIndicator, StyleSheet, TouchableOpacity } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
-
-const COLORS = {
-  primary: '#E85D26',
-  textSecondary: '#888',
-  error: '#C0392B',
-};
+import { useTheme } from '../contexts/ThemeContext';
 
 interface ListFooterProps {
   isFetchingNextPage: boolean;
@@ -28,12 +23,13 @@ export const ListFooter: React.FC<ListFooterProps> = ({
   hasItems = true,
 }) => {
   const { t } = useTranslation();
+  const { colors } = useTheme();
 
   if (error) {
     return (
       <TouchableOpacity style={styles.container} onPress={onRetry} activeOpacity={0.7}>
-        <Ionicons name="alert-circle-outline" size={16} color={COLORS.error} />
-        <Text style={styles.errorText}>
+        <Ionicons name="alert-circle-outline" size={16} color="#C0392B" />
+        <Text style={[styles.errorText, { color: '#C0392B' }]}>
           {t('list.loadFailed')}
           {onRetry ? ` · ${t('list.tapRetry')}` : ''}
         </Text>
@@ -44,8 +40,8 @@ export const ListFooter: React.FC<ListFooterProps> = ({
   if (isFetchingNextPage) {
     return (
       <View style={styles.container}>
-        <ActivityIndicator size="small" color={COLORS.primary} />
-        <Text style={styles.loadingText}>{t('list.loadMore')}</Text>
+        <ActivityIndicator size="small" color={colors.tint} />
+        <Text style={[styles.loadingText, { color: colors.subText }]}>{t('list.loadMore')}</Text>
       </View>
     );
   }
@@ -53,7 +49,7 @@ export const ListFooter: React.FC<ListFooterProps> = ({
   if (!hasNextPage && (hasItems || showNoMoreWhenEmpty)) {
     return (
       <View style={styles.container}>
-        <Text style={styles.noMoreText}>{t('list.noMore')}</Text>
+        <Text style={[styles.noMoreText, { color: colors.subText }]}>{t('list.noMore')}</Text>
       </View>
     );
   }
@@ -72,15 +68,12 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     fontSize: 12,
-    color: COLORS.textSecondary,
   },
   noMoreText: {
     fontSize: 12,
-    color: '#BBB',
   },
   errorText: {
     fontSize: 12,
-    color: COLORS.error,
     fontWeight: '600',
   },
 });

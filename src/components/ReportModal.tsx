@@ -14,7 +14,8 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import Toast from 'react-native-toast-message';
-import { submitReport, ReportTargetType, ReportReasonType } from '@/lib/api';
+import { submitReport, ReportTargetType, ReportReasonType } from '../lib/api';
+import { useTheme } from '../contexts/ThemeContext';
 
 const REPORT_REASONS: ReportReasonType[] = [
   'SPAM',
@@ -33,6 +34,7 @@ interface ReportModalProps {
 
 export function ReportModal({ visible, onClose, targetType, targetId }: ReportModalProps) {
   const { t } = useTranslation();
+  const { colors } = useTheme();
   const [reason, setReason] = useState<ReportReasonType | null>(null);
   const [description, setDescription] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -85,43 +87,43 @@ export function ReportModal({ visible, onClose, targetType, targetId }: ReportMo
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={handleClose} />
-        <View style={styles.sheet}>
+        <View style={[styles.sheet, { backgroundColor: colors.card }]}>
           {/* Header */}
-          <View style={styles.header}>
-            <Text style={styles.title}>
+          <View style={[styles.header, { borderBottomColor: colors.border }]}>
+            <Text style={[styles.title, { color: colors.text }]}>
               {targetType === 'RECIPE' ? t('report.recipe') : t('report.comment')}
             </Text>
             <TouchableOpacity onPress={handleClose} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-              <Ionicons name="close" size={24} color="#333" />
+              <Ionicons name="close" size={24} color={colors.text} />
             </TouchableOpacity>
           </View>
 
           <ScrollView style={styles.body} showsVerticalScrollIndicator={false}>
             {/* Reason selection */}
-            <Text style={styles.label}>{t('report.selectReason')}</Text>
+            <Text style={[styles.label, { color: colors.text }]}>{t('report.selectReason')}</Text>
             {REPORT_REASONS.map((r) => (
               <TouchableOpacity
                 key={r}
-                style={[styles.reasonRow, reason === r && styles.reasonRowSelected]}
+                style={[styles.reasonRow, reason === r && { backgroundColor: colors.chipBg }]}
                 onPress={() => setReason(r)}
               >
                 <Ionicons
                   name={reason === r ? 'radio-button-on' : 'radio-button-off'}
                   size={20}
-                  color={reason === r ? '#E85D26' : '#999'}
+                  color={reason === r ? colors.tint : colors.subText}
                 />
-                <Text style={[styles.reasonText, reason === r && styles.reasonTextSelected]}>
+                <Text style={[styles.reasonText, { color: colors.text }, reason === r && { color: colors.tint }]}>
                   {t(`report.reasons.${r}`)}
                 </Text>
               </TouchableOpacity>
             ))}
 
             {/* Additional info */}
-            <Text style={[styles.label, { marginTop: 16 }]}>{t('report.additionalInfo')}</Text>
+            <Text style={[styles.label, { marginTop: 16, color: colors.text }]}>{t('report.additionalInfo')}</Text>
             <TextInput
-              style={styles.textArea}
+              style={[styles.textArea, { borderColor: colors.border, color: colors.text, backgroundColor: colors.inputBg }]}
               placeholder={t('report.additionalPlaceholder')}
-              placeholderTextColor="#BBB"
+              placeholderTextColor={colors.subText}
               value={description}
               onChangeText={setDescription}
               multiline
@@ -131,7 +133,7 @@ export function ReportModal({ visible, onClose, targetType, targetId }: ReportMo
 
             {/* Submit */}
             <TouchableOpacity
-              style={[styles.submitBtn, (!reason || submitting) && styles.submitBtnDisabled]}
+              style={[styles.submitBtn, { backgroundColor: colors.tint }, (!reason || submitting) && styles.submitBtnDisabled]}
               onPress={handleSubmit}
               disabled={!reason || submitting}
             >

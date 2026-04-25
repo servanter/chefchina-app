@@ -1195,3 +1195,39 @@ export const fetchFeed = async (
   };
 };
 
+
+// ─── Ranking (需求 3) ─────────────────────────────────────────────────────────
+
+export interface RankedRecipe extends Recipe {
+  rank: number;
+  score: number;
+}
+
+export const fetchRankingRecipes = async (
+  period: 'week' | 'month' = 'week',
+  limit = 10,
+): Promise<RankedRecipe[]> => {
+  const res = await apiClient.get('/recipes/ranking', {
+    params: { period, limit },
+  });
+  const wrapper = res.data.data as { recipes: (BackendRecipe & { rank: number; score: number })[] };
+  const items = wrapper.recipes ?? [];
+  return items.map((item) => ({
+    ...adaptRecipe(item),
+    rank: item.rank,
+    score: item.score,
+  }));
+};
+
+// ─── Random (需求 9) ──────────────────────────────────────────────────────────
+
+export const fetchRandomRecipe = async (params?: {
+  categoryId?: string;
+  difficulty?: string;
+}): Promise<Recipe> => {
+  const res = await apiClient.get('/recipes/random', { params });
+  const wrapper = res.data.data as { recipes: BackendRecipe[] };
+  const arr = wrapper.recipes ?? [];
+  if (arr.length === 0) throw new Error('No random recipe found');
+  return adaptRecipe(arr[0]);
+};

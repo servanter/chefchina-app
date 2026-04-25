@@ -25,6 +25,11 @@ import { useRecipeById, useInfiniteComments, useToggleLike, useToggleFavorite, u
 import { StepItem } from '../../src/components/StepItem';
 import { CommentItem } from '../../src/components/CommentItem';
 import { RatingStars } from '../../src/components/RatingStars';
+import { AnimatedLikeButton } from '../../src/components/AnimatedLikeButton';
+import { AnimatedFavoriteButton } from '../../src/components/AnimatedFavoriteButton';
+import { AnimatedRatingStars } from '../../src/components/AnimatedRatingStars';
+import { triggerHaptic } from '../../src/lib/haptics';
+import { useBounce } from '../../src/hooks/useBounce';
 import { EmptyState } from '../../src/components/EmptyState';
 import { LazyImage } from '../../src/components/LazyImage';
 import { ImageViewer } from '../../src/components/ImageViewer';
@@ -41,6 +46,7 @@ import { fetchLikeStatus, fetchFavoriteStatus, fetchRelated, saveViewHistoryRemo
 import { ReportModal } from '../../src/components/ReportModal';
 import type { ReportTargetType } from '../../src/lib/api';
 
+const COLORS = { primary: '#E85D26', background: '#FFFDF9', text: '#1A1A1A', textSecondary: '#666', inputBg: '#F5F2EE', border: '#E8E4DF', card: '#FFF', tint: '#E85D26' };
 const HERO_HEIGHT = 280;
 
 // 需求 11：Hero 封面在 cover_image 缺失时也要能点开查看器。统一兜底 URL
@@ -48,14 +54,7 @@ const HERO_HEIGHT = 280;
 const DEFAULT_COVER_FALLBACK =
   'https://images.unsplash.com/photo-1563245372-f21724e3856d?w=800&q=80';
 
-const COLORS = {
-  primary: '#E85D26',
-  background: '#FFFDF9',
-  text: '#1A1A1A',
-  textSecondary: '#666',
-  cardBg: '#FFFFFF',
-  border: '#F0EDE8',
-};
+import { useTheme } from '../../src/contexts/ThemeContext';
 
 type TabId = 'ingredients' | 'steps' | 'comments';
 
@@ -63,6 +62,16 @@ export default function RecipeDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { t, i18n } = useTranslation();
   const router = useRouter();
+  const { colors: themeColors } = useTheme();
+
+  const COLORS = {
+    primary: themeColors.tint,
+    background: themeColors.bg,
+    text: themeColors.text,
+    textSecondary: themeColors.subText,
+    cardBg: themeColors.card,
+    border: themeColors.border,
+  };
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const effectiveWidth = Math.min(width, 390);
@@ -70,6 +79,8 @@ export default function RecipeDetailScreen() {
 
   const [activeTab, setActiveTab] = useState<TabId>('ingredients');
   const [liked, setLiked] = useState(false);
+  const { scale: likeScale, bounce: likeBounce } = useBounce();
+  const { scale: favScale, bounce: favBounce } = useBounce();
   const [favorited, setFavorited] = useState(false);
   const [commentText, setCommentText] = useState('');
   const [userRating, setUserRating] = useState(0);
@@ -174,6 +185,7 @@ export default function RecipeDetailScreen() {
     setRefreshing(true);
     await Promise.all([refetchRecipe(), refetchComments()]);
     setRefreshing(false);
+    triggerHaptic('light');
   }, [refetchRecipe, refetchComments]);
 
   const handleLoadMoreComments = useCallback(() => {
@@ -192,6 +204,8 @@ export default function RecipeDetailScreen() {
     setLiked(nextLiked);
     try {
       await toggleLikeMutation.mutateAsync({ recipeId: recipe.id, userId });
+      triggerHaptic(nextLiked ? 'success' : 'light');
+      likeBounce();
       Toast.show({
         type: 'success',
         text1: nextLiked ? t('recipe.likeSuccess') : t('recipe.unlikeSuccess'),
@@ -199,6 +213,7 @@ export default function RecipeDetailScreen() {
       });
     } catch {
       setLiked((prev) => !prev); // revert
+      triggerHaptic('error');
       Toast.show({
         type: 'error',
         text1: t('common.error'),
@@ -213,6 +228,8 @@ export default function RecipeDetailScreen() {
     setFavorited(nextFavorited);
     try {
       await toggleFavoriteMutation.mutateAsync({ recipeId: recipe.id, userId });
+      triggerHaptic(nextFavorited ? 'success' : 'light');
+      favBounce();
       Toast.show({
         type: 'success',
         text1: nextFavorited ? t('recipe.favoriteSuccess') : t('recipe.unfavoriteSuccess'),
@@ -220,6 +237,7 @@ export default function RecipeDetailScreen() {
       });
     } catch {
       setFavorited((prev) => !prev);
+      triggerHaptic('error');
       Toast.show({
         type: 'error',
         text1: t('common.error'),
@@ -248,6 +266,7 @@ export default function RecipeDetailScreen() {
       setUserRating(0);
       setCommentImages([]);
       setReplyingTo(null);
+      triggerHaptic('success');
       Toast.show({ type: 'success', text1: t('recipe.commentPosted'), visibilityTime: 1500 });
     } catch {
       Toast.show({ type: 'error', text1: t('common.error'), visibilityTime: 2000 });
@@ -371,16 +390,16 @@ export default function RecipeDetailScreen() {
         <Animated.View
           style={[
             styles.floatingHeader,
-            { paddingTop: insets.top, opacity: headerOpacity },
+            { paddingTop: insets.top, opacity: headerOpacity, backgroundColor: COLORS.background, borderBottomColor: COLORS.border },
           ]}
         >
-          <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
+          <TouchableOpacity style={[styles.backBtn, { backgroundColor: themeColors.inputBg }]} onPress={() => router.back()}>
             <Ionicons name="arrow-back" size={20} color={COLORS.text} />
           </TouchableOpacity>
-          <Text style={styles.floatingTitle} numberOfLines={1}>{title}</Text>
+          <Text style={[styles.floatingTitle, { color: COLORS.text }]} numberOfLines={1}>{title}</Text>
           <View style={styles.headerActionGroup}>
             <TouchableOpacity
-              style={styles.backBtn}
+              style={[styles.backBtn, { backgroundColor: themeColors.inputBg }]}
               onPress={handleShare}
               disabled={sharing}
               accessibilityLabel={t('recipe.shareButton')}
@@ -391,14 +410,16 @@ export default function RecipeDetailScreen() {
                 color={sharing ? '#AAA' : COLORS.text}
               />
             </TouchableOpacity>
-            <TouchableOpacity style={styles.backBtn} onPress={handleFavorite}>
+            <TouchableOpacity style={[styles.backBtn, { backgroundColor: themeColors.inputBg }]} onPress={handleFavorite}>
+              <Animated.View style={{ transform: [{ scale: favScale }] }}>
               <Ionicons
                 name={favorited ? 'bookmark' : 'bookmark-outline'}
                 size={20}
                 color={favorited ? COLORS.primary : COLORS.text}
               />
+              </Animated.View>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.backBtn} onPress={handleReportRecipe}>
+            <TouchableOpacity style={[styles.backBtn, { backgroundColor: themeColors.inputBg }]} onPress={handleReportRecipe}>
               <Ionicons name="flag-outline" size={20} color={COLORS.text} />
             </TouchableOpacity>
           </View>
@@ -457,7 +478,7 @@ export default function RecipeDetailScreen() {
           </View>
 
           {/* ── Content Card ── */}
-          <View style={styles.contentCard}>
+          <View style={[styles.contentCard, { backgroundColor: COLORS.background }]}>
             {/* Title & meta */}
             <View style={styles.titleRow}>
               <View style={{ flex: 1 }}>
@@ -473,7 +494,7 @@ export default function RecipeDetailScreen() {
                     </View>
                   )}
                 </View>
-                <Text style={styles.recipeTitle}>{title}</Text>
+                <Text style={[styles.recipeTitle, { color: COLORS.text }]}>{title}</Text>
               </View>
             </View>
 
@@ -546,7 +567,7 @@ export default function RecipeDetailScreen() {
 
             {/* Rating row */}
             <View style={styles.ratingRow}>
-              <RatingStars rating={recipe.avg_rating} size={16} readonly />
+              <AnimatedRatingStars rating={recipe.avg_rating} size={16} readonly animated />
               <Text style={styles.ratingValue}>{recipe.avg_rating.toFixed(1)}</Text>
               <Text style={styles.ratingCount}>
                 {t('recipe.ratingLabel', { count: recipe.ratings_count })}
@@ -557,33 +578,33 @@ export default function RecipeDetailScreen() {
             {(recipe.cook_time > 0 ||
               recipe.prep_time > 0 ||
               recipe.servings > 0) && (
-              <View style={styles.infoChips}>
+              <View style={[styles.infoChips, { backgroundColor: COLORS.cardBg }]}>
                 {(recipe.cook_time > 0 || recipe.prep_time > 0) && (
                   <View style={styles.infoChip}>
                     <Ionicons name="time-outline" size={16} color={COLORS.primary} />
-                    <Text style={styles.infoChipValue}>{recipe.cook_time + recipe.prep_time}</Text>
-                    <Text style={styles.infoChipLabel}>{t('recipe.cookTime')}</Text>
+                    <Text style={[styles.infoChipValue, { color: COLORS.text }]}>{recipe.cook_time + recipe.prep_time}</Text>
+                    <Text style={[styles.infoChipLabel, { color: COLORS.textSecondary }]}>{t('recipe.cookTime')}</Text>
                   </View>
                 )}
                 {recipe.servings > 0 && (
                   <>
                     {(recipe.cook_time > 0 || recipe.prep_time > 0) && (
-                      <View style={styles.infoChipDivider} />
+                      <View style={[styles.infoChipDivider, { backgroundColor: COLORS.border }]} />
                     )}
                     <View style={styles.infoChip}>
                       <Ionicons name="people-outline" size={16} color={COLORS.primary} />
-                      <Text style={styles.infoChipValue}>{recipe.servings}</Text>
-                      <Text style={styles.infoChipLabel}>{t('recipe.persons')}</Text>
+                      <Text style={[styles.infoChipValue, { color: COLORS.text }]}>{recipe.servings}</Text>
+                      <Text style={[styles.infoChipLabel, { color: COLORS.textSecondary }]}>{t('recipe.persons')}</Text>
                     </View>
                   </>
                 )}
                 {recipe.prep_time > 0 && (
                   <>
-                    <View style={styles.infoChipDivider} />
+                    <View style={[styles.infoChipDivider, { backgroundColor: COLORS.border }]} />
                     <View style={styles.infoChip}>
                       <Ionicons name="restaurant-outline" size={16} color={COLORS.primary} />
-                      <Text style={styles.infoChipValue}>{recipe.prep_time}</Text>
-                      <Text style={styles.infoChipLabel}>{t('recipe.prepTime')}</Text>
+                      <Text style={[styles.infoChipValue, { color: COLORS.text }]}>{recipe.prep_time}</Text>
+                      <Text style={[styles.infoChipLabel, { color: COLORS.textSecondary }]}>{t('recipe.prepTime')}</Text>
                     </View>
                   </>
                 )}
@@ -591,45 +612,41 @@ export default function RecipeDetailScreen() {
             )}
 
             {/* Description */}
-            <Text style={styles.description}>{description}</Text>
+            <Text style={[styles.description, { color: COLORS.textSecondary }]}>{description}</Text>
 
             {/* Like & Favorite actions */}
             <View style={styles.actionRow}>
-              <TouchableOpacity
-                style={[styles.actionBtn, liked && styles.actionBtnActive]}
+              <AnimatedLikeButton
+                liked={liked}
+                label={`${t('recipe.likes')} · ${recipe.likes_count}`}
                 onPress={handleLike}
-              >
-                <Ionicons
-                  name={liked ? 'heart' : 'heart-outline'}
-                  size={18}
-                  color={liked ? '#FFF' : COLORS.primary}
-                />
-                <Text style={[styles.actionBtnText, liked && styles.actionBtnTextActive]}>
-                  {t('recipe.likes')} · {recipe.likes_count}
-                </Text>
-              </TouchableOpacity>
+                tintColor={COLORS.primary}
+                size={18}
+                style={[styles.actionBtn, { backgroundColor: COLORS.cardBg }]}
+                labelStyle={[styles.actionBtnText, { color: COLORS.primary }]}
+                activeStyle={styles.actionBtnActive}
+                activeLabelStyle={styles.actionBtnTextActive}
+              />
 
-              <TouchableOpacity
-                style={[styles.actionBtn, favorited && styles.actionBtnFav]}
+              <AnimatedFavoriteButton
+                favorited={favorited}
+                label={favorited ? t('recipe.favoritedLabel') : t('recipe.favoriteLabel')}
                 onPress={handleFavorite}
-              >
-                <Ionicons
-                  name={favorited ? 'bookmark' : 'bookmark-outline'}
-                  size={18}
-                  color={favorited ? '#FFF' : COLORS.primary}
-                />
-                <Text style={[styles.actionBtnText, favorited && styles.actionBtnTextActive]}>
-                  {favorited ? t('recipe.favoritedLabel') : t('recipe.favoriteLabel')}
-                </Text>
-              </TouchableOpacity>
+                tintColor={COLORS.primary}
+                size={18}
+                style={[styles.actionBtn, { backgroundColor: COLORS.cardBg }]}
+                labelStyle={[styles.actionBtnText, { color: COLORS.primary }]}
+                activeStyle={styles.actionBtnFav}
+                activeLabelStyle={styles.actionBtnTextActive}
+              />
             </View>
 
             {/* ── Tabs ── */}
-            <View style={styles.tabs}>
+            <View style={[styles.tabs, { backgroundColor: themeColors.inputBg }]}>
               {TABS.map((tab) => (
                 <TouchableOpacity
                   key={tab.id}
-                  style={[styles.tab, activeTab === tab.id && styles.tabActive]}
+                  style={[styles.tab, activeTab === tab.id && [styles.tabActive, { backgroundColor: themeColors.card }]]}
                   onPress={() => setActiveTab(tab.id)}
                 >
                   <Text style={[styles.tabText, activeTab === tab.id && styles.tabTextActive]}>
@@ -643,24 +660,24 @@ export default function RecipeDetailScreen() {
             {activeTab === 'ingredients' && (
               <View style={styles.tabContent}>
                 {recipe.ingredients.map((ing, idx) => (
-                  <View key={idx} style={styles.ingredientRow}>
+                  <View key={idx} style={[styles.ingredientRow, { borderBottomColor: COLORS.border }]}>
                     <View style={styles.ingredientDot} />
-                    <Text style={styles.ingredientName}>
+                    <Text style={[styles.ingredientName, { color: COLORS.text }]}>
                       {isZh ? ing.name_zh : ing.name}
                     </Text>
-                    <Text style={styles.ingredientAmount}>{ing.amount}</Text>
+                    <Text style={[styles.ingredientAmount, { color: COLORS.textSecondary }]}>{ing.amount}</Text>
                   </View>
                 ))}
                 
                 {/* 营养成分显示 (REQ-4.4) */}
                 {(recipe.protein || recipe.fat || recipe.carbs || recipe.fiber || recipe.sodium || recipe.sugar) && (
-                  <View style={styles.nutritionSection}>
-                    <Text style={styles.nutritionTitle}>
+                  <View style={[styles.nutritionSection, { backgroundColor: themeColors.inputBg, borderColor: COLORS.border }]}>
+                    <Text style={[styles.nutritionTitle, { color: COLORS.text }]}>
                       {isZh ? '营养信息' : 'Nutrition Facts'}
                     </Text>
                     <View style={styles.nutritionGrid}>
                       {recipe.protein != null && (
-                        <View style={styles.nutritionItem}>
+                        <View style={[styles.nutritionItem, { backgroundColor: COLORS.cardBg, borderColor: COLORS.border }]}>
                           <Text style={styles.nutritionLabel}>
                             {isZh ? '蛋白质' : 'Protein'}
                           </Text>
@@ -668,7 +685,7 @@ export default function RecipeDetailScreen() {
                         </View>
                       )}
                       {recipe.fat != null && (
-                        <View style={styles.nutritionItem}>
+                        <View style={[styles.nutritionItem, { backgroundColor: COLORS.cardBg, borderColor: COLORS.border }]}>
                           <Text style={styles.nutritionLabel}>
                             {isZh ? '脂肪' : 'Fat'}
                           </Text>
@@ -676,7 +693,7 @@ export default function RecipeDetailScreen() {
                         </View>
                       )}
                       {recipe.carbs != null && (
-                        <View style={styles.nutritionItem}>
+                        <View style={[styles.nutritionItem, { backgroundColor: COLORS.cardBg, borderColor: COLORS.border }]}>
                           <Text style={styles.nutritionLabel}>
                             {isZh ? '碳水' : 'Carbs'}
                           </Text>
@@ -684,7 +701,7 @@ export default function RecipeDetailScreen() {
                         </View>
                       )}
                       {recipe.fiber != null && (
-                        <View style={styles.nutritionItem}>
+                        <View style={[styles.nutritionItem, { backgroundColor: COLORS.cardBg, borderColor: COLORS.border }]}>
                           <Text style={styles.nutritionLabel}>
                             {isZh ? '纤维' : 'Fiber'}
                           </Text>
@@ -692,7 +709,7 @@ export default function RecipeDetailScreen() {
                         </View>
                       )}
                       {recipe.sodium != null && (
-                        <View style={styles.nutritionItem}>
+                        <View style={[styles.nutritionItem, { backgroundColor: COLORS.cardBg, borderColor: COLORS.border }]}>
                           <Text style={styles.nutritionLabel}>
                             {isZh ? '钠' : 'Sodium'}
                           </Text>
@@ -700,7 +717,7 @@ export default function RecipeDetailScreen() {
                         </View>
                       )}
                       {recipe.sugar != null && (
-                        <View style={styles.nutritionItem}>
+                        <View style={[styles.nutritionItem, { backgroundColor: COLORS.cardBg, borderColor: COLORS.border }]}>
                           <Text style={styles.nutritionLabel}>
                             {isZh ? '糖' : 'Sugar'}
                           </Text>
@@ -744,7 +761,7 @@ export default function RecipeDetailScreen() {
             {activeTab === 'comments' && (
               <View style={styles.tabContent}>
                 {/* Post comment */}
-                <View style={styles.commentInput}>
+                <View style={[styles.commentInput, { backgroundColor: COLORS.cardBg, borderColor: COLORS.border }]}>
                   {/* 回复提示 */}
                   {replyingTo && (
                     <View style={styles.replyingBox}>
@@ -770,7 +787,7 @@ export default function RecipeDetailScreen() {
                   )}
 
                   <TextInput
-                    style={styles.commentTextInput}
+                    style={[styles.commentTextInput, { color: COLORS.text }]}
                     placeholder={replyingTo ? '写下你的回复...' : t('recipe.writeComment')}
                     placeholderTextColor="#AAA"
                     value={commentText}
@@ -858,7 +875,7 @@ export default function RecipeDetailScreen() {
             {/* 少于 3 条不展示——避免只有 1-2 个看起来像 bug */}
             {relatedRecipes.length >= 3 && (
               <View style={styles.relatedWrap}>
-                <Text style={styles.relatedTitle}>{t('recipe.related')}</Text>
+                <Text style={[styles.relatedTitle, { color: COLORS.text }]}>{t('recipe.related')}</Text>
                 <ScrollView
                   horizontal
                   showsHorizontalScrollIndicator={false}
@@ -1077,7 +1094,7 @@ const styles = StyleSheet.create({
   },
   infoChips: {
     flexDirection: 'row',
-    backgroundColor: COLORS.cardBg,
+    backgroundColor: COLORS.card,
     borderRadius: 14,
     padding: 16,
     marginBottom: 16,
@@ -1242,7 +1259,7 @@ const styles = StyleSheet.create({
     color: COLORS.primary,
   },
   commentInput: {
-    backgroundColor: COLORS.cardBg,
+    backgroundColor: COLORS.card,
     borderRadius: 14,
     padding: 14,
     marginBottom: 16,

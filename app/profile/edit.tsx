@@ -16,20 +16,23 @@ import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import Toast from 'react-native-toast-message';
 import { useAuth } from '../../src/hooks/useAuth';
+import { useTheme } from '../../src/contexts/ThemeContext';
 
-const COLORS = {
-  primary: '#E85D26',
-  background: '#FFFDF9',
-  text: '#1A1A1A',
-  textSecondary: '#666',
-  inputBg: '#F5F2EE',
-  border: '#E8E4DF',
-};
-
+const COLORS = { primary: '#E85D26', background: '#FFFDF9', text: '#1A1A1A', textSecondary: '#666', inputBg: '#F5F2EE', border: '#E8E4DF', card: '#FFF', tint: '#E85D26' };
 export default function EditProfileScreen() {
   const { t } = useTranslation();
   const router = useRouter();
   const { user, updateProfile } = useAuth();
+  const { colors } = useTheme();
+
+  const COLORS = {
+    primary: colors.tint,
+    background: colors.bg,
+    text: colors.text,
+    textSecondary: colors.subText,
+    inputBg: colors.inputBg,
+    border: colors.border,
+  };
 
   const [name, setName] = useState(user?.name ?? '');
   const [bio, setBio] = useState(user?.bio ?? '');

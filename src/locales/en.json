@@ -23,7 +23,13 @@
     "subtitle": "What are you cooking today?",
     "featuredTitle": "Featured Recipes",
     "quickEasyTitle": "Quick & Easy",
+    "weeklyHot": "🔥 This Week's Hot",
+    "whatToEat": "What to Eat Today? 🎲",
+    "whatToEatHint": "Tap or shake to discover",
     "seeAll": "See all"
+  },
+  "ranking": {
+    "title": "🏆 Weekly Ranking"
   },
   "explore": {
     "title": "Explore Recipes",
@@ -33,7 +39,8 @@
     "resultsCount": "{{count}} recipes found",
     "pullToRefresh": "Pull to refresh",
     "noResults": "No recipes found",
-    "noResultsHint": "Try adjusting your filters"
+    "noResultsHint": "Try adjusting your filters",
+    "collections": "📚 Featured Collections"
   },
   "search": {
     "recent": "Recent searches",
@@ -368,5 +375,12 @@
     "sodium_label": "Sodium(mg)",
     "sugar_label": "Sugar(g)",
     "tags": "Tags"
+  },
+  "collections": {
+    "featuredTitle": "📚 Featured Collections",
+    "recipesUnit": "recipes",
+    "by": "by",
+    "noRecipes": "No recipes in this collection yet",
+    "recipesCount": "{{count}} recipes"
   }
 }
