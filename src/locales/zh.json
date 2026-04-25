@@ -108,7 +108,6 @@
     "logout": "退出登录",
     "logoutConfirm": "确定要退出登录吗？",
     "editProfile": "编辑资料",
-    "myRecipes": "我的菜谱",
     "settings": "设置",
     "version": "版本",
     "bio": "美食爱好者 & 家庭大厨",
@@ -153,7 +152,22 @@
     "errorInvalid": "请输入有效的邮箱地址",
     "termsNote": "继续即表示您同意我们的服务条款",
     "orContinue": "或以访客身份浏览",
-    "guestButton": "访客浏览"
+    "guestButton": "访客浏览",
+    "nicknameLabel": "昵称",
+    "nicknamePlaceholder": "设置一个显示名称",
+    "nicknameRequired": "请输入昵称",
+    "forgotPassword": "忘记密码？",
+    "forgotPasswordTitle": "重置密码",
+    "forgotPasswordMsg": "密码重置功能尚未开放，请联系客服 support@chefchina.app。",
+    "contactSupport": "好的",
+    "passwordStrength": {
+      "weak": "弱",
+      "medium": "中",
+      "strong": "强"
+    },
+    "strengthWeak": "弱",
+    "strengthMedium": "中等",
+    "strengthStrong": "强"
   },
   "categories": {
     "all": "全部",
@@ -234,7 +248,14 @@
     "noDescription": "暂无描述",
     "likes": "点赞 {{count}}",
     "comments": "评论 {{count}}",
-    "favorites": "收藏 {{count}}"
+    "favorites": "收藏 {{count}}",
+    "deleteConfirm": "确定要删除 \"{{title}}\" 吗？",
+    "actions": {
+      "edit": "编辑",
+      "continueEdit": "继续编辑",
+      "republish": "重新发布",
+      "delete": "删除"
+    }
   },
   "recentHistory": {
     "title": "浏览历史",
@@ -247,6 +268,27 @@
     "clearAction": "一键清空",
     "unknownRecipe": "菜谱已不存在"
   },
+  "report": {
+    "title": "举报",
+    "recipe": "举报菜谱",
+    "comment": "举报评论",
+    "selectReason": "请选择举报原因",
+    "additionalInfo": "补充说明（可选）",
+    "additionalPlaceholder": "请描述问题...",
+    "submit": "提交举报",
+    "submitting": "提交中...",
+    "success": "已收到反馈",
+    "successHint": "感谢您的反馈，我们将尽快处理。",
+    "failed": "举报提交失败",
+    "loginRequired": "请先登录后再举报",
+    "reasons": {
+      "SPAM": "垃圾信息 / 误导性内容",
+      "INAPPROPRIATE": "不当内容",
+      "COPYRIGHT": "侵犯版权",
+      "HARMFUL": "有害或危险内容",
+      "OTHER": "其他"
+    }
+  },
   "settings": {
     "title": "设置",
     "theme": "主题",
@@ -256,7 +298,8 @@
     "fontSize": "字体大小",
     "fontSmall": "小",
     "fontMedium": "中",
-    "fontLarge": "大",    "cache": "缓存",
+    "fontLarge": "大",
+    "cache": "缓存",
     "clearCache": "清理缓存",
     "clearCacheConfirmTitle": "确定清理缓存？",
     "clearCacheConfirmBody": "将清除图片和临时文件，收藏、历史和登录状态会保留。",
@@ -309,6 +352,21 @@
     "step_content_en": "用英文描述此步骤...",
     "step_content_zh": "用中文描述此步骤...",
     "permission_denied": "权限被拒绝",
-    "need_photo_permission": "需要相册访问权限以添加图片"
+    "need_photo_permission": "需要相册访问权限以添加图片",
+    "edit_title": "编辑菜谱",
+    "save_draft": "保存草稿",
+    "publish_now": "立即发布",
+    "publish_success": "菜谱已发布！",
+    "draft_saved": "草稿已保存！",
+    "update_failed": "更新失败",
+    "load_failed": "加载菜谱失败",
+    "nutrition": "营养成分",
+    "protein": "蛋白质(g)",
+    "fat": "脂肪(g)",
+    "carbs": "碳水化合物(g)",
+    "fiber_label": "膳食纤维(g)",
+    "sodium_label": "钠(mg)",
+    "sugar_label": "糖(g)",
+    "tags": "标签"
   }
 }

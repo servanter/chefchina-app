@@ -990,6 +990,23 @@ export const clearViewHistoryRemote = async (): Promise<void> => {
   await apiClient.delete('/history', { data: { clearAll: true } });
 };
 
+// ─── Reports (需求 4) ──────────────────────────────────────────────────
+
+export type ReportTargetType = 'RECIPE' | 'COMMENT';
+export type ReportReasonType = 'SPAM' | 'INAPPROPRIATE' | 'COPYRIGHT' | 'HARMFUL' | 'OTHER';
+
+export const submitReport = async (params: {
+  targetType: ReportTargetType;
+  targetId: string;
+  reason: ReportReasonType;
+  description?: string;
+}): Promise<void> => {
+  const token = await getAuthToken();
+  await apiClient.post('/reports', params, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+};
+
 export const updatePushToken = async (
   userId: string,
   token: string,

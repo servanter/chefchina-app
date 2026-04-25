@@ -108,7 +108,6 @@
     "logout": "Log Out",
     "logoutConfirm": "Are you sure you want to log out?",
     "editProfile": "Edit Profile",
-    "myRecipes": "My Recipes",
     "settings": "Settings",
     "version": "Version",
     "bio": "Food lover & home cook",
@@ -153,7 +152,22 @@
     "errorInvalid": "Please enter a valid email",
     "termsNote": "By continuing, you agree to our Terms of Service",
     "orContinue": "Or continue as guest",
-    "guestButton": "Browse as Guest"
+    "guestButton": "Browse as Guest",
+    "nicknameLabel": "Nickname",
+    "nicknamePlaceholder": "Choose a display name",
+    "nicknameRequired": "Please enter a nickname",
+    "forgotPassword": "Forgot password?",
+    "forgotPasswordTitle": "Reset Password",
+    "forgotPasswordMsg": "Password reset is not yet available. Please contact support at support@chefchina.app.",
+    "contactSupport": "OK",
+    "passwordStrength": {
+      "weak": "Weak",
+      "medium": "Medium",
+      "strong": "Strong"
+    },
+    "strengthWeak": "Weak",
+    "strengthMedium": "Medium",
+    "strengthStrong": "Strong"
   },
   "categories": {
     "all": "All",
@@ -234,7 +248,14 @@
     "noDescription": "No description yet",
     "likes": "Likes {{count}}",
     "comments": "Comments {{count}}",
-    "favorites": "Favorites {{count}}"
+    "favorites": "Favorites {{count}}",
+    "deleteConfirm": "Are you sure you want to delete \"{{title}}\"?",
+    "actions": {
+      "edit": "Edit",
+      "continueEdit": "Continue Editing",
+      "republish": "Republish",
+      "delete": "Delete"
+    }
   },
   "recentHistory": {
     "title": "Browsing History",
@@ -246,6 +267,27 @@
     "clearConfirm": "Are you sure you want to clear all browsing history?",
     "clearAction": "Clear all",
     "unknownRecipe": "Recipe unavailable"
+  },
+  "report": {
+    "title": "Report",
+    "recipe": "Report Recipe",
+    "comment": "Report Comment",
+    "selectReason": "Select a reason",
+    "additionalInfo": "Additional details (optional)",
+    "additionalPlaceholder": "Please describe the issue...",
+    "submit": "Submit Report",
+    "submitting": "Submitting...",
+    "success": "Report received",
+    "successHint": "Thank you for your feedback. We'll review it shortly.",
+    "failed": "Failed to submit report",
+    "loginRequired": "Please log in to report content",
+    "reasons": {
+      "SPAM": "Spam or misleading",
+      "INAPPROPRIATE": "Inappropriate content",
+      "COPYRIGHT": "Copyright infringement",
+      "HARMFUL": "Harmful or dangerous",
+      "OTHER": "Other"
+    }
   },
   "settings": {
     "title": "Settings",
@@ -310,6 +352,21 @@
     "step_content_en": "Describe this step in English...",
     "step_content_zh": "Describe this step in Chinese (用中文描述此步骤)...",
     "permission_denied": "Permission Denied",
-    "need_photo_permission": "We need photo library access to add images"
+    "need_photo_permission": "We need photo library access to add images",
+    "edit_title": "Edit Recipe",
+    "save_draft": "Save Draft",
+    "publish_now": "Publish",
+    "publish_success": "Recipe published!",
+    "draft_saved": "Draft saved!",
+    "update_failed": "Failed to update recipe",
+    "load_failed": "Failed to load recipe",
+    "nutrition": "Nutrition Info",
+    "protein": "Protein(g)",
+    "fat": "Fat(g)",
+    "carbs": "Carbs(g)",
+    "fiber_label": "Fiber(g)",
+    "sodium_label": "Sodium(mg)",
+    "sugar_label": "Sugar(g)",
+    "tags": "Tags"
   }
 }

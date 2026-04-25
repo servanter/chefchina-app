@@ -181,6 +181,7 @@ export default function RegisterScreen() {
                   if (confirmError && confirm === v) setConfirmError('');
                 }}
                 secureTextEntry={!showPassword}
+                maxLength={72}
                 autoCapitalize="none"
                 autoCorrect={false}
                 returnKeyType="next"
@@ -197,6 +198,29 @@ export default function RegisterScreen() {
               </TouchableOpacity>
             </View>
             <Text style={styles.hint}>{t('auth.passwordRequirements')}</Text>
+            {/* Password strength indicator */}
+            {password.length > 0 && (() => {
+              const hasLetter = /[A-Za-z]/.test(password);
+              const hasDigit = /[0-9]/.test(password);
+              const hasSpecial = /[^A-Za-z0-9]/.test(password);
+              const len = password.length;
+              let score = 0;
+              if (len >= 8) score++;
+              if (hasLetter && hasDigit) score++;
+              if (len >= 12) score++;
+              if (hasSpecial) score++;
+              const level = score <= 1 ? 0 : score <= 2 ? 1 : 2;
+              const labels = [t('auth.strengthWeak'), t('auth.strengthMedium'), t('auth.strengthStrong')];
+              const colors = ['#E25C5C', '#F5A623', '#4CAF50'];
+              return (
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4, gap: 6 }}>
+                  {[0, 1, 2].map((i) => (
+                    <View key={i} style={{ flex: 1, height: 4, borderRadius: 2, backgroundColor: i <= level ? colors[level] : '#E8E4DF' }} />
+                  ))}
+                  <Text style={{ fontSize: 11, color: colors[level], marginLeft: 4 }}>{labels[level]}</Text>
+                </View>
+              );
+            })()}
             {passwordError ? <Text style={styles.errorText}>{passwordError}</Text> : null}
           </View>
 
@@ -215,6 +239,7 @@ export default function RegisterScreen() {
                   if (confirmError) setConfirmError('');
                 }}
                 secureTextEntry={!showConfirm}
+                maxLength={72}
                 autoCapitalize="none"
                 autoCorrect={false}
                 returnKeyType="done"

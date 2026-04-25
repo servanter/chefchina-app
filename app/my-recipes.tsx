@@ -73,20 +73,20 @@ export default function MyRecipesScreen() {
   };
 
   const renderActions = (item: Recipe) => {
-    const canEdit = !item.is_published;
     const canRepublish = !item.is_published;
 
     return (
       <View style={styles.actionsRow}>
-        {canEdit ? (
-          <TouchableOpacity
-            style={[styles.actionBtn, { borderColor: colors.border, backgroundColor: colors.card }]}
-            onPress={() => handleContinueEdit(item)}
-          >
-            <Ionicons name="create-outline" size={16} color={colors.text} />
-            <Text style={[styles.actionText, { color: colors.text }]}>{t('myRecipes.actions.continueEdit')}</Text>
-          </TouchableOpacity>
-        ) : null}
+        {/* 需求 3：所有菜谱（包括已发布）都可编辑 */}
+        <TouchableOpacity
+          style={[styles.actionBtn, { borderColor: colors.border, backgroundColor: colors.card }]}
+          onPress={() => handleContinueEdit(item)}
+        >
+          <Ionicons name="create-outline" size={16} color={colors.text} />
+          <Text style={[styles.actionText, { color: colors.text }]}>
+            {item.is_published ? t('myRecipes.actions.edit') : t('myRecipes.actions.continueEdit')}
+          </Text>
+        </TouchableOpacity>
 
         {canRepublish ? (
           <TouchableOpacity
