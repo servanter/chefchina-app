@@ -193,6 +193,7 @@ export default function LoginScreen() {
                   if (passwordError) setPasswordError('');
                 }}
                 secureTextEntry={!showPassword}
+                maxLength={72}
                 autoCapitalize="none"
                 autoCorrect={false}
                 returnKeyType="done"

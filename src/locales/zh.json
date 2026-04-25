@@ -366,6 +366,7 @@
     "carbs": "碳水化合物(g)",
     "fiber_label": "膳食纤维(g)",
     "sodium_label": "钠(mg)",
-    "sugar_label": "糖(g)"
+    "sugar_label": "糖(g)",
+    "tags": "标签"
   }
 }

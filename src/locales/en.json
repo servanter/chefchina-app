@@ -366,6 +366,7 @@
     "carbs": "Carbs(g)",
     "fiber_label": "Fiber(g)",
     "sodium_label": "Sodium(mg)",
-    "sugar_label": "Sugar(g)"
+    "sugar_label": "Sugar(g)",
+    "tags": "Tags"
   }
 }

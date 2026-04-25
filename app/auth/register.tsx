@@ -181,6 +181,7 @@ export default function RegisterScreen() {
                   if (confirmError && confirm === v) setConfirmError('');
                 }}
                 secureTextEntry={!showPassword}
+                maxLength={72}
                 autoCapitalize="none"
                 autoCorrect={false}
                 returnKeyType="next"
@@ -238,6 +239,7 @@ export default function RegisterScreen() {
                   if (confirmError) setConfirmError('');
                 }}
                 secureTextEntry={!showConfirm}
+                maxLength={72}
                 autoCapitalize="none"
                 autoCorrect={false}
                 returnKeyType="done"

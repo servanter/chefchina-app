@@ -18,7 +18,7 @@ import * as ImagePicker from 'expo-image-picker'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '@/hooks/useAuth'
 import { createRecipe, updateRecipe, fetchRecipeById } from '@/lib/api'
-import { useCategories } from '@/hooks/useRecipes'
+import { useCategories, useTags } from '@/hooks/useRecipes'
 import Toast from 'react-native-toast-message'
 
 interface IngredientForm {
@@ -44,6 +44,7 @@ export default function CreateRecipePage() {
   const { user } = useAuth()
   const userId = user?.id ?? null
   const { data: categoriesData } = useCategories()
+  const { data: tagsData } = useTags()
   const isZh = i18n.language === 'zh'
 
   // ─── Edit mode params ───────────────────────────────────────────
@@ -77,6 +78,7 @@ export default function CreateRecipePage() {
   ])
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isLoadingRecipe, setIsLoadingRecipe] = useState(false)
+  const [selectedTagIds, setSelectedTagIds] = useState<string[]>([])
 
   // ─── Pre-fill fields in edit mode ───────────────────────────────
   useEffect(() => {
@@ -107,6 +109,11 @@ export default function CreateRecipePage() {
         if (r.fiber) setFiber(String(r.fiber))
         if (r.sodium) setSodium(String(r.sodium))
         if (r.sugar) setSugar(String(r.sugar))
+
+        // Backfill tags in edit mode
+        if (r.tags && r.tags.length > 0) {
+          setSelectedTagIds(r.tags.map((t: { id: string }) => t.id))
+        }
 
         if (r.ingredients && r.ingredients.length > 0) {
           setIngredients(
@@ -289,6 +296,7 @@ export default function CreateRecipePage() {
       isPublished: publish,
       ingredients: validIngredients,
       steps: validSteps.map((s, i) => ({ ...s, stepNumber: i + 1 })),
+      tagIds: selectedTagIds,
     }
   }
 
@@ -468,6 +476,43 @@ export default function CreateRecipePage() {
               </TouchableOpacity>
             ))}
           </ScrollView>
+        </View>
+
+        {/* 标签 */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>
+            {t('recipe_create.tags')}
+          </Text>
+          <View style={styles.tagsWrap}>
+            {(tagsData ?? []).map((tag) => {
+              const selected = selectedTagIds.includes(tag.id)
+              return (
+                <TouchableOpacity
+                  key={tag.id}
+                  onPress={() => {
+                    setSelectedTagIds((prev) =>
+                      selected
+                        ? prev.filter((id) => id !== tag.id)
+                        : [...prev, tag.id]
+                    )
+                  }}
+                  style={[
+                    styles.categoryChip,
+                    selected && styles.categoryChipSelected,
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.categoryChipText,
+                      selected && styles.categoryChipTextSelected,
+                    ]}
+                  >
+                    {isZh ? tag.label_zh : tag.label}
+                  </Text>
+                </TouchableOpacity>
+              )
+            })}
+          </View>
         </View>
 
         {/* 基本信息 */}
@@ -849,6 +894,12 @@ const styles = StyleSheet.create({
   categoryChipTextSelected: {
     color: '#FFF',
     fontWeight: '600',
+  },
+  tagsWrap: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginTop: 8,
   },
   rowInputs: {
     flexDirection: 'row',
