@@ -260,6 +260,11 @@ export default function ProfileScreen() {
             onPress={() => router.push('/my-recipes')}
           />
           <MenuRow
+            icon="notifications-outline"
+            label={t('notifications.title')}
+            onPress={() => router.push('/notifications')}
+          />
+          <MenuRow
             icon="time-outline"
             label={t('profile.recentHistory')}
             onPress={() => router.push('/recent-history')}

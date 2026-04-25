@@ -40,7 +40,8 @@ interface Step {
 
 export default function CreateRecipePage() {
   const { t, i18n } = useTranslation()
-  const { userId } = useAuth()
+  const { user } = useAuth()
+  const userId = user?.id ?? null
   const { data: categoriesData } = useCategories()
   const isZh = i18n.language === 'zh'
 
@@ -221,7 +222,7 @@ export default function CreateRecipePage() {
     }
   }
 
-  const categories = categoriesData?.categories || []
+  const categories = categoriesData ?? []
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
