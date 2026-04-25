@@ -7,6 +7,7 @@ import { AppImage } from './AppImage';
 interface CommentItemProps {
   comment: Comment;
   onReply?: (comment: Comment) => void;
+  onReport?: (commentId: string) => void;
   isReply?: boolean;
 }
 
@@ -23,12 +24,18 @@ const StarRating = ({ rating }: { rating: number }) => (
   </View>
 );
 
-export const CommentItem: React.FC<CommentItemProps> = ({ comment, onReply, isReply = false }) => {
+export const CommentItem: React.FC<CommentItemProps> = ({ comment, onReply, onReport, isReply = false }) => {
   const dateStr = new Date(comment.created_at).toLocaleDateString();
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
   return (
     <View style={[styles.container, isReply && styles.replyContainer]}>
+      <TouchableOpacity
+        activeOpacity={0.7}
+        onLongPress={() => onReport?.(comment.id)}
+        delayLongPress={500}
+        style={{ flex: 1, flexDirection: 'row' }}
+      >
       <AppImage
         uri={
           comment.user?.avatar_url && comment.user.avatar_url.length > 0
@@ -68,14 +75,26 @@ export const CommentItem: React.FC<CommentItemProps> = ({ comment, onReply, isRe
         )}
 
         {/* 回复按钮（仅顶级评论显示） */}
-        {!isReply && onReply && (
-          <TouchableOpacity 
-            style={styles.replyButton}
-            onPress={() => onReply(comment)}
-          >
-            <Ionicons name="chatbubble-outline" size={14} color="#666" />
-            <Text style={styles.replyText}>回复</Text>
-          </TouchableOpacity>
+        {!isReply && (
+          <View style={styles.actionRow}>
+            {onReply && (
+              <TouchableOpacity 
+                style={styles.replyButton}
+                onPress={() => onReply(comment)}
+              >
+                <Ionicons name="chatbubble-outline" size={14} color="#666" />
+                <Text style={styles.replyText}>回复</Text>
+              </TouchableOpacity>
+            )}
+            {onReport && (
+              <TouchableOpacity
+                style={styles.replyButton}
+                onPress={() => onReport(comment.id)}
+              >
+                <Ionicons name="flag-outline" size={14} color="#999" />
+              </TouchableOpacity>
+            )}
+          </View>
         )}
 
         {/* 子评论（楼中楼） */}
@@ -90,7 +109,8 @@ export const CommentItem: React.FC<CommentItemProps> = ({ comment, onReply, isRe
             ))}
           </View>
         )}
-      </View>
+        </View>
+      </TouchableOpacity>
 
       {/* 图片查看器 Modal */}
       {selectedImage && (
@@ -181,8 +201,13 @@ const styles = StyleSheet.create({
   replyButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 8,
     gap: 4,
+  },
+  actionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+    marginTop: 8,
   },
   replyText: {
     fontSize: 12,

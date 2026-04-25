@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import {
   View,
   Text,
@@ -9,18 +9,19 @@ import {
   Alert,
   Platform,
   Image,
+  ActivityIndicator,
 } from 'react-native'
-import { router } from 'expo-router'
+import { router, useLocalSearchParams } from 'expo-router'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons'
 import * as ImagePicker from 'expo-image-picker'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '@/hooks/useAuth'
-import { createRecipe } from '@/lib/api'
+import { createRecipe, updateRecipe, fetchRecipeById } from '@/lib/api'
 import { useCategories } from '@/hooks/useRecipes'
 import Toast from 'react-native-toast-message'
 
-interface Ingredient {
+interface IngredientForm {
   nameEn: string
   nameZh: string
   amount: string
@@ -28,7 +29,7 @@ interface Ingredient {
   isOptional: boolean
 }
 
-interface Step {
+interface StepForm {
   stepNumber: number
   titleEn?: string
   titleZh?: string
@@ -45,6 +46,11 @@ export default function CreateRecipePage() {
   const { data: categoriesData } = useCategories()
   const isZh = i18n.language === 'zh'
 
+  // ─── Edit mode params ───────────────────────────────────────────
+  const params = useLocalSearchParams<{ recipeId?: string; mode?: string }>()
+  const isEditMode = params.mode === 'edit' && !!params.recipeId
+  const recipeId = params.recipeId ?? ''
+
   const [titleEn, setTitleEn] = useState('')
   const [titleZh, setTitleZh] = useState('')
   const [descriptionEn, setDescriptionEn] = useState('')
@@ -55,13 +61,104 @@ export default function CreateRecipePage() {
   const [cookTimeMin, setCookTimeMin] = useState('')
   const [servings, setServings] = useState('')
   const [calories, setCalories] = useState('')
-  const [ingredients, setIngredients] = useState<Ingredient[]>([
+  // 营养成分
+  const [protein, setProtein] = useState('')
+  const [fat, setFat] = useState('')
+  const [carbs, setCarbs] = useState('')
+  const [fiber, setFiber] = useState('')
+  const [sodium, setSodium] = useState('')
+  const [sugar, setSugar] = useState('')
+
+  const [ingredients, setIngredients] = useState<IngredientForm[]>([
     { nameEn: '', nameZh: '', amount: '', unit: '', isOptional: false },
   ])
-  const [steps, setSteps] = useState<Step[]>([
+  const [steps, setSteps] = useState<StepForm[]>([
     { stepNumber: 1, contentEn: '', contentZh: '', titleEn: '', titleZh: '' },
   ])
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isLoadingRecipe, setIsLoadingRecipe] = useState(false)
+
+  // ─── Pre-fill fields in edit mode ───────────────────────────────
+  useEffect(() => {
+    if (!isEditMode) return
+
+    let cancelled = false
+    const load = async () => {
+      setIsLoadingRecipe(true)
+      try {
+        const r = await fetchRecipeById(recipeId)
+        if (cancelled) return
+
+        setTitleEn(r.title ?? '')
+        setTitleZh(r.title_zh ?? '')
+        setDescriptionEn(r.description ?? '')
+        setDescriptionZh(r.description_zh ?? '')
+        setCoverImage(r.cover_image ?? '')
+        setCategoryId(r.category_slug ?? '')
+        if (r.difficulty) {
+          setDifficulty(r.difficulty.toUpperCase() as 'EASY' | 'MEDIUM' | 'HARD')
+        }
+        if (r.cook_time) setCookTimeMin(String(r.cook_time))
+        if (r.servings) setServings(String(r.servings))
+        if (r.calories) setCalories(String(r.calories))
+        if (r.protein) setProtein(String(r.protein))
+        if (r.fat) setFat(String(r.fat))
+        if (r.carbs) setCarbs(String(r.carbs))
+        if (r.fiber) setFiber(String(r.fiber))
+        if (r.sodium) setSodium(String(r.sodium))
+        if (r.sugar) setSugar(String(r.sugar))
+
+        if (r.ingredients && r.ingredients.length > 0) {
+          setIngredients(
+            r.ingredients.map((ing) => ({
+              nameEn: ing.name,
+              nameZh: ing.name_zh,
+              amount: ing.amount,
+              unit: ing.unit ?? '',
+              isOptional: false,
+            }))
+          )
+        }
+
+        if (r.steps && r.steps.length > 0) {
+          setSteps(
+            r.steps.map((s) => ({
+              stepNumber: s.order,
+              titleEn: '',
+              titleZh: '',
+              contentEn: s.description,
+              contentZh: s.description_zh,
+              image: s.image,
+              durationMin: s.duration_min,
+            }))
+          )
+        }
+
+        // Need to resolve categoryId from slug — fetch categories to map
+        // We'll do a secondary pass once categoriesData is available
+      } catch (error) {
+        console.error('Failed to load recipe for editing:', error)
+        Toast.show({
+          type: 'error',
+          text1: t('recipe_create.load_failed'),
+        })
+      } finally {
+        if (!cancelled) setIsLoadingRecipe(false)
+      }
+    }
+    load()
+    return () => { cancelled = true }
+  }, [isEditMode, recipeId])
+
+  // ─── Resolve categoryId from slug once categories load ──────────
+  useEffect(() => {
+    if (!isEditMode || !categoriesData) return
+    // If categoryId is currently a slug, find the matching category id
+    const matchBySlug = categoriesData.find((c) => c.slug === categoryId)
+    if (matchBySlug && matchBySlug.id !== 'all') {
+      setCategoryId(matchBySlug.id)
+    }
+  }, [categoriesData, categoryId, isEditMode])
 
   const pickImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync()
@@ -78,8 +175,6 @@ export default function CreateRecipePage() {
     })
 
     if (!result.canceled && result.assets[0]) {
-      // TODO: 上传到 Cloudinary / Supabase Storage
-      // 目前暂时使用本地 URI（生产环境需要真实上传）
       setCoverImage(result.assets[0].uri)
     }
   }
@@ -95,7 +190,7 @@ export default function CreateRecipePage() {
     setIngredients(ingredients.filter((_, i) => i !== index))
   }
 
-  const updateIngredient = (index: number, field: keyof Ingredient, value: any) => {
+  const updateIngredient = (index: number, field: keyof IngredientForm, value: any) => {
     const updated = [...ingredients]
     updated[index] = { ...updated[index], [field]: value }
     setIngredients(updated)
@@ -118,7 +213,7 @@ export default function CreateRecipePage() {
     setSteps(steps.filter((_, i) => i !== index).map((s, i) => ({ ...s, stepNumber: i + 1 })))
   }
 
-  const updateStep = (index: number, field: keyof Step, value: any) => {
+  const updateStep = (index: number, field: keyof StepForm, value: any) => {
     const updated = [...steps]
     updated[index] = { ...updated[index], [field]: value }
     setSteps(updated)
@@ -134,7 +229,7 @@ export default function CreateRecipePage() {
       return false
     }
 
-    if (!categoryId) {
+    if (!categoryId || categoryId === 'all') {
       Toast.show({
         type: 'error',
         text1: t('recipe_create.validation_error'),
@@ -168,7 +263,36 @@ export default function CreateRecipePage() {
     return true
   }
 
-  const handleSubmit = async () => {
+  const buildPayload = (publish: boolean) => {
+    const validIngredients = ingredients.filter(
+      (ing) => ing.nameEn.trim() && ing.nameZh.trim() && ing.amount.trim()
+    )
+    const validSteps = steps.filter((step) => step.contentEn.trim() && step.contentZh.trim())
+
+    return {
+      titleEn,
+      titleZh,
+      descriptionEn: descriptionEn.trim() || undefined,
+      descriptionZh: descriptionZh.trim() || undefined,
+      coverImage: coverImage || undefined,
+      categoryId,
+      difficulty,
+      cookTimeMin: cookTimeMin ? parseInt(cookTimeMin) : undefined,
+      servings: servings ? parseInt(servings) : undefined,
+      calories: calories ? parseInt(calories) : undefined,
+      protein: protein ? parseFloat(protein) : undefined,
+      fat: fat ? parseFloat(fat) : undefined,
+      carbs: carbs ? parseFloat(carbs) : undefined,
+      fiber: fiber ? parseFloat(fiber) : undefined,
+      sodium: sodium ? parseFloat(sodium) : undefined,
+      sugar: sugar ? parseFloat(sugar) : undefined,
+      isPublished: publish,
+      ingredients: validIngredients,
+      steps: validSteps.map((s, i) => ({ ...s, stepNumber: i + 1 })),
+    }
+  }
+
+  const handleSubmit = async (publish = false) => {
     if (!userId) {
       Toast.show({
         type: 'error',
@@ -182,39 +306,29 @@ export default function CreateRecipePage() {
 
     setIsSubmitting(true)
     try {
-      const validIngredients = ingredients.filter(
-        (ing) => ing.nameEn.trim() && ing.nameZh.trim() && ing.amount.trim()
-      )
-      const validSteps = steps.filter((step) => step.contentEn.trim() && step.contentZh.trim())
+      const payload = buildPayload(publish)
 
-      await createRecipe({
-        titleEn,
-        titleZh,
-        descriptionEn: descriptionEn.trim() || undefined,
-        descriptionZh: descriptionZh.trim() || undefined,
-        coverImage: coverImage || undefined,
-        categoryId,
-        difficulty,
-        cookTimeMin: cookTimeMin ? parseInt(cookTimeMin) : undefined,
-        servings: servings ? parseInt(servings) : undefined,
-        calories: calories ? parseInt(calories) : undefined,
-        isPublished: false, // 默认为草稿，等待审核
-        ingredients: validIngredients,
-        steps: validSteps,
-      })
-
-      Toast.show({
-        type: 'success',
-        text1: t('recipe_create.success'),
-        text2: t('recipe_create.under_review'),
-      })
+      if (isEditMode) {
+        await updateRecipe(recipeId, payload)
+        Toast.show({
+          type: 'success',
+          text1: publish ? t('recipe_create.publish_success') : t('recipe_create.draft_saved'),
+        })
+      } else {
+        await createRecipe(payload)
+        Toast.show({
+          type: 'success',
+          text1: t('recipe_create.success'),
+          text2: t('recipe_create.under_review'),
+        })
+      }
 
       router.back()
     } catch (error) {
-      console.error('Create recipe error:', error)
+      console.error('Save recipe error:', error)
       Toast.show({
         type: 'error',
-        text1: t('recipe_create.failed'),
+        text1: isEditMode ? t('recipe_create.update_failed') : t('recipe_create.failed'),
         text2: t('recipe_create.try_again'),
       })
     } finally {
@@ -222,7 +336,18 @@ export default function CreateRecipePage() {
     }
   }
 
-  const categories = categoriesData ?? []
+  const categories = (categoriesData ?? []).filter((c) => c.id !== 'all')
+
+  if (isLoadingRecipe) {
+    return (
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#FF6B35" />
+          <Text style={styles.loadingText}>{t('common.loading')}</Text>
+        </View>
+      </SafeAreaView>
+    )
+  }
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -230,16 +355,35 @@ export default function CreateRecipePage() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color="#333" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>{t('recipe_create.title')}</Text>
-        <TouchableOpacity
-          onPress={handleSubmit}
-          disabled={isSubmitting}
-          style={[styles.submitButton, isSubmitting && styles.submitButtonDisabled]}
-        >
-          <Text style={styles.submitButtonText}>
-            {isSubmitting ? t('recipe_create.submitting') : t('recipe_create.submit')}
-          </Text>
-        </TouchableOpacity>
+        <Text style={styles.headerTitle}>
+          {isEditMode ? t('recipe_create.edit_title') : t('recipe_create.title')}
+        </Text>
+        <View style={styles.headerActions}>
+          {isEditMode && (
+            <TouchableOpacity
+              onPress={() => handleSubmit(false)}
+              disabled={isSubmitting}
+              style={[styles.draftButton, isSubmitting && styles.submitButtonDisabled]}
+            >
+              <Text style={styles.draftButtonText}>
+                {t('recipe_create.save_draft')}
+              </Text>
+            </TouchableOpacity>
+          )}
+          <TouchableOpacity
+            onPress={() => handleSubmit(isEditMode ? true : false)}
+            disabled={isSubmitting}
+            style={[styles.submitButton, isSubmitting && styles.submitButtonDisabled]}
+          >
+            <Text style={styles.submitButtonText}>
+              {isSubmitting
+                ? t('recipe_create.submitting')
+                : isEditMode
+                  ? t('recipe_create.publish_now')
+                  : t('recipe_create.submit')}
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
@@ -389,6 +533,75 @@ export default function CreateRecipePage() {
           </View>
         </View>
 
+        {/* 营养成分 (需求 3 补全) */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>{t('recipe_create.nutrition')}</Text>
+          <View style={styles.rowInputs}>
+            <View style={styles.rowInputWrapper}>
+              <Text style={styles.inputLabel}>{t('recipe_create.protein')}</Text>
+              <TextInput
+                style={styles.smallInput}
+                placeholder="0"
+                value={protein}
+                onChangeText={setProtein}
+                keyboardType="decimal-pad"
+              />
+            </View>
+            <View style={styles.rowInputWrapper}>
+              <Text style={styles.inputLabel}>{t('recipe_create.fat')}</Text>
+              <TextInput
+                style={styles.smallInput}
+                placeholder="0"
+                value={fat}
+                onChangeText={setFat}
+                keyboardType="decimal-pad"
+              />
+            </View>
+            <View style={styles.rowInputWrapper}>
+              <Text style={styles.inputLabel}>{t('recipe_create.carbs')}</Text>
+              <TextInput
+                style={styles.smallInput}
+                placeholder="0"
+                value={carbs}
+                onChangeText={setCarbs}
+                keyboardType="decimal-pad"
+              />
+            </View>
+          </View>
+          <View style={styles.rowInputs}>
+            <View style={styles.rowInputWrapper}>
+              <Text style={styles.inputLabel}>{t('recipe_create.fiber_label')}</Text>
+              <TextInput
+                style={styles.smallInput}
+                placeholder="0"
+                value={fiber}
+                onChangeText={setFiber}
+                keyboardType="decimal-pad"
+              />
+            </View>
+            <View style={styles.rowInputWrapper}>
+              <Text style={styles.inputLabel}>{t('recipe_create.sodium_label')}</Text>
+              <TextInput
+                style={styles.smallInput}
+                placeholder="0"
+                value={sodium}
+                onChangeText={setSodium}
+                keyboardType="decimal-pad"
+              />
+            </View>
+            <View style={styles.rowInputWrapper}>
+              <Text style={styles.inputLabel}>{t('recipe_create.sugar_label')}</Text>
+              <TextInput
+                style={styles.smallInput}
+                placeholder="0"
+                value={sugar}
+                onChangeText={setSugar}
+                keyboardType="decimal-pad"
+              />
+            </View>
+          </View>
+        </View>
+
         {/* 食材列表 */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
@@ -495,6 +708,16 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#fff',
   },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 12,
+  },
+  loadingText: {
+    fontSize: 14,
+    color: '#666',
+  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -511,12 +734,31 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     color: '#333',
+    flex: 1,
+    textAlign: 'center',
+  },
+  headerActions: {
+    flexDirection: 'row',
+    gap: 8,
   },
   submitButton: {
     paddingHorizontal: 16,
     paddingVertical: 8,
     backgroundColor: '#FF6B35',
     borderRadius: 8,
+  },
+  draftButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    backgroundColor: '#F5F5F5',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#DDD',
+  },
+  draftButtonText: {
+    color: '#666',
+    fontSize: 14,
+    fontWeight: '600',
   },
   submitButtonDisabled: {
     backgroundColor: '#CCC',

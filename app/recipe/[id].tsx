@@ -38,6 +38,8 @@ import { ShareCard, SHARE_CARD_HEIGHT, SHARE_CARD_WIDTH } from '../../src/compon
 import { useShareRecipe } from '../../src/hooks/useShareRecipe';
 import { getUserId, getUserName, saveViewHistoryItem } from '../../src/lib/storage';
 import { fetchLikeStatus, fetchFavoriteStatus, fetchRelated, saveViewHistoryRemote, Comment } from '../../src/lib/api';
+import { ReportModal } from '../../src/components/ReportModal';
+import type { ReportTargetType } from '../../src/lib/api';
 
 const HERO_HEIGHT = 280;
 
@@ -80,6 +82,11 @@ export default function RecipeDetailScreen() {
   const [viewerVisible, setViewerVisible] = useState(false);
   const [viewerImages, setViewerImages] = useState<string[]>([]);
   const [viewerIndex, setViewerIndex] = useState(0);
+
+  // Report modal state (需求 4)
+  const [reportVisible, setReportVisible] = useState(false);
+  const [reportTargetType, setReportTargetType] = useState<ReportTargetType>('RECIPE');
+  const [reportTargetId, setReportTargetId] = useState('');
 
   const openViewer = useCallback((images: string[], index: number) => {
     // 防重入：查看器已经打开 or 没有图，则忽略
@@ -306,6 +313,27 @@ export default function RecipeDetailScreen() {
     }
   }, [recipe, shareAvailable, captureAndShare, t]);
 
+  // ─── Report handlers (需求 4) ─────────────────────────────────
+  const handleReportRecipe = useCallback(() => {
+    if (userId === 'guest') {
+      Toast.show({ type: 'error', text1: t('report.loginRequired') });
+      return;
+    }
+    setReportTargetType('RECIPE');
+    setReportTargetId(id ?? '');
+    setReportVisible(true);
+  }, [userId, id, t]);
+
+  const handleReportComment = useCallback((commentId: string) => {
+    if (userId === 'guest') {
+      Toast.show({ type: 'error', text1: t('report.loginRequired') });
+      return;
+    }
+    setReportTargetType('COMMENT');
+    setReportTargetId(commentId);
+    setReportVisible(true);
+  }, [userId, t]);
+
   if (isLoading) return <RecipeDetailSkeleton />;
 
   if (error || !recipe) {
@@ -369,6 +397,9 @@ export default function RecipeDetailScreen() {
                 size={20}
                 color={favorited ? COLORS.primary : COLORS.text}
               />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.backBtn} onPress={handleReportRecipe}>
+              <Ionicons name="flag-outline" size={20} color={COLORS.text} />
             </TouchableOpacity>
           </View>
         </Animated.View>
@@ -808,6 +839,7 @@ export default function RecipeDetailScreen() {
                         key={comment.id} 
                         comment={comment}
                         onReply={handleReply}
+                        onReport={handleReportComment}
                       />
                     ))}
                     <ListFooter
@@ -865,6 +897,14 @@ export default function RecipeDetailScreen() {
           images={viewerImages}
           initialIndex={viewerIndex}
           onClose={() => setViewerVisible(false)}
+        />
+
+        {/* ── Report modal (需求 4) ── */}
+        <ReportModal
+          visible={reportVisible}
+          onClose={() => setReportVisible(false)}
+          targetType={reportTargetType}
+          targetId={reportTargetId}
         />
       </View>
     </KeyboardAvoidingView>

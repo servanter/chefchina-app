@@ -212,6 +212,15 @@ export default function LoginScreen() {
             {passwordError ? <Text style={styles.errorText}>{passwordError}</Text> : null}
           </View>
 
+          {/* Forgot password link */}
+          <TouchableOpacity
+            style={{ alignSelf: 'flex-end', marginBottom: 12 }}
+            onPress={() => Toast.show({ type: 'info', text1: t('auth.forgotPasswordTitle'), text2: t('auth.forgotPasswordMsg') })}
+            hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+          >
+            <Text style={{ color: '#E85D26', fontSize: 13 }}>{t('auth.forgotPassword')}</Text>
+          </TouchableOpacity>
+
           {/* Login button */}
           <TouchableOpacity
             style={[styles.loginBtn, isLoading && styles.loginBtnDisabled]}
