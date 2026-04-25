@@ -1231,3 +1231,61 @@ export const fetchRandomRecipe = async (params?: {
   if (arr.length === 0) throw new Error('No random recipe found');
   return adaptRecipe(arr[0]);
 };
+
+// ─── Achievements & Badges (Batch 10) ─────────────────────────────────────────
+
+export interface Badge {
+  id: string;
+  key: string;
+  nameEn: string;
+  nameZh: string;
+  descEn: string;
+  descZh: string;
+  icon: string;
+  category: string;
+  threshold: number;
+  sortOrder: number;
+}
+
+export interface UserBadge extends Badge {
+  unlockedAt: string;
+}
+
+export interface LevelInfo {
+  level: number;
+  xp: number;
+  levelNameEn: string;
+  levelNameZh: string;
+  levelIcon: string;
+  nextLevelXp: number | null;
+  progress: number;
+}
+
+export const fetchBadges = async (): Promise<Badge[]> => {
+  const res = await apiClient.get('/badges');
+  return res.data.data.badges as Badge[];
+};
+
+export const fetchUserBadges = async (userId: string): Promise<UserBadge[]> => {
+  const res = await apiClient.get(`/users/${userId}/badges`);
+  return res.data.data.badges as UserBadge[];
+};
+
+export const checkAchievements = async (userId: string): Promise<Badge[]> => {
+  const res = await apiClient.post(`/users/${userId}/achievements/check`);
+  return res.data.data.newBadges as Badge[];
+};
+
+export const fetchUserLevel = async (userId: string): Promise<LevelInfo> => {
+  const res = await apiClient.get(`/users/${userId}/level`);
+  return res.data.data as LevelInfo;
+};
+
+export const addUserXp = async (userId: string, amount: number, reason?: string): Promise<{
+  xp: number;
+  level: number;
+  leveledUp: boolean;
+}> => {
+  const res = await apiClient.post(`/users/${userId}/xp`, { amount, reason });
+  return res.data.data;
+};

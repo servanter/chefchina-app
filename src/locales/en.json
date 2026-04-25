@@ -382,5 +382,31 @@
     "by": "by",
     "noRecipes": "No recipes in this collection yet",
     "recipesCount": "{{count}} recipes"
+  },
+  "achievements": {
+    "title": "🏅 Achievements",
+    "levelCard": "Level {{level}}",
+    "xpProgress": "{{current}} / {{next}} XP",
+    "xpMax": "MAX XP",
+    "tabAll": "All",
+    "tabCooking": "Cooking",
+    "tabSocial": "Social",
+    "tabMilestone": "Milestone",
+    "unlocked": "Unlocked",
+    "locked": "Locked",
+    "unlockedDate": "Unlocked {{date}}",
+    "viewAll": "View All Achievements →",
+    "badgeUnlockTitle": "🎉 Achievement Unlocked!",
+    "badgeUnlockClose": "Awesome!",
+    "levelUpTitle": "🎉 Level Up!",
+    "levelUpDesc": "Congratulations!",
+    "levelNames": {
+      "1": "Novice Cook",
+      "2": "Home Cook",
+      "3": "Skilled Chef",
+      "4": "Master Chef",
+      "5": "Legendary Chef"
+    },
+    "recentBadges": "Recent Achievements"
   }
 }
