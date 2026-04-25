@@ -15,6 +15,7 @@ import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../../src/hooks/useAuth';
+import { useUserBadges, useUserLevel } from '../../src/hooks/useAchievements';
 import { changeLanguage } from '../../src/lib/i18n';
 import { AppImage } from '../../src/components/AppImage';
 import { useTheme } from '../../src/contexts/ThemeContext';
@@ -102,6 +103,18 @@ export default function ProfileScreen() {
   const [langToggle, setLangToggle] = useState(isZh);
   const [refreshing, setRefreshing] = useState(false);
 
+  // Achievements data
+  const { data: userBadges } = useUserBadges(user?.id);
+  const { data: levelInfo } = useUserLevel(user?.id);
+
+  const LEVEL_ICONS: Record<number, string> = {
+    1: '🥄',
+    2: '🍴',
+    3: '🔪',
+    4: '👨‍🍳',
+    5: '🏆',
+  };
+
   useEffect(() => {
     setLangToggle(i18n.language === 'zh');
   }, [i18n.language]);
@@ -173,13 +186,20 @@ export default function ProfileScreen() {
               fallback={`https://i.pravatar.cc/150?u=${user?.id ?? 'guest'}`}
               style={[styles.avatar, { borderColor: colors.tint }]}
             />
+            {/* 等级图标（右下角） */}
             <View style={[styles.avatarBadge, { backgroundColor: colors.card, borderColor: colors.border }]}>
-              <Text style={styles.avatarBadgeText}>👨‍🍳</Text>
+              <Text style={styles.avatarBadgeText}>{LEVEL_ICONS[levelInfo?.level ?? 1] ?? '🥄'}</Text>
             </View>
           </View>
           <Text style={[styles.displayName, { color: colors.text, fontSize: scaled(20) }]}>
             {displayName}
           </Text>
+          {/* 等级名称 */}
+          {levelInfo && (
+            <Text style={[styles.levelBadgeText, { color: colors.tint, fontSize: scaled(12) }]}>
+              {t(`achievements.levelNames.${levelInfo.level}`)}
+            </Text>
+          )}
           <Text style={[styles.bio, { color: colors.subText, fontSize: scaled(13) }]}>
             {displayBio}
           </Text>
@@ -201,6 +221,35 @@ export default function ProfileScreen() {
             </TouchableOpacity>
           )}
         </View>
+
+        {/* ─── 成就徽章展示 ─────────────────────────── */}
+        {isLoggedIn && userBadges && userBadges.length > 0 && (
+          <View style={[styles.badgesSection, { backgroundColor: colors.card }]}>
+            <View style={styles.badgesSectionHeader}>
+              <Text style={[styles.badgesSectionTitle, { color: colors.text, fontSize: scaled(15) }]}>
+                {t('achievements.recentBadges')}
+              </Text>
+              <TouchableOpacity onPress={() => router.push('/achievements' as any)}>
+                <Text style={[styles.badgesViewAll, { color: colors.tint, fontSize: scaled(13) }]}>
+                  {t('achievements.viewAll')}
+                </Text>
+              </TouchableOpacity>
+            </View>
+            <View style={styles.badgesRow}>
+              {userBadges.slice(0, 5).map((badge) => (
+                <View key={badge.id} style={[styles.badgeMini, { backgroundColor: colors.chipBg }]}>
+                  <Text style={styles.badgeMiniIcon}>{badge.icon}</Text>
+                  <Text
+                    style={[styles.badgeMiniName, { color: colors.text, fontSize: scaled(11) }]}
+                    numberOfLines={1}
+                  >
+                    {isZh ? badge.nameZh : badge.nameEn}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          </View>
+        )}
 
         {/* ─── Stats ───────────────────────────────── */}
         <View style={[styles.statsRow, { backgroundColor: colors.card }]}>
@@ -263,6 +312,11 @@ export default function ProfileScreen() {
             icon="notifications-outline"
             label={t('notifications.title')}
             onPress={() => router.push('/notifications')}
+          />
+          <MenuRow
+            icon="trophy-outline"
+            label={t('achievements.title')}
+            onPress={() => router.push('/achievements' as any)}
           />
           <MenuRow
             icon="time-outline"
@@ -492,6 +546,52 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: 8,
     marginBottom: 32,
+  },
+  levelBadgeText: {
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  badgesSection: {
+    marginHorizontal: 20,
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 12,
+    elevation: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 4,
+  },
+  badgesSectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  badgesSectionTitle: {
+    fontWeight: '700',
+  },
+  badgesViewAll: {
+    fontWeight: '600',
+  },
+  badgesRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  badgeMini: {
+    flex: 1,
+    borderRadius: 12,
+    padding: 10,
+    alignItems: 'center',
+  },
+  badgeMiniIcon: {
+    fontSize: 28,
+    marginBottom: 4,
+  },
+  badgeMiniName: {
+    fontWeight: '500',
+    textAlign: 'center',
   },
   createRecipeButton: {
     flexDirection: 'row',

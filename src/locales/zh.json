@@ -382,5 +382,31 @@
     "by": "由",
     "noRecipes": "该合集暂无菜谱",
     "recipesCount": "{{count}} 道菜谱"
+  },
+  "achievements": {
+    "title": "🏅 成就殿堂",
+    "levelCard": "等级 {{level}}",
+    "xpProgress": "{{current}} / {{next}} 经验值",
+    "xpMax": "满级",
+    "tabAll": "全部",
+    "tabCooking": "烹饪",
+    "tabSocial": "社交",
+    "tabMilestone": "里程碑",
+    "unlocked": "已解锁",
+    "locked": "未解锁",
+    "unlockedDate": "{{date}} 解锁",
+    "viewAll": "查看全部成就 →",
+    "badgeUnlockTitle": "🎉 解锁新成就！",
+    "badgeUnlockClose": "太棒了！",
+    "levelUpTitle": "🎉 升级啦！",
+    "levelUpDesc": "恭喜升级！",
+    "levelNames": {
+      "1": "新手厨娘",
+      "2": "家常达人",
+      "3": "美食高手",
+      "4": "烹饪大师",
+      "5": "传奇大厨"
+    },
+    "recentBadges": "最近成就"
   }
 }
