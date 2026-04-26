@@ -8,7 +8,10 @@ interface CommentItemProps {
   comment: Comment;
   onReply?: (comment: Comment) => void;
   onReport?: (commentId: string) => void;
+  onToggleLike?: (commentId: string) => void;
   isReply?: boolean;
+  liked?: boolean;  // 当前用户是否点赞了该评论
+  likedMap?: Record<string, boolean>;  // 所有评论的点赞状态映射
 }
 
 const StarRating = ({ rating }: { rating: number }) => (
@@ -24,9 +27,10 @@ const StarRating = ({ rating }: { rating: number }) => (
   </View>
 );
 
-export const CommentItem: React.FC<CommentItemProps> = ({ comment, onReply, onReport, isReply = false }) => {
+export const CommentItem: React.FC<CommentItemProps> = ({ comment, onReply, onReport, onToggleLike, isReply = false, liked = false, likedMap = {} }) => {
   const dateStr = new Date(comment.created_at).toLocaleDateString();
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const likesCount = comment.likes_count ?? 0;
 
   return (
     <View style={[styles.container, isReply && styles.replyContainer]}>
@@ -74,28 +78,42 @@ export const CommentItem: React.FC<CommentItemProps> = ({ comment, onReply, onRe
           </ScrollView>
         )}
 
-        {/* 回复按钮（仅顶级评论显示） */}
-        {!isReply && (
-          <View style={styles.actionRow}>
-            {onReply && (
-              <TouchableOpacity 
-                style={styles.replyButton}
-                onPress={() => onReply(comment)}
-              >
-                <Ionicons name="chatbubble-outline" size={14} color="#666" />
-                <Text style={styles.replyText}>回复</Text>
-              </TouchableOpacity>
-            )}
-            {onReport && (
-              <TouchableOpacity
-                style={styles.replyButton}
-                onPress={() => onReport(comment.id)}
-              >
-                <Ionicons name="flag-outline" size={14} color="#999" />
-              </TouchableOpacity>
-            )}
-          </View>
-        )}
+        {/* 回复按钮（顶级评论和回复都显示） */}
+        <View style={styles.actionRow}>
+          {/* 点赞按钮 (REQ-11.2) */}
+          {onToggleLike && (
+            <TouchableOpacity 
+              style={styles.likeButton}
+              onPress={() => onToggleLike(comment.id)}
+            >
+              <Ionicons 
+                name={liked ? "heart" : "heart-outline"} 
+                size={14} 
+                color={liked ? "#E85D26" : "#666"} 
+              />
+              {likesCount > 0 && (
+                <Text style={styles.likeCount}>{likesCount}</Text>
+              )}
+            </TouchableOpacity>
+          )}
+          {!isReply && onReply && (
+            <TouchableOpacity 
+              style={styles.replyButton}
+              onPress={() => onReply(comment)}
+            >
+              <Ionicons name="chatbubble-outline" size={14} color="#666" />
+              <Text style={styles.replyText}>回复</Text>
+            </TouchableOpacity>
+          )}
+          {onReport && (
+            <TouchableOpacity
+              style={styles.replyButton}
+              onPress={() => onReport(comment.id)}
+            >
+              <Ionicons name="flag-outline" size={14} color="#999" />
+            </TouchableOpacity>
+          )}
+        </View>
 
         {/* 子评论（楼中楼） */}
         {comment.replies && comment.replies.length > 0 && (
@@ -105,6 +123,10 @@ export const CommentItem: React.FC<CommentItemProps> = ({ comment, onReply, onRe
                 key={reply.id}
                 comment={reply}
                 isReply={true}
+                liked={likedMap[reply.id] || false}
+                likedMap={likedMap}
+                onToggleLike={onToggleLike}
+                onReport={onReport}
               />
             ))}
           </View>
@@ -202,6 +224,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
+  },
+  likeButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  likeCount: {
+    fontSize: 12,
+    color: '#666',
   },
   actionRow: {
     flexDirection: 'row',

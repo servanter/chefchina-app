@@ -208,6 +208,21 @@ export default function HomeScreen() {
           ))}
         </ScrollView>
 
+        {/* ─── Following Feed Entry (REQ-11.5) ──────────────────── */}
+        {userId && userId !== 'guest' && (
+          <TouchableOpacity
+            style={styles.followFeedEntry}
+            onPress={() => router.push('/follow-feed')}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="people" size={20} color={COLORS.primary} />
+            <Text style={[styles.followFeedText, { color: COLORS.primary }]}>
+              {t('feed.title')}
+            </Text>
+            <Ionicons name="chevron-forward" size={18} color={COLORS.primary} />
+          </TouchableOpacity>
+        )}
+
         {/* ─── What to Eat Today? (REQ-9) ──────────────────── */}
         <WhatToEatButton tintColor={COLORS.primary} />
 
@@ -513,5 +528,29 @@ const styles = StyleSheet.create({
     color: COLORS.text,
     paddingHorizontal: 8,
     paddingVertical: 6,
+  },
+  // Following Feed Entry (REQ-11.5)
+  followFeedEntry: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    marginHorizontal: 20,
+    marginVertical: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    backgroundColor: COLORS.white,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: COLORS.primary,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+  },
+  followFeedText: {
+    fontSize: 14,
+    fontWeight: '700',
   },
 });

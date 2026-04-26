@@ -1,0 +1,23 @@
+{
+  "feed": {
+    "title": "Following",
+    "loginRequired": "Login Required",
+    "loginRequiredDesc": "Log in to see updates from people you follow",
+    "emptyTitle": "Not following anyone yet",
+    "emptyDesc": "Discover and follow users you're interested in",
+    "goExplore": "Explore",
+    "publishedRecipe": "published a recipe",
+    "commentedOn": "commented on",
+    "favorited": "favorited"
+  },
+  "social": {
+    "follow": "Follow",
+    "following": "Following",
+    "followers": "Followers",
+    "followSuccess": "Followed",
+    "unfollowSuccess": "Unfollowed",
+    "likeComment": "Like",
+    "likeCommentSuccess": "Liked",
+    "unlikeCommentSuccess": "Unliked"
+  }
+}
