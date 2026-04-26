@@ -22,7 +22,7 @@ import Toast from 'react-native-toast-message';
 import { useQuery } from '@tanstack/react-query';
 import * as ImagePicker from 'expo-image-picker';
 import { useRecipeById, useInfiniteComments, useToggleLike, useToggleFavorite, usePostComment } from '../../src/hooks/useRecipes';
-import { useToggleCommentLike } from '../../src/hooks/useSocial';
+import { useToggleCommentLike, useCommentLikeStatus } from '../../src/hooks/useSocial';
 import { StepItem } from '../../src/components/StepItem';
 import { CommentItem } from '../../src/components/CommentItem';
 import { RatingStars } from '../../src/components/RatingStars';
@@ -169,6 +169,23 @@ export default function RecipeDetailScreen() {
   );
   const commentsTotal =
     commentsData?.pages?.[0]?.pagination.total ?? comments.length;
+  
+  // BUG-006: 批量查询评论点赞状态
+  const allCommentIds = useMemo(() => {
+    const ids: string[] = [];
+    comments.forEach(comment => {
+      ids.push(comment.id);
+      if (comment.replies) {
+        comment.replies.forEach(reply => ids.push(reply.id));
+      }
+    });
+    return ids;
+  }, [comments]);
+  
+  const { data: commentLikeStatusMap = {} } = useCommentLikeStatus(
+    allCommentIds,
+    userId !== 'guest' && allCommentIds.length > 0
+  );
   const toggleLikeMutation = useToggleLike();
   const toggleFavoriteMutation = useToggleFavorite();
   const postCommentMutation = usePostComment();
@@ -894,6 +911,8 @@ export default function RecipeDetailScreen() {
                       <CommentItem 
                         key={comment.id} 
                         comment={comment}
+                        liked={commentLikeStatusMap[comment.id] || false}
+                        likedMap={commentLikeStatusMap}
                         onReply={handleReply}
                         onReport={handleReportComment}
                         onToggleLike={handleCommentLike}

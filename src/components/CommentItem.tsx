@@ -10,6 +10,8 @@ interface CommentItemProps {
   onReport?: (commentId: string) => void;
   onToggleLike?: (commentId: string) => void;
   isReply?: boolean;
+  liked?: boolean;  // 当前用户是否点赞了该评论
+  likedMap?: Record<string, boolean>;  // 所有评论的点赞状态映射
 }
 
 const StarRating = ({ rating }: { rating: number }) => (
@@ -25,7 +27,7 @@ const StarRating = ({ rating }: { rating: number }) => (
   </View>
 );
 
-export const CommentItem: React.FC<CommentItemProps> = ({ comment, onReply, onReport, onToggleLike, isReply = false }) => {
+export const CommentItem: React.FC<CommentItemProps> = ({ comment, onReply, onReport, onToggleLike, isReply = false, liked = false, likedMap = {} }) => {
   const dateStr = new Date(comment.created_at).toLocaleDateString();
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const likesCount = comment.likes_count ?? 0;
@@ -84,7 +86,11 @@ export const CommentItem: React.FC<CommentItemProps> = ({ comment, onReply, onRe
               style={styles.likeButton}
               onPress={() => onToggleLike(comment.id)}
             >
-              <Ionicons name="heart-outline" size={14} color="#666" />
+              <Ionicons 
+                name={liked ? "heart" : "heart-outline"} 
+                size={14} 
+                color={liked ? "#E85D26" : "#666"} 
+              />
               {likesCount > 0 && (
                 <Text style={styles.likeCount}>{likesCount}</Text>
               )}
@@ -117,6 +123,10 @@ export const CommentItem: React.FC<CommentItemProps> = ({ comment, onReply, onRe
                 key={reply.id}
                 comment={reply}
                 isReply={true}
+                liked={likedMap[reply.id] || false}
+                likedMap={likedMap}
+                onToggleLike={onToggleLike}
+                onReport={onReport}
               />
             ))}
           </View>
