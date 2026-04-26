@@ -182,11 +182,24 @@ export interface User {
   name: string;
   avatar_url: string;
   bio: string;
+  cover?: string;  // REQ-12.4: 用户头图
+  specialties?: string[];  // REQ-12.4: 擅长菜系
   favorites_count: number;
   comments_count: number;
   recipes_count: number;  // REQ-4.1: 用户发布的菜谱数
   followers_count?: number; // REQ-5.4: 粉丝数
   following_count?: number; // REQ-5.4: 关注数
+  level?: number;  // REQ-12.9: 等级 1-10
+  exp?: number;  // REQ-12.9: 经验值
+  levelInfo?: {  // REQ-12.9: 等级详情
+    exp: number;
+    level: number;
+    currentLevelName: { en: string; zh: string } | null;
+    currentLevelBenefits: any;
+    nextLevelExp: number | null;
+    expToNextLevel: number;
+    progressPercent: number;
+  };
 }
 
 export interface PaginatedResponse<T> {
@@ -229,6 +242,89 @@ export const fetchCategories = async (): Promise<Category[]> => {
   const res = await apiClient.get('/categories');
   const cats = res.data.data as BackendCategory[];
   return cats.map(adaptCategory);
+};
+
+// ─── 话题 (REQ-12.3) ───────────────────────────────────────
+
+export interface Topic {
+  id: string;
+  nameEn: string;
+  nameZh: string;
+  descEn?: string;
+  descZh?: string;
+  icon?: string;
+  coverImage?: string;
+  isHot: boolean;
+  recipesCount?: number;
+}
+
+interface BackendTopic {
+  id: string;
+  nameEn: string;
+  nameZh: string;
+  descEn?: string;
+  descZh?: string;
+  icon?: string;
+  coverImage?: string;
+  isHot: boolean;
+  _count?: { recipes: number };
+}
+
+export const fetchTopics = async (isHot?: boolean): Promise<Topic[]> => {
+  const params = isHot !== undefined ? { isHot: isHot.toString() } : {};
+  const res = await apiClient.get('/topics', { params });
+  const topics = res.data.data.topics as BackendTopic[];
+  return topics.map(t => ({
+    id: t.id,
+    nameEn: t.nameEn,
+    nameZh: t.nameZh,
+    descEn: t.descEn,
+    descZh: t.descZh,
+    icon: t.icon,
+    coverImage: t.coverImage,
+    isHot: t.isHot,
+    recipesCount: t._count?.recipes ?? 0
+  }));
+};
+
+export const fetchTopicRecipes = async (topicId: string, page = 1): Promise<PaginatedResponse<Recipe>> => {
+  const res = await apiClient.get('/recipes', {
+    params: { topicId, page, pageSize: PAGE_SIZE }
+  });
+  const recipes = res.data.data.recipes.map(adaptRecipe);
+  const pagination = res.data.data.pagination;
+  return {
+    data: recipes,
+    page: pagination.page,
+    limit: pagination.pageSize,
+    total: pagination.total,
+    hasMore: pagination.page < pagination.totalPages
+  };
+};
+
+// ─── 推荐 (REQ-12.7) ──────────────────────────────────────
+export const fetchRecommendedRecipes = async (userId: string, page = 1): Promise<PaginatedResponse<Recipe>> => {
+  const res = await apiClient.get('/recommend', {
+    params: { userId, page, limit: PAGE_SIZE }
+  });
+  const recipes = res.data.data.recipes.map(adaptRecipe);
+  const pagination = res.data.data.pagination;
+  return {
+    data: recipes,
+    page: pagination.page,
+    limit: pagination.limit,
+    total: pagination.total,
+    hasMore: pagination.page < pagination.totalPages
+  };
+};
+
+export const recordBrowseHistory = async (userId: string, recipeId: string): Promise<void> => {
+  try {
+    await apiClient.post('/browse-history', { userId, recipeId });
+  } catch (error) {
+    console.warn('Failed to record browse history:', error);
+    // 静默失败,不影响用户浏览
+  }
 };
 
 // ─── 后台 API 原始类型（Prisma 返回格式）────────────────────────────────────────
