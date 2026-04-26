@@ -169,6 +169,7 @@ export interface Comment {
   parent_id?: string; // 父评论 ID
   replies?: Comment[]; // 子评论
   created_at: string;
+  likes_count?: number; // 点赞数 (REQ-11.2)
   user?: {
     name: string;
     avatar_url: string;
@@ -293,6 +294,7 @@ interface BackendComment {
   userId: string;
   createdAt: string;
   user?: { id: string; name?: string; avatar?: string };
+  _count?: { likes: number };
 }
 
 // ─── 适配器：后台格式 → App 前端格式 ──────────────────────────────────────────
@@ -367,6 +369,7 @@ export function adaptComment(c: BackendComment): Comment {
     parent_id: c.parentId,
     replies: c.replies?.map(adaptComment),
     created_at: c.createdAt,
+    likes_count: c._count?.likes ?? 0,
     user: c.user
       ? { name: c.user.name ?? 'Anonymous', avatar_url: c.user.avatar ?? '' }
       : undefined,
@@ -1176,7 +1179,7 @@ export const fetchFollowing = async (
   };
 };
 
-export const fetchFeed = async (
+export const fetchHomeFeed = async (
   page = 1,
   pageSize = 20
 ): Promise<RecipesPage> => {
@@ -1292,4 +1295,80 @@ export const addUserXp = async (userId: string, amount: number, reason?: string)
 }> => {
   const res = await apiClient.post(`/users/${userId}/xp`, { amount, reason });
   return res.data.data;
+};
+
+// ─── Comment Like (REQ-11.2) ──────────────────────────────────────────────────
+
+export const toggleCommentLike = async (commentId: string): Promise<{
+  liked: boolean;
+  likesCount: number;
+}> => {
+  const res = await apiClient.post(`/comments/${commentId}/like`);
+  return { liked: res.data.data.liked, likesCount: res.data.data.likesCount };
+};
+
+export const fetchCommentLikeStatus = async (commentIds: string[]): Promise<Record<string, boolean>> => {
+  if (commentIds.length === 0) return {};
+  const res = await apiClient.get('/comments/like-status', {
+    params: { commentIds: commentIds.join(',') },
+  });
+  return res.data.data.status;
+};
+
+// ─── Feed (REQ-11.5) ──────────────────────────────────────────────────────────
+
+export type FeedItemType = 'recipe' | 'comment' | 'favorite';
+
+export interface FeedItem {
+  id: string;
+  type: FeedItemType;
+  createdAt: string;
+  user: {
+    id: string;
+    name: string | null;
+    avatar: string | null;
+  };
+  recipe?: Recipe;
+  comment?: Comment & {
+    recipe?: {
+      id: string;
+      titleEn: string;
+      titleZh: string;
+      coverImage: string | null;
+      category: {
+        nameEn: string;
+        nameZh: string;
+      };
+    };
+  };
+}
+
+export interface FeedResponse {
+  items: FeedItem[];
+  nextCursor: string | null;
+}
+
+export interface FeedPage {
+  data: FeedItem[];
+  page: number;
+  pageSize: number;
+  total: number;
+  totalPages: number;
+}
+
+export const fetchFeed = async (cursor?: string, limit = 20): Promise<FeedResponse> => {
+  const params: any = { limit };
+  if (cursor) params.cursor = cursor;
+  const res = await apiClient.get('/feed', { params });
+  return res.data.data as FeedResponse;
+};
+
+export const toggleFollow = async (followingId: string, action: 'follow' | 'unfollow'): Promise<{ message: string }> => {
+  if (action === 'follow') {
+    const res = await apiClient.post(`/users/${followingId}/follow`);
+    return res.data.data;
+  } else {
+    const res = await apiClient.delete(`/users/${followingId}/follow`);
+    return res.data.data;
+  }
 };

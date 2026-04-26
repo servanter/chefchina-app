@@ -1,0 +1,23 @@
+{
+  "feed": {
+    "title": "关注",
+    "loginRequired": "请先登录",
+    "loginRequiredDesc": "登录后查看关注用户的最新动态",
+    "emptyTitle": "还没有关注任何人",
+    "emptyDesc": "快去探索页关注感兴趣的用户吧",
+    "goExplore": "去探索",
+    "publishedRecipe": "发布了菜谱",
+    "commentedOn": "评论了",
+    "favorited": "收藏了"
+  },
+  "social": {
+    "follow": "关注",
+    "following": "已关注",
+    "followers": "粉丝",
+    "followSuccess": "关注成功",
+    "unfollowSuccess": "已取消关注",
+    "likeComment": "赞",
+    "likeCommentSuccess": "已点赞",
+    "unlikeCommentSuccess": "已取消点赞"
+  }
+}

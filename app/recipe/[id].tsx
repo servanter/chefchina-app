@@ -22,6 +22,7 @@ import Toast from 'react-native-toast-message';
 import { useQuery } from '@tanstack/react-query';
 import * as ImagePicker from 'expo-image-picker';
 import { useRecipeById, useInfiniteComments, useToggleLike, useToggleFavorite, usePostComment } from '../../src/hooks/useRecipes';
+import { useToggleCommentLike } from '../../src/hooks/useSocial';
 import { StepItem } from '../../src/components/StepItem';
 import { CommentItem } from '../../src/components/CommentItem';
 import { RatingStars } from '../../src/components/RatingStars';
@@ -352,6 +353,23 @@ export default function RecipeDetailScreen() {
       });
     }
   }, [recipe, shareAvailable, captureAndShare, t]);
+
+  const { mutate: toggleCommentLike } = useToggleCommentLike();
+
+  const handleCommentLike = useCallback((commentId: string) => {
+    if (userId === 'guest') {
+      Toast.show({ type: 'error', text1: t('social.loginRequired') || t('report.loginRequired') });
+      return;
+    }
+    toggleCommentLike({ commentId }, {
+      onSuccess: () => {
+        triggerHaptic('light');
+      },
+      onError: () => {
+        Toast.show({ type: 'error', text1: t('common.error') });
+      },
+    });
+  }, [userId, toggleCommentLike, t]);
 
   // ─── Report handlers (需求 4) ─────────────────────────────────
   const handleReportRecipe = useCallback(() => {
@@ -878,6 +896,7 @@ export default function RecipeDetailScreen() {
                         comment={comment}
                         onReply={handleReply}
                         onReport={handleReportComment}
+                        onToggleLike={handleCommentLike}
                       />
                     ))}
                     <ListFooter

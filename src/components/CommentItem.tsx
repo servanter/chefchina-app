@@ -8,6 +8,7 @@ interface CommentItemProps {
   comment: Comment;
   onReply?: (comment: Comment) => void;
   onReport?: (commentId: string) => void;
+  onToggleLike?: (commentId: string) => void;
   isReply?: boolean;
 }
 
@@ -24,9 +25,10 @@ const StarRating = ({ rating }: { rating: number }) => (
   </View>
 );
 
-export const CommentItem: React.FC<CommentItemProps> = ({ comment, onReply, onReport, isReply = false }) => {
+export const CommentItem: React.FC<CommentItemProps> = ({ comment, onReply, onReport, onToggleLike, isReply = false }) => {
   const dateStr = new Date(comment.created_at).toLocaleDateString();
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const likesCount = comment.likes_count ?? 0;
 
   return (
     <View style={[styles.container, isReply && styles.replyContainer]}>
@@ -77,6 +79,18 @@ export const CommentItem: React.FC<CommentItemProps> = ({ comment, onReply, onRe
         {/* 回复按钮（仅顶级评论显示） */}
         {!isReply && (
           <View style={styles.actionRow}>
+            {/* 点赞按钮 (REQ-11.2) */}
+            {onToggleLike && (
+              <TouchableOpacity 
+                style={styles.likeButton}
+                onPress={() => onToggleLike(comment.id)}
+              >
+                <Ionicons name="heart-outline" size={14} color="#666" />
+                {likesCount > 0 && (
+                  <Text style={styles.likeCount}>{likesCount}</Text>
+                )}
+              </TouchableOpacity>
+            )}
             {onReply && (
               <TouchableOpacity 
                 style={styles.replyButton}
@@ -202,6 +216,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
+  },
+  likeButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  likeCount: {
+    fontSize: 12,
+    color: '#666',
   },
   actionRow: {
     flexDirection: 'row',
