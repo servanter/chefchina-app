@@ -319,7 +319,12 @@ export const fetchRecommendedRecipes = async (userId: string, page = 1): Promise
 };
 
 export const recordBrowseHistory = async (userId: string, recipeId: string): Promise<void> => {
-  await apiClient.post('/browse-history', { userId, recipeId });
+  try {
+    await apiClient.post('/browse-history', { userId, recipeId });
+  } catch (error) {
+    console.warn('Failed to record browse history:', error);
+    // 静默失败,不影响用户浏览
+  }
 };
 
 // ─── 后台 API 原始类型（Prisma 返回格式）────────────────────────────────────────
