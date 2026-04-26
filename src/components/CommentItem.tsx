@@ -76,40 +76,38 @@ export const CommentItem: React.FC<CommentItemProps> = ({ comment, onReply, onRe
           </ScrollView>
         )}
 
-        {/* 回复按钮（仅顶级评论显示） */}
-        {!isReply && (
-          <View style={styles.actionRow}>
-            {/* 点赞按钮 (REQ-11.2) */}
-            {onToggleLike && (
-              <TouchableOpacity 
-                style={styles.likeButton}
-                onPress={() => onToggleLike(comment.id)}
-              >
-                <Ionicons name="heart-outline" size={14} color="#666" />
-                {likesCount > 0 && (
-                  <Text style={styles.likeCount}>{likesCount}</Text>
-                )}
-              </TouchableOpacity>
-            )}
-            {onReply && (
-              <TouchableOpacity 
-                style={styles.replyButton}
-                onPress={() => onReply(comment)}
-              >
-                <Ionicons name="chatbubble-outline" size={14} color="#666" />
-                <Text style={styles.replyText}>回复</Text>
-              </TouchableOpacity>
-            )}
-            {onReport && (
-              <TouchableOpacity
-                style={styles.replyButton}
-                onPress={() => onReport(comment.id)}
-              >
-                <Ionicons name="flag-outline" size={14} color="#999" />
-              </TouchableOpacity>
-            )}
-          </View>
-        )}
+        {/* 回复按钮（顶级评论和回复都显示） */}
+        <View style={styles.actionRow}>
+          {/* 点赞按钮 (REQ-11.2) */}
+          {onToggleLike && (
+            <TouchableOpacity 
+              style={styles.likeButton}
+              onPress={() => onToggleLike(comment.id)}
+            >
+              <Ionicons name="heart-outline" size={14} color="#666" />
+              {likesCount > 0 && (
+                <Text style={styles.likeCount}>{likesCount}</Text>
+              )}
+            </TouchableOpacity>
+          )}
+          {!isReply && onReply && (
+            <TouchableOpacity 
+              style={styles.replyButton}
+              onPress={() => onReply(comment)}
+            >
+              <Ionicons name="chatbubble-outline" size={14} color="#666" />
+              <Text style={styles.replyText}>回复</Text>
+            </TouchableOpacity>
+          )}
+          {onReport && (
+            <TouchableOpacity
+              style={styles.replyButton}
+              onPress={() => onReport(comment.id)}
+            >
+              <Ionicons name="flag-outline" size={14} color="#999" />
+            </TouchableOpacity>
+          )}
+        </View>
 
         {/* 子评论（楼中楼） */}
         {comment.replies && comment.replies.length > 0 && (

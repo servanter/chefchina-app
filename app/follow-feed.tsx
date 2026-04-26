@@ -206,7 +206,7 @@ function handleItemPress(item: FeedItem, router: any) {
   if (item.type === 'recipe' && item.recipe) {
     router.push(`/recipe/${item.recipe.id}`);
   } else if (item.type === 'comment' && item.comment) {
-    router.push(`/recipe/${item.comment.recipe_id}`);
+    router.push(`/recipe/${item.comment.recipe.id}`);
   } else if (item.type === 'favorite' && item.recipe) {
     router.push(`/recipe/${item.recipe.id}`);
   }
