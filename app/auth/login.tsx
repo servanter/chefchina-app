@@ -11,7 +11,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import Toast from 'react-native-toast-message';
@@ -25,6 +25,10 @@ export default function LoginScreen() {
   const { t, i18n } = useTranslation();
   const isZh = i18n.language === 'zh';
   const router = useRouter();
+  const params = useLocalSearchParams<{ redirect?: string }>();
+  const redirectTo = typeof params.redirect === 'string' && params.redirect.length > 0
+    ? params.redirect
+    : '/(tabs)';
   const { login, isLoading } = useAuth();
   const { colors } = useTheme();
 
@@ -75,7 +79,7 @@ export default function LoginScreen() {
         text2: email.trim(),
         visibilityTime: 1800,
       });
-      router.replace('/(tabs)');
+      router.replace(redirectTo as never);
     } catch (e: unknown) {
       // BUG-20260422-04 修复：按后端 error code 映射 i18n，不再靠 message 里
       // 捕获 "invalid email" / "password" 关键字（锁定消息、限流消息、zod
@@ -114,7 +118,10 @@ export default function LoginScreen() {
   };
 
   const goRegister = () => {
-    router.push('/auth/register');
+    router.push({
+      pathname: '/auth/register',
+      params: params.redirect ? { redirect: redirectTo } : undefined,
+    });
   };
 
   return (

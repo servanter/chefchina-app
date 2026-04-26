@@ -11,7 +11,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import Toast from 'react-native-toast-message';
@@ -26,6 +26,10 @@ const COLORS = { primary: '#E85D26', background: '#FFFDF9', text: '#1A1A1A', tex
 export default function RegisterScreen() {
   const { t } = useTranslation();
   const router = useRouter();
+  const params = useLocalSearchParams<{ redirect?: string }>();
+  const redirectTo = typeof params.redirect === 'string' && params.redirect.length > 0
+    ? params.redirect
+    : '/(tabs)';
   const { register, isLoading } = useAuth();
   const { colors } = useTheme();
 
@@ -85,7 +89,7 @@ export default function RegisterScreen() {
         text1: t('auth.registerSuccess'),
         visibilityTime: 1800,
       });
-      router.replace('/(tabs)');
+      router.replace(redirectTo as never);
     } catch (e: unknown) {
       // BUG-20260422-04 修复：按后端 error code 映射 i18n，不再靠
       // message.includes('already') 判断（锁定 / 限流 / validation 都漏）。
@@ -116,7 +120,10 @@ export default function RegisterScreen() {
   };
 
   const goLogin = () => {
-    router.back();
+    router.push({
+      pathname: '/auth/login',
+      params: params.redirect ? { redirect: redirectTo } : undefined,
+    });
   };
 
   return (

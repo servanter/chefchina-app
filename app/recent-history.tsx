@@ -20,6 +20,7 @@ import {
   useDeleteViewHistory,
   useViewHistory,
 } from '@/hooks/useViewHistory';
+import { useAuth } from '@/hooks/useAuth';
 import { EmptyState } from '@/components/EmptyState';
 import { ListFooter } from '@/components/ListFooter';
 
@@ -29,6 +30,7 @@ export default function RecentHistoryScreen() {
   const { colors } = useTheme();
   const { scaled } = useFontScale();
   const isZh = i18n.language.startsWith('zh');
+  const { isLoggedIn } = useAuth();
 
   const {
     data,
@@ -38,7 +40,7 @@ export default function RecentHistoryScreen() {
     hasNextPage,
     isFetchingNextPage,
     error,
-  } = useViewHistory();
+  } = useViewHistory(isLoggedIn);
   const deleteMutation = useDeleteViewHistory();
   const clearMutation = useClearViewHistory();
 
@@ -75,7 +77,21 @@ export default function RecentHistoryScreen() {
         </TouchableOpacity>
       </View>
 
-      {listEmpty ? (
+      {!isLoggedIn ? (
+        <View style={styles.emptyWrap}>
+          <EmptyState
+            icon="person-circle-outline"
+            title={t('auth.loginRequired')}
+            subtitle={t('auth.loginRequiredDesc')}
+          />
+          <TouchableOpacity
+            style={[styles.loginBtn, { backgroundColor: colors.tint }]}
+            onPress={() => router.push({ pathname: '/auth/login', params: { redirect: '/recent-history' } })}
+          >
+            <Text style={styles.loginBtnText}>{t('auth.login')}</Text>
+          </TouchableOpacity>
+        </View>
+      ) : listEmpty ? (
         <View style={styles.emptyWrap}>
           <EmptyState
             icon="time-outline"
@@ -161,4 +177,6 @@ const styles = StyleSheet.create({
   time: { fontSize: 12 },
   deleteBtn: { width: 48, alignItems: 'center', justifyContent: 'center' },
   emptyWrap: { flex: 1, justifyContent: 'center', padding: 24 },
+  loginBtn: { alignSelf: 'center', marginTop: 16, paddingHorizontal: 18, paddingVertical: 12, borderRadius: 12 },
+  loginBtnText: { color: '#fff', fontWeight: '700' },
 });

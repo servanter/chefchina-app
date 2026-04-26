@@ -200,6 +200,13 @@ export default function RecipeDetailScreen() {
 
   const handleLike = useCallback(async () => {
     if (!recipe) return;
+    if (userId === 'guest') {
+      Alert.alert(t('auth.loginRequired'), t('auth.loginRequiredDesc'), [
+        { text: t('common.cancel'), style: 'cancel' },
+        { text: t('auth.login'), onPress: () => router.push({ pathname: '/auth/login', params: { redirect: `/recipe/${recipe.id}` } }) },
+      ]);
+      return;
+    }
     const nextLiked = !liked;
     setLiked(nextLiked);
     try {
@@ -224,6 +231,13 @@ export default function RecipeDetailScreen() {
 
   const handleFavorite = useCallback(async () => {
     if (!recipe) return;
+    if (userId === 'guest') {
+      Alert.alert(t('auth.loginRequired'), t('auth.loginRequiredDesc'), [
+        { text: t('common.cancel'), style: 'cancel' },
+        { text: t('auth.login'), onPress: () => router.push({ pathname: '/auth/login', params: { redirect: `/recipe/${recipe.id}` } }) },
+      ]);
+      return;
+    }
     const nextFavorited = !favorited;
     setFavorited(nextFavorited);
     try {
@@ -247,6 +261,13 @@ export default function RecipeDetailScreen() {
   }, [recipe, favorited, userId, t, toggleFavoriteMutation]);
 
   const handlePostComment = useCallback(async () => {
+    if (userId === 'guest') {
+      Alert.alert(t('auth.loginRequired'), t('auth.loginRequiredDesc'), [
+        { text: t('common.cancel'), style: 'cancel' },
+        { text: t('auth.login'), onPress: () => router.push({ pathname: '/auth/login', params: { redirect: id ? `/recipe/${id}` : '/(tabs)' } }) },
+      ]);
+      return;
+    }
     if (!commentText.trim()) return;
     // 回复评论不需要评分
     if (!replyingTo && userRating === 0) {
