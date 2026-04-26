@@ -104,6 +104,8 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
           <View style={styles.listStats}>
             <Ionicons name="heart" size={13} color={colors.tint} />
             <Text style={[styles.listStatsText, { color: colors.subText, fontSize: scaled(12) }]}>{recipe.likes_count}</Text>
+            <Ionicons name="chatbubble-outline" size={13} color={colors.subText} style={{ marginLeft: 8 }} />
+            <Text style={[styles.listStatsText, { color: colors.subText, fontSize: scaled(12) }]}>{recipe.comments_count}</Text>
             <Ionicons name="star" size={13} color="#FFB800" style={{ marginLeft: 8 }} />
             <Text style={[styles.listStatsText, { color: colors.subText, fontSize: scaled(12) }]}>{recipe.avg_rating.toFixed(1)}</Text>
           </View>

@@ -54,6 +54,10 @@ apiClient.interceptors.request.use(
     const needsAuth =
       url.startsWith('/notifications') ||
       url.startsWith('/history') ||
+      url.startsWith('/comments') ||
+      url.startsWith('/likes') ||
+      url.startsWith('/favorites') ||
+      url.startsWith('/users/') ||
       url.includes('/push-token') ||
       url.includes('/recipes/mine');
     if (needsAuth) {

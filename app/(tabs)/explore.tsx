@@ -65,6 +65,8 @@ export default function ExploreScreen() {
   const [selectedTag, setSelectedTag] = useState<string | undefined>(params.tagId);
   const [selectedSort, setSelectedSort] = useState<'recommended' | 'latest' | 'popular'>('recommended');
   const [refreshing, setRefreshing] = useState(false);
+  const [hideSearchChrome, setHideSearchChrome] = useState(false);
+  const lastScrollY = useRef(0);
 
   // ─── Search Panel state (FEAT-20260422-23) ─────────────────────────────────
   const [panelOpen, setPanelOpen] = useState(false);
@@ -239,6 +241,8 @@ export default function ExploreScreen() {
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
       {/* ─── Header ─────────────────────────────────── */}
+      {!hideSearchChrome && (
+        <>
       <View style={styles.header}>
         <Text style={styles.title}>{t('explore.title')}</Text>
       </View>
@@ -280,6 +284,8 @@ export default function ExploreScreen() {
           )}
         </View>
       </View>
+        </>
+      )}
 
       {/* ─── Search Panel（展开时覆盖筛选 + 列表）───────────────────────────── */}
       {panelOpen ? (
@@ -393,7 +399,7 @@ export default function ExploreScreen() {
       ) : (
         <>
           {/* 筛选区仅在「非搜索模式」下显示 */}
-          {!isSearchMode && (
+          {!isSearchMode && !hideSearchChrome && (
             <>
               {/* ─── Category Filter ─────────────────────────── */}
               <View style={styles.filterSection}>
@@ -567,6 +573,18 @@ export default function ExploreScreen() {
           ) : (
             <FlatList
               data={recipes}
+              onScroll={(e) => {
+                const y = e.nativeEvent.contentOffset.y;
+                const delta = y - lastScrollY.current;
+                lastScrollY.current = y;
+                if (!panelOpen && !isSearchMode) {
+                  if (y > 180 && delta > 8 && !hideSearchChrome) setHideSearchChrome(true);
+                  if ((delta < -8 && y < 220) || y < 60) {
+                    if (hideSearchChrome) setHideSearchChrome(false);
+                  }
+                }
+              }}
+              scrollEventThrottle={16}
               keyExtractor={(item) => item.id}
               contentContainerStyle={styles.list}
               showsVerticalScrollIndicator={false}

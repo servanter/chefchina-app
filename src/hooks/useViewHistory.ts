@@ -8,7 +8,7 @@ import {
   ViewHistoryRecipe,
 } from '../lib/api';
 
-export const useViewHistory = () => {
+export const useViewHistory = (enabled = true) => {
   return useInfiniteQuery<ViewHistoryPage>({
     queryKey: ['view-history'],
     queryFn: ({ pageParam = 1 }) => fetchViewHistory(pageParam as number, PAGE_SIZE),
@@ -18,6 +18,7 @@ export const useViewHistory = () => {
         ? lastPage.pagination.page + 1
         : undefined,
     staleTime: 1000 * 30,
+    enabled,
   });
 };
 
