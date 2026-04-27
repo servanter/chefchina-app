@@ -14,7 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '@/contexts/ThemeContext';
-import { useDeleteRecipe, useMyRecipes, useRepublishRecipe } from '@/hooks/useRecipes';
+import { useDeleteRecipe, useMyRecipes, useRepublishRecipe, useUnpublishRecipe } from '@/hooks/useRecipes';
 import { useFontScale } from '@/hooks/useFontScale';
 import type { Recipe } from '@/lib/api';
 
@@ -30,6 +30,7 @@ export default function MyRecipesScreen() {
   const query = useMyRecipes(status);
   const deleteMutation = useDeleteRecipe();
   const republishMutation = useRepublishRecipe();
+  const unpublishMutation = useUnpublishRecipe();
 
   const recipes = useMemo(
     () => (query.data?.pages ?? []).flatMap((page) => page.data),
@@ -72,6 +73,26 @@ export default function MyRecipesScreen() {
     }
   };
 
+  const handleUnpublish = (item: Recipe) => {
+    Alert.alert(
+      t('common.confirm'),
+      t('myRecipes.unpublishConfirm', { title: i18n.language.startsWith('zh') ? item.title_zh : item.title }),
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        {
+          text: t('myRecipes.actions.unpublish'),
+          onPress: async () => {
+            try {
+              await unpublishMutation.mutateAsync(item.id);
+            } catch (error: any) {
+              Alert.alert(t('common.error'), error?.message || t('common.operationFailed'));
+            }
+          },
+        },
+      ],
+    );
+  };
+
   const renderActions = (item: Recipe) => {
     const canRepublish = !item.is_published;
 
@@ -96,7 +117,15 @@ export default function MyRecipesScreen() {
             <Ionicons name="cloud-upload-outline" size={16} color={colors.tint} />
             <Text style={[styles.actionText, { color: colors.tint }]}>{t('myRecipes.actions.republish')}</Text>
           </TouchableOpacity>
-        ) : null}
+        ) : (
+          <TouchableOpacity
+            style={[styles.actionBtn, { borderColor: '#f59e0b', backgroundColor: '#fff7ed' }]}
+            onPress={() => handleUnpublish(item)}
+          >
+            <Ionicons name="eye-off-outline" size={16} color="#f59e0b" />
+            <Text style={[styles.actionText, { color: '#b45309' }]}>{t('myRecipes.actions.unpublish')}</Text>
+          </TouchableOpacity>
+        )}
 
         <TouchableOpacity
           style={[styles.actionBtn, { borderColor: '#fecaca', backgroundColor: '#fef2f2' }]}
@@ -143,7 +172,7 @@ export default function MyRecipesScreen() {
     );
   };
 
-  const busy = deleteMutation.isPending || republishMutation.isPending;
+  const busy = deleteMutation.isPending || republishMutation.isPending || unpublishMutation.isPending;
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.safeAreaBg }]}> 

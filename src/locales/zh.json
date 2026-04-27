@@ -257,10 +257,12 @@
     "comments": "评论 {{count}}",
     "favorites": "收藏 {{count}}",
     "deleteConfirm": "确定要删除 \"{{title}}\" 吗？",
+    "unpublishConfirm": "确定要下架 \"{{title}}\" 吗？",
     "actions": {
       "edit": "编辑",
       "continueEdit": "继续编辑",
       "republish": "重新发布",
+      "unpublish": "下架",
       "delete": "删除"
     }
   },

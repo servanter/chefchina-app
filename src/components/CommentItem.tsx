@@ -4,10 +4,17 @@ import { Ionicons } from '@expo/vector-icons';
 import { Comment } from '../lib/api';
 import { AppImage } from './AppImage';
 
+const getCommentOwnerId = (comment: Comment) =>
+  comment.user?.id ?? comment.userId ?? comment.user_id;
+
 interface CommentItemProps {
   comment: Comment;
+  canManage?: boolean;
+  userId?: string;
   onReply?: (comment: Comment) => void;
   onReport?: (commentId: string) => void;
+  onEdit?: (comment: Comment) => void;
+  onDelete?: (comment: Comment) => void;
   onToggleLike?: (commentId: string) => void;
   isReply?: boolean;
   liked?: boolean;  // 当前用户是否点赞了该评论
@@ -27,7 +34,7 @@ const StarRating = ({ rating }: { rating: number }) => (
   </View>
 );
 
-export const CommentItem: React.FC<CommentItemProps> = ({ comment, onReply, onReport, onToggleLike, isReply = false, liked = false, likedMap = {} }) => {
+export const CommentItem: React.FC<CommentItemProps> = ({ comment, canManage = false, userId, onReply, onReport, onEdit, onDelete, onToggleLike, isReply = false, liked = false, likedMap = {} }) => {
   const dateStr = new Date(comment.created_at).toLocaleDateString();
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const likesCount = comment.likes_count ?? 0;
@@ -105,7 +112,25 @@ export const CommentItem: React.FC<CommentItemProps> = ({ comment, onReply, onRe
               <Text style={styles.replyText}>回复</Text>
             </TouchableOpacity>
           )}
-          {onReport && (
+          {canManage && onEdit ? (
+            <TouchableOpacity
+              style={styles.replyButton}
+              onPress={() => onEdit(comment)}
+            >
+              <Ionicons name="create-outline" size={14} color="#666" />
+              <Text style={styles.replyText}>编辑</Text>
+            </TouchableOpacity>
+          ) : null}
+          {canManage && onDelete ? (
+            <TouchableOpacity
+              style={styles.replyButton}
+              onPress={() => onDelete(comment)}
+            >
+              <Ionicons name="trash-outline" size={14} color="#d33" />
+              <Text style={[styles.replyText, { color: '#d33' }]}>删除</Text>
+            </TouchableOpacity>
+          ) : null}
+          {onReport && !canManage && (
             <TouchableOpacity
               style={styles.replyButton}
               onPress={() => onReport(comment.id)}
@@ -123,9 +148,13 @@ export const CommentItem: React.FC<CommentItemProps> = ({ comment, onReply, onRe
                 key={reply.id}
                 comment={reply}
                 isReply={true}
+                userId={userId}
+                canManage={getCommentOwnerId(reply) === userId}
                 liked={likedMap[reply.id] || false}
                 likedMap={likedMap}
                 onToggleLike={onToggleLike}
+                onEdit={onEdit}
+                onDelete={onDelete}
                 onReport={onReport}
               />
             ))}

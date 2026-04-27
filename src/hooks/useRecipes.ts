@@ -15,6 +15,9 @@ import {
   postComment,
   updateRecipe,
   deleteRecipe,
+  unpublishRecipe,
+  updateComment,
+  deleteComment,
   republishRecipe,
   fetchHomeInit,
   fetchRecipeDetailFull,
@@ -214,6 +217,19 @@ export const useRepublishRecipe = () => {
   });
 };
 
+export const useUnpublishRecipe = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (recipeId: string) => unpublishRecipe(recipeId),
+    onSuccess: (recipe) => {
+      queryClient.invalidateQueries({ queryKey: ['my-recipes'] });
+      queryClient.invalidateQueries({ queryKey: ['recipe', recipe.id] });
+      queryClient.invalidateQueries({ queryKey: ['recipe-detail-full', recipe.id] });
+      queryClient.invalidateQueries({ queryKey: ['recipes'] });
+    },
+  });
+};
+
 // ─── Likes ────────────────────────────────────────────────────────────────────
 
 export const useToggleLike = () => {
@@ -375,6 +391,33 @@ export const usePostComment = () => {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['comments', variables.recipe_id] });
       queryClient.invalidateQueries({ queryKey: ['comments', 'infinite', variables.recipe_id] });
+      queryClient.invalidateQueries({ queryKey: ['recipe-detail-full', variables.recipe_id] });
+    },
+  });
+};
+
+export const useUpdateComment = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ commentId, content }: { commentId: string; content: string }) =>
+      updateComment(commentId, { content }),
+    onSuccess: (comment) => {
+      queryClient.invalidateQueries({ queryKey: ['comments', comment.recipe_id] });
+      queryClient.invalidateQueries({ queryKey: ['comments', 'infinite', comment.recipe_id] });
+      queryClient.invalidateQueries({ queryKey: ['recipe-detail-full', comment.recipe_id] });
+    },
+  });
+};
+
+export const useDeleteComment = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ commentId, recipeId }: { commentId: string; recipeId: string }) =>
+      deleteComment(commentId),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['comments', variables.recipeId] });
+      queryClient.invalidateQueries({ queryKey: ['comments', 'infinite', variables.recipeId] });
+      queryClient.invalidateQueries({ queryKey: ['recipe-detail-full', variables.recipeId] });
     },
   });
 };

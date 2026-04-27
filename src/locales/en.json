@@ -257,10 +257,12 @@
     "comments": "Comments {{count}}",
     "favorites": "Favorites {{count}}",
     "deleteConfirm": "Are you sure you want to delete \"{{title}}\"?",
+    "unpublishConfirm": "Are you sure you want to unpublish \"{{title}}\"?",
     "actions": {
       "edit": "Edit",
       "continueEdit": "Continue Editing",
       "republish": "Republish",
+      "unpublish": "Unpublish",
       "delete": "Delete"
     }
   },
