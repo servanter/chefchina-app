@@ -21,7 +21,7 @@ import { Ionicons } from '@expo/vector-icons';
 import Toast from 'react-native-toast-message';
 import { useQuery } from '@tanstack/react-query';
 import * as ImagePicker from 'expo-image-picker';
-import { useRecipeDetailFull, useToggleLike, useToggleFavorite, usePostComment } from '../../src/hooks/useRecipes';
+import { useRecipeDetailFull, useToggleLike, useToggleFavorite, usePostComment, useUpdateComment, useDeleteComment, useUnpublishRecipe, useDeleteRecipe } from '../../src/hooks/useRecipes';
 import { useToggleCommentLike, useCommentLikeStatus } from '../../src/hooks/useSocial';
 import { StepItem } from '../../src/components/StepItem';
 import { CommentItem } from '../../src/components/CommentItem';
@@ -89,6 +89,7 @@ export default function RecipeDetailScreen() {
   const [userName, setUserName] = useState<string | null>(null);
   const [commentImages, setCommentImages] = useState<string[]>([]); // 评论图片
   const [replyingTo, setReplyingTo] = useState<Comment | null>(null); // 回复对象
+  const [editingComment, setEditingComment] = useState<Comment | null>(null);
 
   // Image viewer：全屏查看器（需求 11）
   const [viewerVisible, setViewerVisible] = useState(false);
@@ -178,6 +179,10 @@ export default function RecipeDetailScreen() {
   const toggleLikeMutation = useToggleLike();
   const toggleFavoriteMutation = useToggleFavorite();
   const postCommentMutation = usePostComment();
+  const updateCommentMutation = useUpdateComment();
+  const deleteCommentMutation = useDeleteComment();
+  const unpublishRecipeMutation = useUnpublishRecipe();
+  const deleteRecipeMutation = useDeleteRecipe();
 
   const [refreshing, setRefreshing] = useState(false);
   const onRefresh = useCallback(async () => {
@@ -271,6 +276,24 @@ export default function RecipeDetailScreen() {
       return;
     }
     if (!commentText.trim()) return;
+    if (editingComment) {
+      try {
+        await updateCommentMutation.mutateAsync({
+          commentId: editingComment.id,
+          content: commentText.trim(),
+        });
+        setEditingComment(null);
+        setCommentText('');
+        setUserRating(0);
+        setCommentImages([]);
+        setReplyingTo(null);
+        triggerHaptic('success');
+        Toast.show({ type: 'success', text1: isZh ? '评论已更新' : 'Comment updated', visibilityTime: 1500 });
+      } catch {
+        Toast.show({ type: 'error', text1: t('common.error'), visibilityTime: 2000 });
+      }
+      return;
+    }
     // 回复评论不需要评分
     if (!replyingTo && userRating === 0) {
       Alert.alert(t('recipe.selectRating'));
@@ -294,7 +317,7 @@ export default function RecipeDetailScreen() {
     } catch {
       Toast.show({ type: 'error', text1: t('common.error'), visibilityTime: 2000 });
     }
-  }, [commentText, userRating, commentImages, replyingTo, id, userId, t, postCommentMutation]);
+  }, [commentText, userRating, commentImages, replyingTo, editingComment, id, userId, t, postCommentMutation, updateCommentMutation, isZh]);
 
   const handlePickImage = useCallback(async () => {
     if (commentImages.length >= 9) {
@@ -318,9 +341,45 @@ export default function RecipeDetailScreen() {
   }, []);
 
   const handleReply = useCallback((comment: Comment) => {
+    setEditingComment(null);
     setReplyingTo(comment);
     setUserRating(0);
   }, []);
+
+  const handleEditComment = useCallback((comment: Comment) => {
+    setReplyingTo(null);
+    setEditingComment(comment);
+    setCommentText(comment.content);
+    setUserRating(comment.rating || 0);
+    setCommentImages(comment.images ?? []);
+  }, []);
+
+  const handleDeleteComment = useCallback((comment: Comment) => {
+    Alert.alert(
+      t('common.confirm'),
+      isZh ? '确定删除这条评论吗？' : 'Delete this comment?',
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        {
+          text: isZh ? '删除' : 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deleteCommentMutation.mutateAsync({ commentId: comment.id, recipeId: comment.recipe_id });
+              if (editingComment?.id === comment.id) {
+                setEditingComment(null);
+                setCommentText('');
+                setCommentImages([]);
+              }
+              Toast.show({ type: 'success', text1: isZh ? '评论已删除' : 'Comment deleted' });
+            } catch {
+              Toast.show({ type: 'error', text1: t('common.error') });
+            }
+          },
+        },
+      ],
+    );
+  }, [deleteCommentMutation, editingComment, isZh, t]);
 
   const handleCancelReply = useCallback(() => {
     setReplyingTo(null);
@@ -399,6 +458,8 @@ export default function RecipeDetailScreen() {
     setFavorited(detailData.userStatus.favorited);
   }, [detailData?.userStatus]);
 
+  const isAuthor = userId !== 'guest' && !!recipe && userId === (detailData as any)?.recipe?.author?.id;
+
   if (isLoading) return <RecipeDetailSkeleton />;
 
   if (error || !recipe) {
@@ -444,6 +505,65 @@ export default function RecipeDetailScreen() {
           </TouchableOpacity>
           <Text style={[styles.floatingTitle, { color: COLORS.text }]} numberOfLines={1}>{title}</Text>
           <View style={styles.headerActionGroup}>
+            {isAuthor ? (
+              <>
+                <TouchableOpacity
+                  style={[styles.backBtn, { backgroundColor: themeColors.inputBg }]}
+                  onPress={() => {
+                    if (!recipe) return;
+                    Alert.alert(
+                      t('common.confirm'),
+                      isZh ? '确定下架这道菜谱吗？' : 'Unpublish this recipe?',
+                      [
+                        { text: t('common.cancel'), style: 'cancel' },
+                        {
+                          text: isZh ? '下架' : 'Unpublish',
+                          onPress: async () => {
+                            try {
+                              await unpublishRecipeMutation.mutateAsync(recipe.id);
+                              Toast.show({ type: 'success', text1: isZh ? '菜谱已下架' : 'Recipe unpublished' });
+                              await refetchRecipeDetail();
+                            } catch {
+                              Toast.show({ type: 'error', text1: t('common.error') });
+                            }
+                          },
+                        },
+                      ],
+                    );
+                  }}
+                >
+                  <Ionicons name="eye-off-outline" size={20} color={COLORS.text} />
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.backBtn, { backgroundColor: themeColors.inputBg }]}
+                  onPress={() => {
+                    if (!recipe) return;
+                    Alert.alert(
+                      t('common.confirm'),
+                      isZh ? '确定删除这道菜谱吗？' : 'Delete this recipe?',
+                      [
+                        { text: t('common.cancel'), style: 'cancel' },
+                        {
+                          text: isZh ? '删除' : 'Delete',
+                          style: 'destructive',
+                          onPress: async () => {
+                            try {
+                              await deleteRecipeMutation.mutateAsync(recipe.id);
+                              Toast.show({ type: 'success', text1: isZh ? '菜谱已删除' : 'Recipe deleted' });
+                              router.replace('/my-recipes');
+                            } catch {
+                              Toast.show({ type: 'error', text1: t('common.error') });
+                            }
+                          },
+                        },
+                      ],
+                    );
+                  }}
+                >
+                  <Ionicons name="trash-outline" size={20} color="#dc2626" />
+                </TouchableOpacity>
+              </>
+            ) : null}
             <TouchableOpacity
               style={[styles.backBtn, { backgroundColor: themeColors.inputBg }]}
               onPress={handleShare}
@@ -465,9 +585,11 @@ export default function RecipeDetailScreen() {
               />
               </Animated.View>
             </TouchableOpacity>
-            <TouchableOpacity style={[styles.backBtn, { backgroundColor: themeColors.inputBg }]} onPress={handleReportRecipe}>
-              <Ionicons name="flag-outline" size={20} color={COLORS.text} />
-            </TouchableOpacity>
+            {!isAuthor ? (
+              <TouchableOpacity style={[styles.backBtn, { backgroundColor: themeColors.inputBg }]} onPress={handleReportRecipe}>
+                <Ionicons name="flag-outline" size={20} color={COLORS.text} />
+              </TouchableOpacity>
+            ) : null}
           </View>
         </Animated.View>
 
@@ -834,7 +956,7 @@ export default function RecipeDetailScreen() {
 
                   <TextInput
                     style={[styles.commentTextInput, { color: COLORS.text }]}
-                    placeholder={replyingTo ? '写下你的回复...' : t('recipe.writeComment')}
+                    placeholder={editingComment ? (isZh ? '编辑你的评论...' : 'Edit your comment...') : replyingTo ? '写下你的回复...' : t('recipe.writeComment')}
                     placeholderTextColor="#AAA"
                     value={commentText}
                     onChangeText={setCommentText}
@@ -873,12 +995,12 @@ export default function RecipeDetailScreen() {
                     <TouchableOpacity
                       style={[
                         styles.postBtn,
-                        (!commentText.trim() || (!replyingTo && userRating === 0)) && styles.postBtnDisabled,
+                        (!commentText.trim() || (!replyingTo && !editingComment && userRating === 0)) && styles.postBtnDisabled,
                       ]}
                       onPress={handlePostComment}
-                      disabled={!commentText.trim() || (!replyingTo && userRating === 0)}
+                      disabled={!commentText.trim() || (!replyingTo && !editingComment && userRating === 0)}
                     >
-                      <Text style={styles.postBtnText}>{t('recipe.postComment')}</Text>
+                      <Text style={styles.postBtnText}>{editingComment ? (isZh ? '保存修改' : 'Save') : t('recipe.postComment')}</Text>
                     </TouchableOpacity>
                   </View>
                 </View>
@@ -901,9 +1023,12 @@ export default function RecipeDetailScreen() {
                       <CommentItem 
                         key={comment.id} 
                         comment={comment}
+                        canManage={comment.user_id === userId}
                         liked={commentLikeStatusMap[comment.id] || false}
                         likedMap={commentLikeStatusMap}
                         onReply={handleReply}
+                        onEdit={handleEditComment}
+                        onDelete={handleDeleteComment}
                         onReport={handleReportComment}
                         onToggleLike={handleCommentLike}
                       />

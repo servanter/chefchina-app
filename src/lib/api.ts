@@ -192,6 +192,8 @@ export interface Comment {
   parent_id?: string; // 父评论 ID
   replies?: Comment[]; // 子评论
   created_at: string;
+  updated_at?: string;
+  is_visible?: boolean;
   likes_count?: number; // 点赞数 (REQ-11.2)
   user?: {
     name: string;
@@ -412,6 +414,8 @@ interface BackendComment {
   recipeId: string;
   userId: string;
   createdAt: string;
+  updatedAt?: string;
+  isVisible?: boolean;
   user?: { id: string; name?: string; avatar?: string };
   _count?: { likes: number };
 }
@@ -511,6 +515,8 @@ export function adaptComment(c: BackendComment): Comment {
     parent_id: c.parentId,
     replies: c.replies?.map(adaptComment),
     created_at: c.createdAt,
+    updated_at: c.updatedAt,
+    is_visible: c.isVisible,
     likes_count: c._count?.likes ?? 0,
     user: c.user
       ? { name: c.user.name ?? 'Anonymous', avatar_url: c.user.avatar ?? '' }
@@ -732,6 +738,10 @@ export const republishRecipe = async (recipeId: string): Promise<Recipe> => {
   return updateRecipe(recipeId, { isPublished: true });
 };
 
+export const unpublishRecipe = async (recipeId: string): Promise<Recipe> => {
+  return updateRecipe(recipeId, { isPublished: false });
+};
+
 /**
  * 拉当前菜谱的"相关推荐"（同 category 的其他已发布菜谱）。
  * 后端：GET /api/recipes/[id]/related → { items: BackendRecipe[] }
@@ -861,6 +871,28 @@ export const postComment = async (params: {
     parentId: params.parent_id,
   });
   return adaptComment(res.data.data as BackendComment);
+};
+
+export const updateComment = async (
+  commentId: string,
+  payload: { content: string },
+): Promise<Comment> => {
+  const token = await getAuthToken();
+  const res = await apiClient.patch(`/comments/${commentId}`, payload, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  return adaptComment(res.data.data as BackendComment);
+};
+
+export const deleteComment = async (commentId: string): Promise<void> => {
+  const token = await getAuthToken();
+  await apiClient.delete(`/comments/${commentId}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
 };
 
 export const upsertUser = async (params: {
