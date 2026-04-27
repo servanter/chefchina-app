@@ -175,6 +175,7 @@ export interface RecipeDetailFullData {
     liked: boolean;
     favorited: boolean;
   };
+  commentLikeStatus?: Record<string, boolean>; // 新增：评论点赞状态 map
   authorLevel?: {
     level: number;
     exp: number;
