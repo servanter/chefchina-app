@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -56,9 +56,12 @@ export default function AchievementsScreen() {
   const [newLevel, setNewLevel] = useState<number | null>(null);
   const [prevLevel, setPrevLevel] = useState<number | null>(null);
 
-  // 进入页面时静默检查
+  const hasCheckedRef = useRef(false);
+
+  // 进入页面时静默检查（仅执行一次）
   useEffect(() => {
-    if (userId) {
+    if (userId && !hasCheckedRef.current) {
+      hasCheckedRef.current = true;
       // 缓存当前 level 用于对比
       const currentLevel = levelInfo?.level ?? 1;
       setPrevLevel(currentLevel);
@@ -74,7 +77,7 @@ export default function AchievementsScreen() {
         },
       });
     }
-  }, [userId]);
+  }, [userId, levelInfo, checkMutation, refetchLevel]);
 
   const unlockedMap = new Map(
     (userBadges ?? []).map((ub) => [ub.id, ub.unlockedAt]),
