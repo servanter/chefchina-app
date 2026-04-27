@@ -83,7 +83,7 @@ export default function RecipeDetailScreen() {
   const isZh = i18n.language === 'zh';
 
   const [activeTab, setActiveTab] = useState<TabId>('ingredients');
-  const { user } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
   const userId = user?.id ?? 'guest';
   const userName = user?.name ?? null;
   
@@ -129,7 +129,7 @@ export default function RecipeDetailScreen() {
     isLoading,
     error,
     refetch: refetchRecipeDetail,
-  } = useRecipeDetailFull(id ?? '', userId);
+  } = useRecipeDetailFull(id ?? '', userId, authLoading); // 传入 authLoading
 
   const recipe = detailData?.recipe;
   const comments = detailData?.comments ?? [];
