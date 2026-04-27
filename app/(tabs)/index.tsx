@@ -55,7 +55,7 @@ export default function HomeScreen() {
   const effectiveWidth = Math.min(width, 390);
   const isZh = i18n.language === 'zh';
 
-  const { user } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
   const userId = user?.id ?? null;
   
   const [searchText, setSearchText] = useState('');
@@ -67,7 +67,7 @@ export default function HomeScreen() {
     isLoading: homeLoading,
     error: homeError,
     refetch: refetchHome,
-  } = useHomeInit(userId);
+  } = useHomeInit(userId, authLoading);
 
   const unreadCount = homeData?.unreadCount ?? 0;
   const featuredData = homeData?.featured ?? [];

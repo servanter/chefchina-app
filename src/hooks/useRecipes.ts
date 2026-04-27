@@ -145,7 +145,7 @@ export const useRecipeById = (id: string) => {
   });
 };
 
-export const useHomeInit = (userId?: string | null) => {
+export const useHomeInit = (userId?: string | null, authLoading?: boolean) => {
   // 统一处理：guest 视为未登录，不传 userId
   const normalizedUserId = userId && userId !== 'guest' ? userId : undefined;
   const cacheMinutes = normalizedUserId ? 2 : 5;
@@ -153,11 +153,12 @@ export const useHomeInit = (userId?: string | null) => {
   return useQuery<HomeInitData>({
     queryKey: ['home-init', normalizedUserId ?? 'anonymous'],
     queryFn: () => fetchHomeInit(normalizedUserId),
+    enabled: !authLoading, // 等待 auth 加载完成
     staleTime: 1000 * 60 * cacheMinutes,
   });
 };
 
-export const useRecipeDetailFull = (id: string, userId?: string | null) => {
+export const useRecipeDetailFull = (id: string, userId?: string | null, authLoading?: boolean) => {
   // 统一处理：guest 视为未登录，不传 userId
   const normalizedUserId = userId && userId !== 'guest' ? userId : undefined;
   const cacheMinutes = normalizedUserId ? 2 : 5;
@@ -165,7 +166,7 @@ export const useRecipeDetailFull = (id: string, userId?: string | null) => {
   return useQuery<RecipeDetailFullData>({
     queryKey: ['recipe-detail-full', id, normalizedUserId ?? 'anonymous'],
     queryFn: () => fetchRecipeDetailFull(id, normalizedUserId),
-    enabled: !!id,
+    enabled: !!id && !authLoading, // 等待 auth 加载完成
     staleTime: 1000 * 60 * cacheMinutes,
   });
 };
