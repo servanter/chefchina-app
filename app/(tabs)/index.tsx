@@ -21,10 +21,10 @@ import { ListFooter } from '../../src/components/ListFooter';
 import { WhatToEatButton } from '../../src/components/WhatToEat';
 import { LazyImage } from '../../src/components/LazyImage';
 import { useHomeInit } from '../../src/hooks/useRecipes';
-import { getUserId } from '../../src/lib/storage';
 import { changeLanguage } from '../../src/lib/i18n';
 import { triggerHaptic } from '../../src/lib/haptics';
 import { useTheme } from '../../src/contexts/ThemeContext';
+import { useAuth } from '../../src/hooks/useAuth';
 
 // Fallback values used in StyleSheet.create (static, can't use hooks)
 // Dynamic theming applied via inline styles in JSX
@@ -55,14 +55,12 @@ export default function HomeScreen() {
   const effectiveWidth = Math.min(width, 390);
   const isZh = i18n.language === 'zh';
 
+  const { user } = useAuth();
+  const userId = user?.id ?? null;
+  
   const [searchText, setSearchText] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [refreshing, setRefreshing] = useState(false);
-  const [userId, setUserId] = useState<string | null>(null);
-
-  useEffect(() => {
-    getUserId().then((uid) => setUserId(uid));
-  }, []);
 
   const {
     data: homeData,

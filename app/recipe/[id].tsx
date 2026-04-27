@@ -42,8 +42,9 @@ import {
 import { ListFooter } from '../../src/components/ListFooter';
 import { ShareCard, SHARE_CARD_HEIGHT, SHARE_CARD_WIDTH } from '../../src/components/ShareCard';
 import { useShareRecipe } from '../../src/hooks/useShareRecipe';
-import { getUserId, getUserName, saveViewHistoryItem } from '../../src/lib/storage';
 import { saveViewHistoryRemote, Comment } from '../../src/lib/api';
+import { useAuth } from '../../src/hooks/useAuth';
+import { saveViewHistoryItem } from '../../src/lib/storage';
 import { ReportModal } from '../../src/components/ReportModal';
 import type { ReportTargetType } from '../../src/lib/api';
 
@@ -82,14 +83,16 @@ export default function RecipeDetailScreen() {
   const isZh = i18n.language === 'zh';
 
   const [activeTab, setActiveTab] = useState<TabId>('ingredients');
+  const { user } = useAuth();
+  const userId = user?.id ?? 'guest';
+  const userName = user?.name ?? null;
+  
   const [liked, setLiked] = useState(false);
   const { scale: likeScale, bounce: likeBounce } = useBounce();
   const { scale: favScale, bounce: favBounce } = useBounce();
   const [favorited, setFavorited] = useState(false);
   const [commentText, setCommentText] = useState('');
   const [userRating, setUserRating] = useState(0);
-  const [userId, setUserId] = useState('guest');
-  const [userName, setUserName] = useState<string | null>(null);
   const [commentImages, setCommentImages] = useState<string[]>([]); // 评论图片
   const [replyingTo, setReplyingTo] = useState<Comment | null>(null); // 回复对象
   const [editingComment, setEditingComment] = useState<Comment | null>(null);
@@ -120,15 +123,6 @@ export default function RecipeDetailScreen() {
     shareAvailable,
     buildDeepLink,
   } = useShareRecipe();
-
-  useEffect(() => {
-    getUserId().then(async (uid) => {
-      const resolvedUid = uid ?? 'guest';
-      setUserId(resolvedUid);
-      const name = await getUserName();
-      setUserName(name);
-    });
-  }, []);
 
   const {
     data: detailData,
@@ -209,6 +203,8 @@ export default function RecipeDetailScreen() {
       await toggleLikeMutation.mutateAsync({ recipeId: recipe.id, userId });
       triggerHaptic(nextLiked ? 'success' : 'light');
       likeBounce();
+      // 刷新详情页数据
+      await refetchRecipeDetail();
       Toast.show({
         type: 'success',
         text1: nextLiked ? t('recipe.likeSuccess') : t('recipe.unlikeSuccess'),
@@ -223,7 +219,7 @@ export default function RecipeDetailScreen() {
         visibilityTime: 2000,
       });
     }
-  }, [recipe, liked, userId, t, toggleLikeMutation]);
+  }, [recipe, liked, userId, t, toggleLikeMutation, refetchRecipeDetail]);
 
   const handleFavorite = useCallback(async () => {
     if (!recipe) return;
@@ -240,6 +236,8 @@ export default function RecipeDetailScreen() {
       await toggleFavoriteMutation.mutateAsync({ recipeId: recipe.id, userId });
       triggerHaptic(nextFavorited ? 'success' : 'light');
       favBounce();
+      // 刷新详情页数据
+      await refetchRecipeDetail();
       Toast.show({
         type: 'success',
         text1: nextFavorited ? t('recipe.favoriteSuccess') : t('recipe.unfavoriteSuccess'),
@@ -254,7 +252,7 @@ export default function RecipeDetailScreen() {
         visibilityTime: 2000,
       });
     }
-  }, [recipe, favorited, userId, t, toggleFavoriteMutation]);
+  }, [recipe, favorited, userId, t, toggleFavoriteMutation, refetchRecipeDetail]);
 
   const handlePostComment = useCallback(async () => {
     if (userId === 'guest') {
