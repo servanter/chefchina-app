@@ -159,6 +159,29 @@ export interface Recipe {
   tags: { id: string; label: string; label_zh: string }[];
 }
 
+export interface HomeInitData {
+  featured: Recipe[];
+  quick: Recipe[];
+  categories: Category[];
+  ranking: RankedRecipe[];
+  unreadCount: number;
+}
+
+export interface RecipeDetailFullData {
+  recipe: Recipe;
+  related: Recipe[];
+  comments: Comment[];
+  userStatus: {
+    liked: boolean;
+    favorited: boolean;
+  };
+  authorLevel?: {
+    level: number;
+    exp: number;
+    nextLevelExp: number;
+  };
+}
+
 export interface Comment {
   id: string;
   user_id: string;
@@ -393,6 +416,29 @@ interface BackendComment {
   _count?: { likes: number };
 }
 
+interface BackendHomeInitData {
+  featured?: BackendRecipe[];
+  quick?: BackendRecipe[];
+  categories?: BackendCategory[];
+  ranking?: (BackendRecipe & { rank: number; score: number })[];
+  unreadCount?: number;
+}
+
+interface BackendRecipeDetailFullData {
+  recipe: BackendRecipe;
+  related?: BackendRecipe[];
+  comments?: BackendComment[];
+  userStatus?: {
+    liked?: boolean;
+    favorited?: boolean;
+  };
+  authorLevel?: {
+    level: number;
+    exp: number;
+    nextLevelExp: number;
+  };
+}
+
 // ─── 适配器：后台格式 → App 前端格式 ──────────────────────────────────────────
 
 function adaptDifficulty(d: string | null | undefined): 'easy' | 'medium' | 'hard' | null {
@@ -538,6 +584,44 @@ export const fetchRecipes = async (params?: {
 export const fetchRecipeById = async (id: string): Promise<Recipe> => {
   const res = await apiClient.get(`/recipes/${id}`);
   return adaptRecipe(res.data.data as BackendRecipe);
+};
+
+export const fetchHomeInit = async (userId?: string): Promise<HomeInitData> => {
+  const params = userId ? { userId } : {};
+  const res = await apiClient.get('/home/init', { params });
+  const data = res.data.data as BackendHomeInitData;
+
+  return {
+    featured: (data.featured ?? []).map(adaptRecipe),
+    quick: (data.quick ?? []).map(adaptRecipe),
+    categories: (data.categories ?? []).map(adaptCategory),
+    ranking: (data.ranking ?? []).map((item) => ({
+      ...adaptRecipe(item),
+      rank: item.rank,
+      score: item.score,
+    })),
+    unreadCount: data.unreadCount ?? 0,
+  };
+};
+
+export const fetchRecipeDetailFull = async (
+  id: string,
+  userId?: string,
+): Promise<RecipeDetailFullData> => {
+  const params = userId ? { userId } : {};
+  const res = await apiClient.get(`/recipes/${id}/detail-full`, { params });
+  const data = res.data.data as BackendRecipeDetailFullData;
+
+  return {
+    recipe: adaptRecipe(data.recipe),
+    related: (data.related ?? []).map(adaptRecipe),
+    comments: (data.comments ?? []).map(adaptComment),
+    userStatus: {
+      liked: data.userStatus?.liked ?? false,
+      favorited: data.userStatus?.favorited ?? false,
+    },
+    authorLevel: data.authorLevel,
+  };
 };
 
 export interface MyRecipesPage {

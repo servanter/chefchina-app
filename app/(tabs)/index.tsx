@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect, useMemo } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
@@ -20,13 +20,10 @@ import { SkeletonCard, SkeletonList } from '../../src/components/Skeleton';
 import { ListFooter } from '../../src/components/ListFooter';
 import { WhatToEatButton } from '../../src/components/WhatToEat';
 import { LazyImage } from '../../src/components/LazyImage';
-import { useFeaturedRecipes, useInfiniteRecipes, useCategories } from '../../src/hooks/useRecipes';
-import { useUnreadCount } from '../../src/hooks/useNotifications';
+import { useHomeInit } from '../../src/hooks/useRecipes';
 import { getUserId } from '../../src/lib/storage';
 import { changeLanguage } from '../../src/lib/i18n';
 import { triggerHaptic } from '../../src/lib/haptics';
-import { fetchRankingRecipes, RankedRecipe } from '../../src/lib/api';
-import { useQuery } from '@tanstack/react-query';
 import { useTheme } from '../../src/contexts/ThemeContext';
 
 // Fallback values used in StyleSheet.create (static, can't use hooks)
@@ -67,48 +64,32 @@ export default function HomeScreen() {
     getUserId().then((uid) => setUserId(uid));
   }, []);
 
-  const { data: unreadCount = 0 } = useUnreadCount(userId);
-
   const {
-    data: featuredData,
-    isLoading: featuredLoading,
-    refetch: refetchFeatured,
-  } = useFeaturedRecipes();
+    data: homeData,
+    isLoading: homeLoading,
+    error: homeError,
+    refetch: refetchHome,
+  } = useHomeInit(userId);
 
-  const {
-    data: quickData,
-    isLoading: quickLoading,
-    refetch: refetchQuick,
-    fetchNextPage: fetchNextQuick,
-    hasNextPage: hasNextQuick,
-    isFetchingNextPage: isFetchingNextQuick,
-    error: quickError,
-  } = useInfiniteRecipes({ difficulty: 'easy' });
-
-  const quickRecipes = useMemo(
-    () => (quickData?.pages ?? []).flatMap((p) => p.data),
-    [quickData],
-  );
+  const unreadCount = homeData?.unreadCount ?? 0;
+  const featuredData = homeData?.featured ?? [];
+  const quickRecipes = homeData?.quick ?? [];
+  const categories = homeData?.categories ?? [];
+  const rankingData = homeData?.ranking ?? [];
 
   const handleLoadMoreQuick = useCallback(() => {
-    if (!isFetchingNextQuick && hasNextQuick) fetchNextQuick();
-  }, [isFetchingNextQuick, hasNextQuick, fetchNextQuick]);
-
-  const { data: categories = [] } = useCategories();
-
-  // Weekly ranking (REQ-3)
-  const { data: rankingData = [] } = useQuery<RankedRecipe[]>({
-    queryKey: ['ranking', 'week'],
-    queryFn: () => fetchRankingRecipes('week'),
-    staleTime: 1000 * 60 * 30, // 30 min
-  });
+    // BFF 聚合后首页快手菜首屏直接返回固定 6 条，不再需要额外分页请求。
+  }, []);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await Promise.all([refetchFeatured(), refetchQuick()]);
-    setRefreshing(false);
-    triggerHaptic('light');
-  }, [refetchFeatured, refetchQuick]);
+    try {
+      await refetchHome();
+    } finally {
+      setRefreshing(false);
+      triggerHaptic('light');
+    }
+  }, [refetchHome]);
 
   const toggleLanguage = async () => {
     await changeLanguage(isZh ? 'en' : 'zh');
@@ -132,7 +113,7 @@ export default function HomeScreen() {
         showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.primary} />}
         onScroll={({ nativeEvent }) => {
-          // 滚到底 80% 时自动拉下一页（Quick 列表）
+          // 滚到底 80% 时自动拉下一页(Quick 列表)
           const { layoutMeasurement, contentOffset, contentSize } = nativeEvent;
           const reachedEnd =
             layoutMeasurement.height + contentOffset.y >=
@@ -234,7 +215,7 @@ export default function HomeScreen() {
           </TouchableOpacity>
         </View>
 
-        {featuredLoading ? (
+        {homeLoading ? (
           <FlatList
             data={[0, 1, 2]}
             keyExtractor={(i) => String(i)}
@@ -309,11 +290,11 @@ export default function HomeScreen() {
           </TouchableOpacity>
         </View>
 
-        {quickLoading ? (
+        {homeLoading ? (
           <SkeletonList count={6} />
         ) : (
           <>
-            <View style={[styles.gridContainer, { maxWidth: effectiveWidth, alignSelf: 'center', width: '100%' }]}>
+            <View style={[styles.gridContainer, { maxWidth: effectiveWidth, alignSelf: 'center', width: '100%' }]}> 
               {quickRecipes.map((item) => (
                 <RecipeCard
                   key={item.id}
@@ -324,10 +305,10 @@ export default function HomeScreen() {
               ))}
             </View>
             <ListFooter
-              isFetchingNextPage={isFetchingNextQuick}
-              hasNextPage={!!hasNextQuick}
-              error={quickError}
-              onRetry={() => fetchNextQuick()}
+              isFetchingNextPage={false}
+              hasNextPage={false}
+              error={homeError}
+              onRetry={() => refetchHome()}
               hasItems={quickRecipes.length > 0}
             />
           </>

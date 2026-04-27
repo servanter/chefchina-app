@@ -16,11 +16,15 @@ import {
   updateRecipe,
   deleteRecipe,
   republishRecipe,
+  fetchHomeInit,
+  fetchRecipeDetailFull,
   PAGE_SIZE,
   Recipe,
   Comment,
   Category,
   Tag,
+  HomeInitData,
+  RecipeDetailFullData,
 } from '../lib/api';
 import { MOCK_RECIPES, MOCK_COMMENTS } from '../lib/mockData';
 import { useInfiniteList } from './useInfiniteList';
@@ -135,6 +139,29 @@ export const useRecipeById = (id: string) => {
     },
     enabled: !!id,
     staleTime: 1000 * 60 * 5,
+  });
+};
+
+export const useHomeInit = (userId?: string | null) => {
+  const cacheMinutes = userId && userId !== 'guest' ? 2 : 5;
+
+  return useQuery<HomeInitData>({
+    queryKey: ['home-init', userId ?? 'guest'],
+    // 使用 BFF 聚合接口替代首页 5 个并发请求，降低后端瞬时连接峰值。
+    queryFn: () => fetchHomeInit(userId && userId !== 'guest' ? userId : undefined),
+    staleTime: 1000 * 60 * cacheMinutes,
+  });
+};
+
+export const useRecipeDetailFull = (id: string, userId?: string | null) => {
+  const cacheMinutes = userId && userId !== 'guest' ? 2 : 5;
+
+  return useQuery<RecipeDetailFullData>({
+    queryKey: ['recipe-detail-full', id, userId ?? 'guest'],
+    // 使用 BFF 聚合接口把详情页的菜谱/评论/互动状态合并为一次请求。
+    queryFn: () => fetchRecipeDetailFull(id, userId && userId !== 'guest' ? userId : undefined),
+    enabled: !!id,
+    staleTime: 1000 * 60 * cacheMinutes,
   });
 };
 
