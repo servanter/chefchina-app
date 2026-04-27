@@ -45,5 +45,6 @@ export const useUserLevel = (userId: string | null | undefined) => {
     queryKey: ['userLevel', userId],
     queryFn: () => fetchUserLevel(userId!),
     enabled: !!userId,
+    staleTime: 5 * 60 * 1000, // 5 分钟缓存，level 不常变
   });
 };

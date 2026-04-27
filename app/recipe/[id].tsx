@@ -22,7 +22,7 @@ import Toast from 'react-native-toast-message';
 import { useQuery } from '@tanstack/react-query';
 import * as ImagePicker from 'expo-image-picker';
 import { useRecipeDetailFull, useToggleLike, useToggleFavorite, usePostComment, useUpdateComment, useDeleteComment, useUnpublishRecipe, useDeleteRecipe } from '../../src/hooks/useRecipes';
-import { useToggleCommentLike, useCommentLikeStatus } from '../../src/hooks/useSocial';
+import { useToggleCommentLike } from '../../src/hooks/useSocial';
 import { StepItem } from '../../src/components/StepItem';
 import { CommentItem } from '../../src/components/CommentItem';
 import { RatingStars } from '../../src/components/RatingStars';
@@ -143,6 +143,7 @@ export default function RecipeDetailScreen() {
   const commentsError = error;
   const commentsTotal = comments.length;
   const relatedRecipes = detailData?.related ?? [];
+  const commentLikeStatusMap = detailData?.commentLikeStatus ?? {}; // 从 detail-full 获取
 
   useEffect(() => {
     if (!recipe?.id) return;
@@ -163,22 +164,7 @@ export default function RecipeDetailScreen() {
   const hasMoreComments = false;
   const isFetchingMoreComments = false;
   
-  // BUG-006: 批量查询评论点赞状态
-  const allCommentIds = useMemo(() => {
-    const ids: string[] = [];
-    comments.forEach(comment => {
-      ids.push(comment.id);
-      if (comment.replies) {
-        comment.replies.forEach(reply => ids.push(reply.id));
-      }
-    });
-    return ids;
-  }, [comments]);
-  
-  const { data: commentLikeStatusMap = {} } = useCommentLikeStatus(
-    allCommentIds,
-    userId !== 'guest' && allCommentIds.length > 0
-  );
+  // 移除独立的 useCommentLikeStatus 调用，改用 detail-full 返回的数据
   const toggleLikeMutation = useToggleLike();
   const toggleFavoriteMutation = useToggleFavorite();
   const postCommentMutation = usePostComment();

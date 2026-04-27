@@ -304,13 +304,7 @@ export default function HomeScreen() {
                 />
               ))}
             </View>
-            <ListFooter
-              isFetchingNextPage={false}
-              hasNextPage={false}
-              error={homeError}
-              onRetry={() => refetchHome()}
-              hasItems={quickRecipes.length > 0}
-            />
+            {/* 移除 ListFooter，不显示 "End of list" */}
           </>
         )}
 
