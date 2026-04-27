@@ -240,7 +240,11 @@ export const useToggleLike = () => {
     mutationFn: ({ recipeId, userId }: { recipeId: string; userId: string }) =>
       toggleLike(recipeId, userId),
     onSuccess: (_, variables) => {
+      // Invalidate 详情页和列表页的数据
+      queryClient.invalidateQueries({ queryKey: ['recipe-detail-full', variables.recipeId] });
       queryClient.invalidateQueries({ queryKey: ['recipe', variables.recipeId] });
+      // 同时刷新首页数据
+      queryClient.invalidateQueries({ queryKey: ['home-init'] });
     },
   });
 };
@@ -344,7 +348,11 @@ export const useToggleFavorite = () => {
       queryClient.invalidateQueries({
         queryKey: ['favorites', 'infinite', 'cursor', variables.userId],
       });
+      // Invalidate 详情页和列表页的数据
+      queryClient.invalidateQueries({ queryKey: ['recipe-detail-full', variables.recipeId] });
       queryClient.invalidateQueries({ queryKey: ['recipe', variables.recipeId] });
+      // 同时刷新首页数据
+      queryClient.invalidateQueries({ queryKey: ['home-init'] });
     },
   });
 };
