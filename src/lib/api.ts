@@ -492,9 +492,10 @@ export function adaptRecipe(r: BackendRecipe): Recipe {
       image: s.image,
       duration_min: s.durationMin,
     })),
-    likes_count: r._count?.likes ?? 0,
-    comments_count: r._count?.comments ?? 0,
-    favorites_count: r._count?.favorites ?? 0,
+    // 支持两种字段名：likesCount (驼峰) 和 _count.likes (下划线)
+    likes_count: (r as any).likesCount ?? r._count?.likes ?? 0,
+    comments_count: (r as any).commentsCount ?? r._count?.comments ?? 0,
+    favorites_count: (r as any).favoritesCount ?? r._count?.favorites ?? 0,
     avg_rating: r.avgRating ?? 0,
     ratings_count: r.ratingsCount ?? 0,
     is_published: r.isPublished,
