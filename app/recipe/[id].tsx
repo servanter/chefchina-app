@@ -21,7 +21,7 @@ import { Ionicons } from '@expo/vector-icons';
 import Toast from 'react-native-toast-message';
 import { useQuery } from '@tanstack/react-query';
 import * as ImagePicker from 'expo-image-picker';
-import { useRecipeById, useInfiniteComments, useToggleLike, useToggleFavorite, usePostComment } from '../../src/hooks/useRecipes';
+import { useRecipeDetailFull, useToggleLike, useToggleFavorite, usePostComment } from '../../src/hooks/useRecipes';
 import { useToggleCommentLike, useCommentLikeStatus } from '../../src/hooks/useSocial';
 import { StepItem } from '../../src/components/StepItem';
 import { CommentItem } from '../../src/components/CommentItem';
@@ -43,7 +43,7 @@ import { ListFooter } from '../../src/components/ListFooter';
 import { ShareCard, SHARE_CARD_HEIGHT, SHARE_CARD_WIDTH } from '../../src/components/ShareCard';
 import { useShareRecipe } from '../../src/hooks/useShareRecipe';
 import { getUserId, getUserName, saveViewHistoryItem } from '../../src/lib/storage';
-import { fetchLikeStatus, fetchFavoriteStatus, fetchRelated, saveViewHistoryRemote, Comment } from '../../src/lib/api';
+import { saveViewHistoryRemote, Comment } from '../../src/lib/api';
 import { ReportModal } from '../../src/components/ReportModal';
 import type { ReportTargetType } from '../../src/lib/api';
 
@@ -123,22 +123,22 @@ export default function RecipeDetailScreen() {
       setUserId(resolvedUid);
       const name = await getUserName();
       setUserName(name);
-      if (resolvedUid !== 'guest' && id) {
-        try {
-          const [likeStatus, favStatus] = await Promise.all([
-            fetchLikeStatus(id, resolvedUid),
-            fetchFavoriteStatus(id, resolvedUid),
-          ]);
-          setLiked(likeStatus.liked);
-          setFavorited(favStatus.favorited);
-        } catch {
-          // non-critical
-        }
-      }
     });
-  }, [id]);
+  }, []);
 
-  const { data: recipe, isLoading, error, refetch: refetchRecipe } = useRecipeById(id ?? '');
+  const {
+    data: detailData,
+    isLoading,
+    error,
+    refetch: refetchRecipeDetail,
+  } = useRecipeDetailFull(id ?? '', userId);
+
+  const recipe = detailData?.recipe;
+  const comments = detailData?.comments ?? [];
+  const commentsLoading = isLoading;
+  const commentsError = error;
+  const commentsTotal = comments.length;
+  const relatedRecipes = detailData?.related ?? [];
 
   useEffect(() => {
     if (!recipe?.id) return;
@@ -154,21 +154,10 @@ export default function RecipeDetailScreen() {
       saveViewHistoryRemote(recipe.id).catch(() => {});
     }
   }, [recipe, userId]);
-  const {
-    data: commentsData,
-    isLoading: commentsLoading,
-    refetch: refetchComments,
-    fetchNextPage: fetchNextComments,
-    hasNextPage: hasMoreComments,
-    isFetchingNextPage: isFetchingMoreComments,
-    error: commentsError,
-  } = useInfiniteComments(id ?? '');
-  const comments = useMemo(
-    () => (commentsData?.pages ?? []).flatMap((p) => p.data),
-    [commentsData],
-  );
-  const commentsTotal =
-    commentsData?.pages?.[0]?.pagination.total ?? comments.length;
+  const refetchComments = refetchRecipeDetail;
+  const fetchNextComments = async () => undefined;
+  const hasMoreComments = false;
+  const isFetchingMoreComments = false;
   
   // BUG-006: 批量查询评论点赞状态
   const allCommentIds = useMemo(() => {
@@ -190,25 +179,20 @@ export default function RecipeDetailScreen() {
   const toggleFavoriteMutation = useToggleFavorite();
   const postCommentMutation = usePostComment();
 
-  // 相关推荐（需求 15）
-  const { data: relatedRecipes = [] } = useQuery({
-    queryKey: ['recipe', id, 'related'],
-    queryFn: () => fetchRelated(id ?? '', 6),
-    enabled: !!id,
-    staleTime: 1000 * 60 * 5,
-  });
-
   const [refreshing, setRefreshing] = useState(false);
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await Promise.all([refetchRecipe(), refetchComments()]);
-    setRefreshing(false);
-    triggerHaptic('light');
-  }, [refetchRecipe, refetchComments]);
+    try {
+      await refetchRecipeDetail();
+    } finally {
+      setRefreshing(false);
+      triggerHaptic('light');
+    }
+  }, [refetchRecipeDetail]);
 
   const handleLoadMoreComments = useCallback(() => {
-    if (!isFetchingMoreComments && hasMoreComments) fetchNextComments();
-  }, [isFetchingMoreComments, hasMoreComments, fetchNextComments]);
+    // 详情页改为 BFF 聚合接口后，评论首屏由同一次请求返回；当前页不再单独分页拉取。
+  }, []);
 
   const headerOpacity = scrollY.interpolate({
     inputRange: [HERO_HEIGHT - 80, HERO_HEIGHT - 40],
@@ -408,6 +392,12 @@ export default function RecipeDetailScreen() {
     setReportTargetId(commentId);
     setReportVisible(true);
   }, [userId, t]);
+
+  useEffect(() => {
+    if (!detailData?.userStatus) return;
+    setLiked(detailData.userStatus.liked);
+    setFavorited(detailData.userStatus.favorited);
+  }, [detailData?.userStatus]);
 
   if (isLoading) return <RecipeDetailSkeleton />;
 
