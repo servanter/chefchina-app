@@ -59,6 +59,9 @@ import { useTheme } from '../../src/contexts/ThemeContext';
 
 type TabId = 'ingredients' | 'steps' | 'comments';
 
+const getCommentOwnerId = (comment: Comment) =>
+  comment.user?.id ?? comment.userId ?? comment.user_id;
+
 export default function RecipeDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { t, i18n } = useTranslation();
@@ -1023,7 +1026,7 @@ export default function RecipeDetailScreen() {
                       <CommentItem 
                         key={comment.id} 
                         comment={comment}
-                        canManage={comment.user_id === userId}
+                        canManage={getCommentOwnerId(comment) === userId}
                         liked={commentLikeStatusMap[comment.id] || false}
                         likedMap={commentLikeStatusMap}
                         onReply={handleReply}

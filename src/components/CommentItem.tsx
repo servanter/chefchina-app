@@ -4,6 +4,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { Comment } from '../lib/api';
 import { AppImage } from './AppImage';
 
+const getCommentOwnerId = (comment: Comment) =>
+  comment.user?.id ?? comment.userId ?? comment.user_id;
+
 interface CommentItemProps {
   comment: Comment;
   canManage?: boolean;
@@ -144,7 +147,7 @@ export const CommentItem: React.FC<CommentItemProps> = ({ comment, canManage = f
                 key={reply.id}
                 comment={reply}
                 isReply={true}
-                canManage={canManage && reply.user_id === comment.user_id}
+                canManage={getCommentOwnerId(reply) === getCommentOwnerId(comment)}
                 liked={likedMap[reply.id] || false}
                 likedMap={likedMap}
                 onToggleLike={onToggleLike}

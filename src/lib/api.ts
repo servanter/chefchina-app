@@ -185,6 +185,7 @@ export interface RecipeDetailFullData {
 export interface Comment {
   id: string;
   user_id: string;
+  userId?: string;
   recipe_id: string;
   content: string;
   rating: number;
@@ -196,6 +197,7 @@ export interface Comment {
   is_visible?: boolean;
   likes_count?: number; // 点赞数 (REQ-11.2)
   user?: {
+    id?: string;
     name: string;
     avatar_url: string;
   };
