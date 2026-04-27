@@ -10,6 +10,7 @@ const getCommentOwnerId = (comment: Comment) =>
 interface CommentItemProps {
   comment: Comment;
   canManage?: boolean;
+  userId?: string;
   onReply?: (comment: Comment) => void;
   onReport?: (commentId: string) => void;
   onEdit?: (comment: Comment) => void;
@@ -33,7 +34,7 @@ const StarRating = ({ rating }: { rating: number }) => (
   </View>
 );
 
-export const CommentItem: React.FC<CommentItemProps> = ({ comment, canManage = false, onReply, onReport, onEdit, onDelete, onToggleLike, isReply = false, liked = false, likedMap = {} }) => {
+export const CommentItem: React.FC<CommentItemProps> = ({ comment, canManage = false, userId, onReply, onReport, onEdit, onDelete, onToggleLike, isReply = false, liked = false, likedMap = {} }) => {
   const dateStr = new Date(comment.created_at).toLocaleDateString();
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const likesCount = comment.likes_count ?? 0;
@@ -147,7 +148,8 @@ export const CommentItem: React.FC<CommentItemProps> = ({ comment, canManage = f
                 key={reply.id}
                 comment={reply}
                 isReply={true}
-                canManage={getCommentOwnerId(reply) === getCommentOwnerId(comment)}
+                userId={userId}
+                canManage={getCommentOwnerId(reply) === userId}
                 liked={likedMap[reply.id] || false}
                 likedMap={likedMap}
                 onToggleLike={onToggleLike}

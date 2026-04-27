@@ -1026,6 +1026,7 @@ export default function RecipeDetailScreen() {
                       <CommentItem 
                         key={comment.id} 
                         comment={comment}
+                        userId={userId}
                         canManage={getCommentOwnerId(comment) === userId}
                         liked={commentLikeStatusMap[comment.id] || false}
                         likedMap={commentLikeStatusMap}
