@@ -203,8 +203,7 @@ export default function RecipeDetailScreen() {
       await toggleLikeMutation.mutateAsync({ recipeId: recipe.id, userId });
       triggerHaptic(nextLiked ? 'success' : 'light');
       likeBounce();
-      // 刷新详情页数据
-      await refetchRecipeDetail();
+      // 不需要手动 refetch，mutation 的 onSuccess 会自动 invalidate
       Toast.show({
         type: 'success',
         text1: nextLiked ? t('recipe.likeSuccess') : t('recipe.unlikeSuccess'),
@@ -219,7 +218,7 @@ export default function RecipeDetailScreen() {
         visibilityTime: 2000,
       });
     }
-  }, [recipe, liked, userId, t, toggleLikeMutation, refetchRecipeDetail]);
+  }, [recipe, liked, userId, t, toggleLikeMutation, router, likeBounce]);
 
   const handleFavorite = useCallback(async () => {
     if (!recipe) return;
@@ -236,8 +235,7 @@ export default function RecipeDetailScreen() {
       await toggleFavoriteMutation.mutateAsync({ recipeId: recipe.id, userId });
       triggerHaptic(nextFavorited ? 'success' : 'light');
       favBounce();
-      // 刷新详情页数据
-      await refetchRecipeDetail();
+      // 不需要手动 refetch，mutation 的 onSuccess 会自动 invalidate
       Toast.show({
         type: 'success',
         text1: nextFavorited ? t('recipe.favoriteSuccess') : t('recipe.unfavoriteSuccess'),
@@ -252,7 +250,7 @@ export default function RecipeDetailScreen() {
         visibilityTime: 2000,
       });
     }
-  }, [recipe, favorited, userId, t, toggleFavoriteMutation, refetchRecipeDetail]);
+  }, [recipe, favorited, userId, t, toggleFavoriteMutation, router, favBounce]);
 
   const handlePostComment = useCallback(async () => {
     if (userId === 'guest') {
@@ -439,11 +437,12 @@ export default function RecipeDetailScreen() {
     setReportVisible(true);
   }, [userId, t]);
 
+  // 监听 detailData 变化，更新 liked 和 favorited 状态
   useEffect(() => {
     if (!detailData?.userStatus) return;
     setLiked(detailData.userStatus.liked);
     setFavorited(detailData.userStatus.favorited);
-  }, [detailData?.userStatus]);
+  }, [detailData?.userStatus?.liked, detailData?.userStatus?.favorited]);
 
   const isAuthor = userId !== 'guest' && !!recipe && userId === (detailData as any)?.recipe?.author?.id;
 
