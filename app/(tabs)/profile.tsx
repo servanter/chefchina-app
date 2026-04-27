@@ -122,12 +122,16 @@ export default function ProfileScreen() {
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     try {
-      await queryClient.invalidateQueries();
+      // 只刷新 profile 相关数据，不要全量刷新
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['userBadges', user?.id] }),
+        queryClient.invalidateQueries({ queryKey: ['userLevel', user?.id] }),
+      ]);
     } catch {
       // ignore
     }
     setTimeout(() => setRefreshing(false), 400);
-  }, [queryClient]);
+  }, [queryClient, user?.id]);
 
   const handleLanguageToggle = async (value: boolean) => {
     setLangToggle(value);
