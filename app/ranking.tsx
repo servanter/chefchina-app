@@ -14,6 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { fetchRankingRecipes, RankedRecipe } from '../src/lib/api';
 import { LazyImage } from '../src/components/LazyImage';
+import { EmptyState } from '../src/components/EmptyState';
 import { useTheme } from '../src/contexts/ThemeContext';
 
 const RANK_BADGES = ['🥇', '🥈', '🥉'];
@@ -97,12 +98,11 @@ export default function RankingScreen() {
         contentContainerStyle={[styles.list, ranking.length === 0 && { flex: 1 }]}
         showsVerticalScrollIndicator={false}
         ListEmptyComponent={
-          <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', paddingTop: 60 }}>
-            <Ionicons name="trophy-outline" size={48} color={colors.subText} />
-            <Text style={{ marginTop: 12, fontSize: 14, color: colors.subText }}>
-              {isZh ? '暂无排行数据' : 'No ranking data yet'}
-            </Text>
-          </View>
+          <EmptyState
+            icon="trophy-outline"
+            title={isZh ? '暂无排行数据' : 'No ranking data yet'}
+            subtitle={isZh ? '暂时没有菜谱上榜' : 'No recipes ranked yet'}
+          />
         }
       />
       )}

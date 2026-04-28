@@ -17,6 +17,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { useDeleteRecipe, useMyRecipes, useRepublishRecipe, useUnpublishRecipe } from '@/hooks/useRecipes';
 import { useFontScale } from '@/hooks/useFontScale';
 import type { Recipe } from '@/lib/api';
+import { EmptyState } from '@/components/EmptyState';
 
 const STATUS_TABS = ['all', 'draft', 'published'] as const;
 type StatusTab = typeof STATUS_TABS[number];
@@ -210,11 +211,15 @@ export default function MyRecipesScreen() {
           <Text style={[styles.emptyText, { color: colors.subText }]}>{t('common.loading')}</Text>
         </View>
       ) : recipes.length === 0 ? (
-        <View style={styles.center}>
-          <Ionicons name="document-text-outline" size={52} color={colors.subText} />
-          <Text style={[styles.emptyTitle, { color: colors.text }]}>{t('myRecipes.emptyTitle')}</Text>
-          <Text style={[styles.emptyText, { color: colors.subText }]}>{t(`myRecipes.emptyByStatus.${status}`)}</Text>
-        </View>
+        <EmptyState
+          icon="document-text-outline"
+          title={t('myRecipes.emptyTitle')}
+          subtitle={t(`myRecipes.emptyByStatus.${status}`)}
+          action={{
+            label: t('myRecipes.createRecipe'),
+            onPress: () => router.push('/recipe/create')
+          }}
+        />
       ) : (
         <FlatList
           data={recipes}

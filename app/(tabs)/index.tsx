@@ -20,6 +20,7 @@ import { SkeletonCard, SkeletonList } from '../../src/components/Skeleton';
 import { ListFooter } from '../../src/components/ListFooter';
 import { WhatToEatButton } from '../../src/components/WhatToEat';
 import { LazyImage } from '../../src/components/LazyImage';
+import { EmptyState } from '../../src/components/EmptyState';
 import { useHomeInit } from '../../src/hooks/useRecipes';
 import { changeLanguage } from '../../src/lib/i18n';
 import { triggerHaptic } from '../../src/lib/haptics';
