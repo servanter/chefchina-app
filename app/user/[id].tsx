@@ -17,7 +17,7 @@ import { AppImage } from '../../src/components/AppImage';
 import { LoadingSpinner } from '../../src/components/LoadingSpinner';
 import { EmptyState } from '../../src/components/EmptyState';
 import { useAuth } from '../../src/hooks/useAuth';
-import { useUserStats, useUserRecipes, useUserFavorites } from '../../src/hooks/useUserProfile';
+import { useUserStats, useUserRecipes, useUserFavorites, useUserFollowing, useUserFollowers } from '../../src/hooks/useUserProfile';
 import { useTheme } from '../../src/contexts/ThemeContext';
 import { useFontScale } from '../../src/hooks/useFontScale';
 import { apiRequest } from '../../src/lib/api';
@@ -25,7 +25,8 @@ import { apiRequest } from '../../src/lib/api';
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = (width - 48) / 2;
 
-type TabType = 'recipes' | 'favorites' | 'liked';
+// BUG-002: 添加 'following' 和 'followers' Tab
+type TabType = 'recipes' | 'favorites' | 'liked' | 'following' | 'followers';
 
 export default function UserProfileScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -58,6 +59,9 @@ export default function UserProfileScreen() {
   const { data: recipes, refetch: refetchRecipes } = useUserRecipes(id, 'published');
   const { data: likedRecipes, refetch: refetchLiked } = useUserRecipes(id, 'liked');
   const { data: favorites, refetch: refetchFavorites } = useUserFavorites(id);
+  // BUG-002: 添加关注和粉丝数据
+  const { data: following, refetch: refetchFollowing } = useUserFollowing(id);
+  const { data: followers, refetch: refetchFollowers } = useUserFollowers(id);
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -67,6 +71,8 @@ export default function UserProfileScreen() {
       refetchRecipes(),
       refetchLiked(),
       refetchFavorites(),
+      refetchFollowing(),
+      refetchFollowers(),
     ]);
     setRefreshing(false);
   };
@@ -80,6 +86,11 @@ export default function UserProfileScreen() {
         return favorites || [];
       case 'liked':
         return likedRecipes || [];
+      // BUG-002: 添加关注和粉丝 Tab 数据
+      case 'following':
+        return following || [];
+      case 'followers':
+        return followers || [];
       default:
         return [];
     }
@@ -243,6 +254,34 @@ export default function UserProfileScreen() {
                   {isZh ? '收藏' : 'Favorites'}
                 </Text>
               </TouchableOpacity>
+              {/* BUG-002: 添加关注 Tab */}
+              <TouchableOpacity
+                style={[styles.tab, activeTab === 'following' && { borderBottomColor: colors.tint }]}
+                onPress={() => setActiveTab('following')}
+              >
+                <Text
+                  style={[
+                    styles.tabText,
+                    { color: activeTab === 'following' ? colors.tint : colors.subText, fontSize: scaled(15) },
+                  ]}
+                >
+                  {isZh ? '关注' : 'Following'}
+                </Text>
+              </TouchableOpacity>
+              {/* BUG-002: 添加粉丝 Tab */}
+              <TouchableOpacity
+                style={[styles.tab, activeTab === 'followers' && { borderBottomColor: colors.tint }]}
+                onPress={() => setActiveTab('followers')}
+              >
+                <Text
+                  style={[
+                    styles.tabText,
+                    { color: activeTab === 'followers' ? colors.tint : colors.subText, fontSize: scaled(15) },
+                  ]}
+                >
+                  {isZh ? '粉丝' : 'Followers'}
+                </Text>
+              </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.tab, activeTab === 'liked' && { borderBottomColor: colors.tint }]}
                 onPress={() => setActiveTab('liked')}
@@ -259,29 +298,58 @@ export default function UserProfileScreen() {
             </View>
           </>
         }
-        renderItem={({ item }) => (
-          <TouchableOpacity
-            style={[styles.recipeCard, { backgroundColor: colors.card }]}
-            onPress={() => router.push(`/recipe/${item.id}`)}
-          >
-            <AppImage
-              uri={item.coverImage || item.cover_image}
-              fallback="https://via.placeholder.com/300"
-              style={styles.recipeImage}
-            />
-            <View style={styles.recipeInfo}>
-              <Text style={[styles.recipeTitle, { color: colors.text, fontSize: scaled(14) }]} numberOfLines={2}>
-                {isZh ? item.titleZh || item.titleEn : item.titleEn}
-              </Text>
-              <View style={styles.recipeMeta}>
-                <Ionicons name="heart" size={12} color={colors.subText} />
-                <Text style={[styles.recipeMetaText, { color: colors.subText, fontSize: scaled(11) }]}>
-                  {item._count?.likes || 0}
+        renderItem={({ item }) => {
+          // BUG-002: 关注/粉丝 Tab 显示用户卡片
+          if (activeTab === 'following' || activeTab === 'followers') {
+            const user = item as any;
+            return (
+              <TouchableOpacity
+                style={[styles.userCard, { backgroundColor: colors.card }]}
+                onPress={() => router.push(`/user/${user.id}`)}
+              >
+                <AppImage
+                  uri={user.avatar || `https://i.pravatar.cc/150?u=${user.id}`}
+                  fallback={`https://i.pravatar.cc/150?u=${user.id}`}
+                  style={styles.userAvatar}
+                />
+                <View style={styles.userCardInfo}>
+                  <Text style={[styles.userCardName, { color: colors.text, fontSize: scaled(14) }]} numberOfLines={1}>
+                    {user.name || 'Anonymous'}
+                  </Text>
+                  {user.bio && (
+                    <Text style={[styles.userCardBio, { color: colors.subText, fontSize: scaled(12) }]} numberOfLines={2}>
+                      {user.bio}
+                    </Text>
+                  )}
+                </View>
+              </TouchableOpacity>
+            );
+          }
+          // 菜谱卡片（recipes/favorites/liked）
+          return (
+            <TouchableOpacity
+              style={[styles.recipeCard, { backgroundColor: colors.card }]}
+              onPress={() => router.push(`/recipe/${item.id}`)}
+            >
+              <AppImage
+                uri={item.coverImage || item.cover_image}
+                fallback="https://via.placeholder.com/300"
+                style={styles.recipeImage}
+              />
+              <View style={styles.recipeInfo}>
+                <Text style={[styles.recipeTitle, { color: colors.text, fontSize: scaled(14) }]} numberOfLines={2}>
+                  {isZh ? item.titleZh || item.titleEn : item.titleEn}
                 </Text>
+                <View style={styles.recipeMeta}>
+                  <Ionicons name="heart" size={12} color={colors.subText} />
+                  <Text style={[styles.recipeMetaText, { color: colors.subText, fontSize: scaled(11) }]}>
+                    {item._count?.likes || 0}
+                  </Text>
+                </View>
               </View>
-            </View>
-          </TouchableOpacity>
-        )}
+            </TouchableOpacity>
+          );
+        }}
         ListEmptyComponent={
           <EmptyState
             icon="document-text-outline"
@@ -434,5 +502,37 @@ const styles = StyleSheet.create({
   },
   recipeMetaText: {
     fontSize: 11,
+  },
+  // BUG-002: 用户卡片样式（关注/粉丝 Tab）
+  userCard: {
+    width: CARD_WIDTH,
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 16,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  userAvatar: {
+    width: CARD_WIDTH - 24,
+    height: CARD_WIDTH - 24,
+    borderRadius: (CARD_WIDTH - 24) / 2,
+    alignSelf: 'center',
+    marginBottom: 8,
+  },
+  userCardInfo: {
+    alignItems: 'center',
+  },
+  userCardName: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 4,
+    textAlign: 'center',
+  },
+  userCardBio: {
+    fontSize: 12,
+    textAlign: 'center',
   },
 });

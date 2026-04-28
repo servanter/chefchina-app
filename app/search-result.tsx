@@ -45,12 +45,12 @@ const DIFFICULTIES = [
   { value: 'hard', label: 'Hard', labelZh: '困难' },
 ];
 
+// BUG-001: 统一烹饪时间格式为 '<30' | '30-60' | '>60'
 const COOK_TIMES = [
   { value: '', label: 'All', labelZh: '全部' },
-  { value: '0-30', label: '< 30 min', labelZh: '30分钟内' },
+  { value: '<30', label: '< 30 min', labelZh: '30分钟内' },
   { value: '30-60', label: '30-60 min', labelZh: '30-60分钟' },
-  { value: '60-120', label: '1-2 hours', labelZh: '1-2小时' },
-  { value: '120+', label: '> 2 hours', labelZh: '2小时以上' },
+  { value: '>60', label: '> 60 min', labelZh: '60分钟以上' },
 ];
 
 export default function SearchResultScreen() {

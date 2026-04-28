@@ -14,6 +14,8 @@ import { captureRef } from 'react-native-view-shot';
 import * as MediaLibrary from 'expo-media-library';
 import * as Sharing from 'expo-sharing';
 import { Ionicons } from '@expo/vector-icons';
+// BUG-003: 导入二维码组件
+import QRCode from 'react-native-qrcode-svg';
 
 interface SharePosterProps {
   visible: boolean;
@@ -183,8 +185,14 @@ export default function SharePoster({ visible, onClose, recipe }: SharePosterPro
 
                   {/* 二维码/链接区 */}
                   <View style={styles.qrSection}>
-                    <View style={styles.qrPlaceholder}>
-                      <Ionicons name="qr-code" size={60} color="#FF6B35" />
+                    {/* BUG-003: 使用真实二维码替换占位符图标 */}
+                    <View style={styles.qrContainer}>
+                      <QRCode
+                        value={shareUrl}
+                        size={80}
+                        backgroundColor="white"
+                        color="#FF6B35"
+                      />
                     </View>
                     <View style={styles.qrTextContainer}>
                       <Text style={styles.qrTitle}>扫码查看完整菜谱</Text>
@@ -372,7 +380,8 @@ const styles = StyleSheet.create({
     padding: 12,
     marginBottom: 12,
   },
-  qrPlaceholder: {
+  // BUG-003: 二维码容器样式
+  qrContainer: {
     width: 80,
     height: 80,
     backgroundColor: '#fff',
@@ -380,8 +389,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
-    borderWidth: 2,
-    borderColor: '#FF6B35',
+    padding: 0,
+    overflow: 'hidden',
   },
   qrTextContainer: {
     flex: 1,
