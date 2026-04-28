@@ -46,6 +46,7 @@ import { saveViewHistoryRemote, Comment } from '../../src/lib/api';
 import { useAuth } from '../../src/hooks/useAuth';
 import { saveViewHistoryItem } from '../../src/lib/storage';
 import { ReportModal } from '../../src/components/ReportModal';
+import SharePoster from '../../src/components/SharePoster';
 import type { ReportTargetType } from '../../src/lib/api';
 
 const COLORS = { primary: '#E85D26', background: '#FFFDF9', text: '#1A1A1A', textSecondary: '#666', inputBg: '#F5F2EE', border: '#E8E4DF', card: '#FFF', tint: '#E85D26' };
@@ -106,6 +107,9 @@ export default function RecipeDetailScreen() {
   const [reportVisible, setReportVisible] = useState(false);
   const [reportTargetType, setReportTargetType] = useState<ReportTargetType>('RECIPE');
   const [reportTargetId, setReportTargetId] = useState('');
+
+  // Share poster state (需求 16.3)
+  const [posterVisible, setPosterVisible] = useState(false);
 
   const openViewer = useCallback((images: string[], index: number) => {
     // 防重入：查看器已经打开 or 没有图，则忽略
@@ -372,32 +376,9 @@ export default function RecipeDetailScreen() {
 
   const handleShare = useCallback(async () => {
     if (!recipe) return;
-    if (!shareAvailable) {
-      Toast.show({
-        type: 'info',
-        text1: t('recipe.shareUnavailable'),
-        visibilityTime: 2400,
-      });
-      return;
-    }
-    Toast.show({
-      type: 'info',
-      text1: t('recipe.sharing'),
-      visibilityTime: 1200,
-    });
-    const ok = await captureAndShare({
-      recipe,
-      cardRef: shareCardRef,
-      channel: 'other',
-    });
-    if (!ok) {
-      Toast.show({
-        type: 'error',
-        text1: t('recipe.shareFailed'),
-        visibilityTime: 2000,
-      });
-    }
-  }, [recipe, shareAvailable, captureAndShare, t]);
+    // 打开海报生成对话框
+    setPosterVisible(true);
+  }, [recipe]);
 
   const { mutate: toggleCommentLike } = useToggleCommentLike();
 
@@ -1084,6 +1065,23 @@ export default function RecipeDetailScreen() {
           targetType={reportTargetType}
           targetId={reportTargetId}
         />
+
+        {/* ── Share poster modal (需求 16.3) ── */}
+        {recipe && (
+          <SharePoster
+            visible={posterVisible}
+            onClose={() => setPosterVisible(false)}
+            recipe={{
+              id: recipe.id,
+              title: isZh ? recipe.title_zh : recipe.title,
+              coverImage: recipe.cover_image,
+              author: {
+                name: recipe.author_name || 'Anonymous',
+                avatar: undefined,
+              },
+            }}
+          />
+        )}
       </View>
     </KeyboardAvoidingView>
   );
