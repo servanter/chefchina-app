@@ -442,7 +442,7 @@ export default function RecipeDetailScreen() {
     if (!detailData?.userStatus) return;
     setLiked(detailData.userStatus.liked);
     setFavorited(detailData.userStatus.favorited);
-  }, [detailData?.userStatus?.liked, detailData?.userStatus?.favorited]);
+  }, [detailData?.userStatus]);
 
   const isAuthor = userId !== 'guest' && !!recipe && userId === (detailData as any)?.recipe?.author?.id;
 
