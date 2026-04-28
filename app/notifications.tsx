@@ -20,9 +20,12 @@ import {
   useInfiniteNotifications,
   useMarkRead,
   useMarkAllRead,
+  useUnreadCount,
+  type TabType,
+  type Notification,
+  type NotificationType,
 } from '../src/hooks/useNotifications';
 import { getUserId } from '../src/lib/storage';
-import type { Notification, NotificationType } from '../src/lib/api';
 import { useTheme } from '../src/contexts/ThemeContext';
 
 const ICONS: Record<NotificationType, keyof typeof Ionicons.glyphMap> = {
@@ -75,6 +78,7 @@ export default function NotificationsScreen() {
   const [userId, setUserId] = useState<string | null>(null);
   const [resolvedAuth, setResolvedAuth] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [activeTab, setActiveTab] = useState<TabType>('all');
 
   useEffect(() => {
     getUserId().then((uid) => {
@@ -95,9 +99,10 @@ export default function NotificationsScreen() {
     hasNextPage,
     isFetchingNextPage,
     error,
-  } = useInfiniteNotifications(userId);
+  } = useInfiniteNotifications(userId, activeTab);
   const markRead = useMarkRead(userId);
-  const markAllRead = useMarkAllRead(userId);
+  const markAllRead = useMarkAllRead(userId, activeTab);
+  const { data: unreadCounts } = useUnreadCount(userId);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -187,6 +192,62 @@ export default function NotificationsScreen() {
             >
               {t('notifications.markAllRead')}
             </Text>
+          )}
+        </TouchableOpacity>
+      </View>
+
+      {/* REQ-16.2: Tab 分类 */}
+      <View style={styles.tabBar}>
+        <TouchableOpacity
+          style={[styles.tab, activeTab === 'all' && styles.tabActive]}
+          onPress={() => setActiveTab('all')}
+        >
+          <Text style={[styles.tabText, activeTab === 'all' && styles.tabTextActive]}>
+            {isZh ? '全部' : 'All'}
+          </Text>
+          {(unreadCounts?.all || 0) > 0 && (
+            <View style={styles.badge}>
+              <Text style={styles.badgeText}>{unreadCounts?.all}</Text>
+            </View>
+          )}
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.tab, activeTab === 'like' && styles.tabActive]}
+          onPress={() => setActiveTab('like')}
+        >
+          <Text style={[styles.tabText, activeTab === 'like' && styles.tabTextActive]}>
+            {isZh ? '点赞' : 'Likes'}
+          </Text>
+          {(unreadCounts?.like || 0) > 0 && (
+            <View style={styles.badge}>
+              <Text style={styles.badgeText}>{unreadCounts?.like}</Text>
+            </View>
+          )}
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.tab, activeTab === 'comment' && styles.tabActive]}
+          onPress={() => setActiveTab('comment')}
+        >
+          <Text style={[styles.tabText, activeTab === 'comment' && styles.tabTextActive]}>
+            {isZh ? '评论' : 'Comments'}
+          </Text>
+          {(unreadCounts?.comment || 0) > 0 && (
+            <View style={styles.badge}>
+              <Text style={styles.badgeText}>{unreadCounts?.comment}</Text>
+            </View>
+          )}
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.tab, activeTab === 'system' && styles.tabActive]}
+          onPress={() => setActiveTab('system')}
+        >
+          <Text style={[styles.tabText, activeTab === 'system' && styles.tabTextActive]}>
+            {isZh ? '系统' : 'System'}
+          </Text>
+          {(unreadCounts?.system || 0) > 0 && (
+            <View style={styles.badge}>
+              <Text style={styles.badgeText}>{unreadCounts?.system}</Text>
+            </View>
           )}
         </TouchableOpacity>
       </View>
@@ -399,5 +460,48 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '700',
     color: COLORS.primary,
+  },
+  // REQ-16.2: Tab Bar 样式
+  tabBar: {
+    flexDirection: 'row',
+    backgroundColor: COLORS.background,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+    paddingHorizontal: 8,
+  },
+  tab: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    gap: 4,
+    borderBottomWidth: 2,
+    borderBottomColor: 'transparent',
+  },
+  tabActive: {
+    borderBottomColor: COLORS.primary,
+  },
+  tabText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: COLORS.textSecondary,
+  },
+  tabTextActive: {
+    color: COLORS.primary,
+  },
+  badge: {
+    backgroundColor: COLORS.primary,
+    borderRadius: 10,
+    minWidth: 18,
+    height: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 4,
+  },
+  badgeText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#FFF',
   },
 });

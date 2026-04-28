@@ -1,134 +1,99 @@
-import {
-  useQuery,
-  useMutation,
-  useQueryClient,
-  useInfiniteQuery,
-} from '@tanstack/react-query';
-import {
-  fetchNotifications,
-  fetchUnreadCount,
-  markNotificationRead,
-  markAllNotificationsRead,
-  deleteNotification,
-  Notification,
-  NotificationsPage,
-} from '../lib/api';
+import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from '@tanstack/react-query'
+import { apiRequest } from '../lib/api'
 
-// ─── Lists ────────────────────────────────────────────────────────────────────
+export type NotificationType = 'COMMENT_REPLY' | 'RECIPE_LIKED' | 'RECIPE_FAVORITED' | 'SUBMISSION_APPROVED' | 'SYSTEM'
 
-export const useNotifications = (userId?: string | null) => {
-  return useQuery<NotificationsPage>({
-    queryKey: ['notifications', userId, 'first'],
-    queryFn: () => fetchNotifications(userId as string, 1),
-    enabled: !!userId && userId !== 'guest',
-    staleTime: 1000 * 30,
-  });
-};
+export interface Notification {
+  id: string
+  type: NotificationType
+  title: string
+  body: string
+  read: boolean
+  read_at: string | null
+  created_at: string
+  payload?: {
+    recipeId?: string
+    commentId?: string
+    fromUserId?: string
+    [key: string]: any
+  }
+}
 
-export const useInfiniteNotifications = (userId?: string | null) => {
-  return useInfiniteQuery<NotificationsPage>({
-    queryKey: ['notifications', userId, 'infinite'],
-    queryFn: ({ pageParam = 1 }) =>
-      fetchNotifications(userId as string, pageParam as number),
-    initialPageParam: 1,
-    getNextPageParam: (last) => (last.hasMore ? last.page + 1 : undefined),
-    enabled: !!userId && userId !== 'guest',
-    staleTime: 1000 * 30,
-  });
-};
+export type TabType = 'all' | 'like' | 'comment' | 'system'
 
-// ─── Unread badge (polled) ────────────────────────────────────────────────────
-
-export const useUnreadCount = (userId?: string | null) => {
-  return useQuery<number>({
-    queryKey: ['notifications', userId, 'unreadCount'],
-    queryFn: () => fetchUnreadCount(userId as string),
-    enabled: !!userId && userId !== 'guest',
-    staleTime: 1000 * 30,
-    refetchInterval: 60000,
-    refetchOnWindowFocus: true,
-  });
-};
-
-// ─── Mutations ────────────────────────────────────────────────────────────────
-
-const invalidateAll = (
-  queryClient: ReturnType<typeof useQueryClient>,
-  userId?: string | null,
-) => {
-  queryClient.invalidateQueries({ queryKey: ['notifications', userId, 'first'] });
-  queryClient.invalidateQueries({ queryKey: ['notifications', userId, 'infinite'] });
-  queryClient.invalidateQueries({ queryKey: ['notifications', userId, 'unreadCount'] });
-};
-
-export const useMarkRead = (userId?: string | null) => {
-  const queryClient = useQueryClient();
-  return useMutation<Notification, Error, string>({
-    mutationFn: (id) => markNotificationRead(id),
-    onMutate: async (id) => {
-      // Optimistically flip `read` in both the first-page cache AND the
-      // infinite-page cache (whichever consumer is mounted will see it).
-      const firstKey = ['notifications', userId, 'first'] as const;
-      const infiniteKey = ['notifications', userId, 'infinite'] as const;
-
-      const prevFirst = queryClient.getQueryData<NotificationsPage>(firstKey);
-      if (prevFirst) {
-        queryClient.setQueryData<NotificationsPage>(firstKey, {
-          ...prevFirst,
-          unreadCount: Math.max(0, prevFirst.unreadCount - 1),
-          data: prevFirst.data.map((n) =>
-            n.id === id ? { ...n, read: true } : n,
-          ),
-        });
+// REQ-16.2: 获取通知列表（支持分类）
+export function useInfiniteNotifications(userId: string | null, tab: TabType = 'all') {
+  return useInfiniteQuery({
+    queryKey: ['notifications', userId, tab],
+    queryFn: async ({ pageParam = 1 }) => {
+      if (!userId) throw new Error('userId is required')
+      const res = await apiRequest(`/notifications?userId=${userId}&tab=${tab}&page=${pageParam}&pageSize=20`)
+      return {
+        data: res.data.notifications as Notification[],
+        unreadCount: res.data.unreadCount,
+        pagination: res.data.pagination,
       }
-
-      const prevInfinite = queryClient.getQueryData<{
-        pages: NotificationsPage[];
-        pageParams: unknown[];
-      }>(infiniteKey);
-      if (prevInfinite) {
-        queryClient.setQueryData(infiniteKey, {
-          ...prevInfinite,
-          pages: prevInfinite.pages.map((p, idx) => ({
-            ...p,
-            unreadCount:
-              idx === 0 ? Math.max(0, p.unreadCount - 1) : p.unreadCount,
-            data: p.data.map((n) =>
-              n.id === id ? { ...n, read: true } : n,
-            ),
-          })),
-        });
-      }
-
-      const prevCount = queryClient.getQueryData<number>([
-        'notifications',
-        userId,
-        'unreadCount',
-      ]);
-      if (typeof prevCount === 'number') {
-        queryClient.setQueryData(
-          ['notifications', userId, 'unreadCount'],
-          Math.max(0, prevCount - 1),
-        );
-      }
-      return { prevFirst, prevInfinite, prevCount };
     },
-    onSettled: () => invalidateAll(queryClient, userId),
-  });
-};
+    getNextPageParam: (lastPage) => {
+      const { pagination } = lastPage
+      return pagination.page < pagination.totalPages ? pagination.page + 1 : undefined
+    },
+    enabled: !!userId,
+    staleTime: 30 * 1000, // 30 秒
+  })
+}
 
-export const useMarkAllRead = (userId?: string | null) => {
-  const queryClient = useQueryClient();
-  return useMutation<number, Error, void>({
-    mutationFn: async () => markAllNotificationsRead(userId as string),
-    onSuccess: () => invalidateAll(queryClient, userId),
-  });
-};
+// REQ-16.2: 获取未读数量（按类型分组）
+export function useUnreadCount(userId: string | null) {
+  return useQuery({
+    queryKey: ['unreadCount', userId],
+    queryFn: async () => {
+      if (!userId) throw new Error('userId is required')
+      const res = await apiRequest(`/notifications/unread-count?userId=${userId}`)
+      return res.data as {
+        all: number
+        like: number
+        comment: number
+        system: number
+      }
+    },
+    enabled: !!userId,
+    staleTime: 30 * 1000, // 30 秒
+    refetchInterval: 60 * 1000, // 每分钟自动刷新
+  })
+}
 
-export const useDeleteNotification = (userId?: string | null) => {
-  const queryClient = useQueryClient();
-  return useMutation<void, Error, string>({
-    mutationFn: (id) => deleteNotification(id),
-    onSuccess: () => invalidateAll(queryClient, userId),
-  });
-};
+// 标记单条通知为已读
+export function useMarkRead(userId: string | null) {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (notificationId: string) => {
+      const res = await apiRequest(`/notifications/${notificationId}/read`, { method: 'PATCH' })
+      return res.data
+    },
+    onSuccess: () => {
+      // 刷新通知列表和未读数量
+      queryClient.invalidateQueries({ queryKey: ['notifications', userId] })
+      queryClient.invalidateQueries({ queryKey: ['unreadCount', userId] })
+    },
+  })
+}
+
+// REQ-16.2: 批量标记已读
+export function useMarkAllRead(userId: string | null, tab: TabType = 'all') {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async () => {
+      if (!userId) throw new Error('userId is required')
+      const res = await apiRequest(`/notifications/mark-all-read?userId=${userId}&type=${tab}`, { method: 'POST' })
+      return res.data
+    },
+    onSuccess: () => {
+      // 刷新所有通知相关查询
+      queryClient.invalidateQueries({ queryKey: ['notifications', userId] })
+      queryClient.invalidateQueries({ queryKey: ['unreadCount', userId] })
+    },
+  })
+}
