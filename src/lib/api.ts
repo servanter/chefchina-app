@@ -1588,3 +1588,117 @@ export const toggleFollow = async (followingId: string, action: 'follow' | 'unfo
     return res.data.data;
   }
 };
+
+// ─── Batch 15: 话题系统 & 搜索增强 ─────────────────────────────────────────
+
+// 话题详情（含关注状态）
+export interface TopicDetail {
+  id: string;
+  nameEn: string;
+  nameZh: string;
+  descEn?: string | null;
+  descZh?: string | null;
+  icon?: string | null;
+  coverImage?: string | null;
+  isHot: boolean;
+  _count: {
+    recipes: number;
+  };
+  followerCount: number;
+  isFollowing: boolean;
+}
+
+export const fetchTopicDetail = async (topicId: string): Promise<TopicDetail> => {
+  const res = await apiClient.get(`/topics/${topicId}`);
+  return res.data.data;
+};
+
+// 话题菜谱列表
+export interface TopicRecipesResponse {
+  recipes: Recipe[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
+export const fetchTopicRecipes = async (
+  topicId: string,
+  sort: 'latest' | 'hot' = 'latest',
+  page = 1
+): Promise<TopicRecipesResponse> => {
+  const res = await apiClient.get(`/topics/${topicId}/recipes`, {
+    params: { sort, page, limit: PAGE_SIZE }
+  });
+  return res.data.data;
+};
+
+// 关注/取消关注话题
+export const toggleTopicFollow = async (
+  topicId: string,
+  action: 'follow' | 'unfollow'
+): Promise<{ followed: boolean; followerCount: number }> => {
+  if (action === 'follow') {
+    const res = await apiClient.post(`/topics/${topicId}/follow`);
+    return res.data.data;
+  } else {
+    const res = await apiClient.delete(`/topics/${topicId}/follow`);
+    return res.data.data;
+  }
+};
+
+// 我关注的话题列表
+export interface FollowedTopic {
+  id: string;
+  nameEn: string;
+  nameZh: string;
+  icon?: string | null;
+  _count: {
+    recipes: number;
+  };
+  followerCount: number;
+  followedAt: string;
+}
+
+export interface FollowedTopicsResponse {
+  topics: FollowedTopic[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
+export const fetchFollowedTopics = async (page = 1): Promise<FollowedTopicsResponse> => {
+  const res = await apiClient.get('/me/followed-topics', {
+    params: { page, limit: PAGE_SIZE }
+  });
+  return res.data.data;
+};
+
+// 热门搜索词
+export interface TrendingKeyword {
+  keyword: string;
+  searchCount: number;
+  clickRate: number;
+  score: number;
+  trendingType: 'hot' | 'rising' | 'new';
+}
+
+export interface TrendingResponse {
+  trending: TrendingKeyword[];
+  updatedAt: string;
+}
+
+export const fetchTrendingKeywords = async (limit = 10): Promise<TrendingResponse> => {
+  const res = await apiClient.get('/search/trending', { params: { limit } });
+  return res.data.data;
+};
+
+// 记录搜索行为
+export const recordSearch = async (query: string, resultCount: number, clicked: boolean): Promise<void> => {
+  await apiClient.post('/search/record', { query, resultCount, clicked });
+};
