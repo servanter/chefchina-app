@@ -315,20 +315,7 @@ export const fetchTopics = async (isHot?: boolean): Promise<Topic[]> => {
   }));
 };
 
-export const fetchTopicRecipes = async (topicId: string, page = 1): Promise<PaginatedResponse<Recipe>> => {
-  const res = await apiClient.get('/recipes', {
-    params: { topicId, page, pageSize: PAGE_SIZE }
-  });
-  const recipes = res.data.data.recipes.map(adaptRecipe);
-  const pagination = res.data.data.pagination;
-  return {
-    data: recipes,
-    page: pagination.page,
-    limit: pagination.pageSize,
-    total: pagination.total,
-    hasMore: pagination.page < pagination.totalPages
-  };
-};
+
 
 // ─── 推荐 (REQ-12.7) ──────────────────────────────────────
 export const fetchRecommendedRecipes = async (userId: string, page = 1): Promise<PaginatedResponse<Recipe>> => {
