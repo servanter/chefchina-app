@@ -21,6 +21,7 @@ import { ListFooter } from '../../src/components/ListFooter';
 import { WhatToEatButton } from '../../src/components/WhatToEat';
 import { LazyImage } from '../../src/components/LazyImage';
 import { EmptyState } from '../../src/components/EmptyState';
+import { SearchModal } from '../../src/components/SearchModal';
 import { useHomeInit } from '../../src/hooks/useRecipes';
 import { changeLanguage } from '../../src/lib/i18n';
 import { triggerHaptic } from '../../src/lib/haptics';
@@ -60,6 +61,7 @@ export default function HomeScreen() {
   const userId = user?.id ?? null;
   
   const [searchText, setSearchText] = useState('');
+  const [searchModalVisible, setSearchModalVisible] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [refreshing, setRefreshing] = useState(false);
 
@@ -152,7 +154,7 @@ export default function HomeScreen() {
         </View>
 
         {/* ─── Search ──────────────────────────────────────── */}
-        <View style={styles.searchRow}>
+        <TouchableOpacity style={styles.searchRow} onPress={() => setSearchModalVisible(true)} activeOpacity={0.8}>
           <View style={styles.searchBox}>
             <Ionicons name="search-outline" size={18} color="#999" style={styles.searchIcon} />
             <TextInput
@@ -170,7 +172,7 @@ export default function HomeScreen() {
               </TouchableOpacity>
             )}
           </View>
-        </View>
+        </TouchableOpacity>
 
         {/* ─── Categories ──────────────────────────────────── */}
         <ScrollView
@@ -187,6 +189,13 @@ export default function HomeScreen() {
             />
           ))}
         </ScrollView>
+
+      {/* 搜索模态框 */}
+      <SearchModal
+        visible={searchModalVisible}
+        onClose={() => setSearchModalVisible(false)}
+        tintColor={COLORS.primary}
+      />
 
         {/* ─── Following Feed Entry (REQ-11.5) ──────────────────── */}
         {userId && userId !== 'guest' && (
@@ -309,6 +318,13 @@ export default function HomeScreen() {
 
         <View style={{ height: 24 }} />
       </ScrollView>
+
+      {/* 搜索模态框 */}
+      <SearchModal
+        visible={searchModalVisible}
+        onClose={() => setSearchModalVisible(false)}
+        tintColor={COLORS.primary}
+      />
     </SafeAreaView>
   );
 }
