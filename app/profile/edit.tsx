@@ -61,7 +61,7 @@ export default function EditProfileScreen() {
   const [bio, setBio] = useState(user?.bio ?? '');
   const [location, setLocation] = useState(''); // 新增字段
   const [gender, setGender] = useState<'MALE' | 'FEMALE' | 'OTHER' | 'PRIVATE'>('PRIVATE'); // 新增字段
-  const [avatar, setAvatar] = useState(user?.avatar ?? '');
+  const [avatar, setAvatar] = useState(user?.avatar_url ?? '');
   const [avatarFile, setAvatarFile] = useState<string | null>(null);
 
   // 错误和验证状态
