@@ -46,27 +46,27 @@ export function useUserFavorites(userId?: string | null) {
   })
 }
 
-// REQ-16.1: 获取用户关注列表
+// REQ-BF-010: 获取用户关注列表
 export function useUserFollowing(userId?: string | null) {
   return useQuery({
     queryKey: ['userFollowing', userId],
     queryFn: async () => {
       if (!userId) throw new Error('userId is required')
       const res = await apiClient.get(`/users/${userId}/following`)
-      return res.data as any[]
+      return res.data.following as any[]
     },
     enabled: !!userId,
   })
 }
 
-// REQ-16.1: 获取用户粉丝列表
+// REQ-BF-010: 获取用户粉丝列表
 export function useUserFollowers(userId?: string | null) {
   return useQuery({
     queryKey: ['userFollowers', userId],
     queryFn: async () => {
       if (!userId) throw new Error('userId is required')
       const res = await apiClient.get(`/users/${userId}/followers`)
-      return res.data as any[]
+      return res.data.followers as any[]
     },
     enabled: !!userId,
   })
