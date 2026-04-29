@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { apiRequest } from '../lib/api'
+import { apiClient } from '../lib/api'
 
 // REQ-16.1: 获取用户统计数据
 export function useUserStats(userId?: string | null) {
@@ -7,7 +7,7 @@ export function useUserStats(userId?: string | null) {
     queryKey: ['userStats', userId],
     queryFn: async () => {
       if (!userId) throw new Error('userId is required')
-      const res = await apiRequest(`/users/${userId}/stats`)
+      const res = await apiClient.get(`/users/${userId}/stats`)
       return res.data as {
         recipeCount: number
         totalLikes: number
@@ -26,7 +26,7 @@ export function useUserRecipes(userId?: string | null, tab: 'published' | 'liked
     queryKey: ['userRecipes', userId, tab],
     queryFn: async () => {
       if (!userId) throw new Error('userId is required')
-      const res = await apiRequest(`/users/${userId}/recipes?tab=${tab}`)
+      const res = await apiClient.get(`/users/${userId}/recipes`, { params: { tab } })
       return res.data.data as any[]
     },
     enabled: !!userId,
@@ -39,7 +39,7 @@ export function useUserFavorites(userId?: string | null) {
     queryKey: ['userFavorites', userId],
     queryFn: async () => {
       if (!userId) throw new Error('userId is required')
-      const res = await apiRequest(`/users/${userId}/favorites`)
+      const res = await apiClient.get(`/users/${userId}/favorites`)
       return res.data.data as any[]
     },
     enabled: !!userId,
@@ -52,7 +52,7 @@ export function useUserFollowing(userId?: string | null) {
     queryKey: ['userFollowing', userId],
     queryFn: async () => {
       if (!userId) throw new Error('userId is required')
-      const res = await apiRequest(`/users/${userId}/following`)
+      const res = await apiClient.get(`/users/${userId}/following`)
       return res.data as any[]
     },
     enabled: !!userId,
@@ -65,7 +65,7 @@ export function useUserFollowers(userId?: string | null) {
     queryKey: ['userFollowers', userId],
     queryFn: async () => {
       if (!userId) throw new Error('userId is required')
-      const res = await apiRequest(`/users/${userId}/followers`)
+      const res = await apiClient.get(`/users/${userId}/followers`)
       return res.data as any[]
     },
     enabled: !!userId,

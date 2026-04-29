@@ -1,6 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import axios from 'axios';
-import { getApiUrl } from '@/lib/api';
+import { apiClient } from '@/lib/api';
 
 export type SearchType = 'recipe' | 'user' | 'topic';
 
@@ -87,14 +86,13 @@ export function useSearch(
         };
       }
 
-      const params = new URLSearchParams({
-        q: query.trim(),
-        type,
-        ...filters,
+      const response = await apiClient.get<SearchResponse>('/search', {
+        params: {
+          q: query.trim(),
+          type,
+          ...filters,
+        },
       });
-
-      const url = `${getApiUrl()}/search?${params}`;
-      const response = await axios.get<SearchResponse>(url);
       return response.data;
     },
     enabled: enabled && !!query.trim(),
