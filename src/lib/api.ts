@@ -212,6 +212,8 @@ export interface User {
   bio: string;
   cover?: string;  // REQ-12.4: 用户头图
   specialties?: string[];  // REQ-12.4: 擅长菜系
+  location?: string;  // REQ-12.4: 所在地区
+  gender?: 'MALE' | 'FEMALE' | 'OTHER' | 'PRIVATE';  // REQ-12.4: 性别
   favorites_count: number;
   comments_count: number;
   recipes_count: number;  // REQ-4.1: 用户发布的菜谱数
