@@ -21,6 +21,7 @@ import { ListFooter } from '../../src/components/ListFooter';
 import { WhatToEatButton } from '../../src/components/WhatToEat';
 import { LazyImage } from '../../src/components/LazyImage';
 import { EmptyState } from '../../src/components/EmptyState';
+import { SearchModal } from '../../src/components/SearchModal';
 import { useHomeInit } from '../../src/hooks/useRecipes';
 import { changeLanguage } from '../../src/lib/i18n';
 import { triggerHaptic } from '../../src/lib/haptics';
@@ -60,6 +61,7 @@ export default function HomeScreen() {
   const userId = user?.id ?? null;
   
   const [searchText, setSearchText] = useState('');
+  const [searchModalVisible, setSearchModalVisible] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [refreshing, setRefreshing] = useState(false);
 
@@ -126,7 +128,8 @@ export default function HomeScreen() {
           <View style={{ flex: 1 }}>
             <Text style={styles.welcomeText}>{t('home.welcome')}</Text>
             <Text style={styles.subtitleText}>{t('home.subtitle')}</Text>
-          </View>
+          
+        </TouchableOpacity>
 
           <View style={styles.headerActions}>
             <TouchableOpacity
@@ -140,7 +143,8 @@ export default function HomeScreen() {
                   <Text style={styles.bellBadgeText}>
                     {unreadCount > 99 ? '99+' : unreadCount}
                   </Text>
-                </View>
+                
+        </TouchableOpacity>
               )}
             </TouchableOpacity>
 
@@ -148,11 +152,13 @@ export default function HomeScreen() {
               <Text style={styles.langBtnText}>🌐</Text>
               <Text style={styles.langBtnLabel}>{isZh ? 'EN' : '中'}</Text>
             </TouchableOpacity>
-          </View>
-        </View>
+          
+        </TouchableOpacity>
+        
+        </TouchableOpacity>
 
         {/* ─── Search ──────────────────────────────────────── */}
-        <View style={styles.searchRow}>
+        <TouchableOpacity style={styles.searchRow} onPress={() => setSearchModalVisible(true)} activeOpacity={0.8}>
           <View style={styles.searchBox}>
             <Ionicons name="search-outline" size={18} color="#999" style={styles.searchIcon} />
             <TextInput
@@ -169,8 +175,10 @@ export default function HomeScreen() {
                 <Ionicons name="close-circle" size={18} color="#BBB" />
               </TouchableOpacity>
             )}
-          </View>
-        </View>
+          
+        </TouchableOpacity>
+        
+        </TouchableOpacity>
 
         {/* ─── Categories ──────────────────────────────────── */}
         <ScrollView
@@ -187,6 +195,13 @@ export default function HomeScreen() {
             />
           ))}
         </ScrollView>
+
+      {/* 搜索模态框 */}
+      <SearchModal
+        visible={searchModalVisible}
+        onClose={() => setSearchModalVisible(false)}
+        tintColor={COLORS.primary}
+      />
 
         {/* ─── Following Feed Entry (REQ-11.5) ──────────────────── */}
         {userId && userId !== 'guest' && (
@@ -212,7 +227,8 @@ export default function HomeScreen() {
           <TouchableOpacity onPress={() => router.push('/(tabs)/explore')}>
             <Text style={styles.seeAll}>{t('home.seeAll')}</Text>
           </TouchableOpacity>
-        </View>
+        
+        </TouchableOpacity>
 
         {homeLoading ? (
           <FlatList
@@ -224,7 +240,8 @@ export default function HomeScreen() {
             renderItem={() => (
               <View style={{ width: effectiveWidth * 0.72, marginRight: 12 }}>
                 <SkeletonCard />
-              </View>
+              
+        </TouchableOpacity>
             )}
           />
         ) : (
@@ -252,7 +269,8 @@ export default function HomeScreen() {
               <TouchableOpacity onPress={() => router.push('/ranking')}>
                 <Text style={styles.seeAll}>{t('home.seeAll')}</Text>
               </TouchableOpacity>
-            </View>
+            
+        </TouchableOpacity>
             <FlatList
               data={rankingData.slice(0, 5)}
               keyExtractor={(item) => item.id}
@@ -269,7 +287,8 @@ export default function HomeScreen() {
                   >
                     <View style={styles.rankBadge}>
                       <Text style={styles.rankBadgeText}>{rankBadge}</Text>
-                    </View>
+                    
+        </TouchableOpacity>
                     <LazyImage uri={item.cover_image} style={styles.rankingImage} />
                     <Text style={styles.rankingTitle} numberOfLines={1}>
                       {isZh ? item.title_zh : item.title}
@@ -287,7 +306,8 @@ export default function HomeScreen() {
           <TouchableOpacity onPress={() => router.push({ pathname: '/(tabs)/explore', params: { difficulty: 'easy' } })}>
             <Text style={styles.seeAll}>{t('home.seeAll')}</Text>
           </TouchableOpacity>
-        </View>
+        
+        </TouchableOpacity>
 
         {homeLoading ? (
           <SkeletonList count={6} />
@@ -302,13 +322,21 @@ export default function HomeScreen() {
                   onPress={() => router.push(`/recipe/${item.id}`)}
                 />
               ))}
-            </View>
+            
+        </TouchableOpacity>
             {/* 移除 ListFooter，不显示 "End of list" */}
           </>
         )}
 
         <View style={{ height: 24 }} />
       </ScrollView>
+
+      {/* 搜索模态框 */}
+      <SearchModal
+        visible={searchModalVisible}
+        onClose={() => setSearchModalVisible(false)}
+        tintColor={COLORS.primary}
+      />
     </SafeAreaView>
   );
 }
