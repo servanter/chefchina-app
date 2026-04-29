@@ -24,6 +24,7 @@ import Toast from 'react-native-toast-message';
 import * as ImagePicker from 'expo-image-picker';
 import * as ImageManipulator from 'expo-image-manipulator';
 import { useAuth } from '../../src/hooks/useAuth';
+import { getAuthToken } from '../../src/lib/storage';
 import { useTheme } from '../../src/contexts/ThemeContext';
 import { FieldError, FormBanner, ValidationIcon } from '../../src/components/FormError';
 
@@ -186,28 +187,42 @@ export default function EditProfileScreen() {
       // 1. 如果有新头像，先上传
       let avatarUrl = avatar;
       if (avatarFile) {
-        // TODO: 调用头像上传 API
-        // const formData = new FormData();
-        // formData.append('avatar', {
-        //   uri: avatarFile,
-        //   name: 'avatar.jpg',
-        //   type: 'image/jpeg',
-        // } as any);
-        // const uploadRes = await fetch('/api/users/me/avatar', {
-        //   method: 'POST',
-        //   body: formData,
-        // });
-        // const uploadData = await uploadRes.json();
-        // avatarUrl = uploadData.avatar;
+        setUploadingAvatar(true);
+        
+        const formData = new FormData();
+        formData.append('avatar', {
+          uri: avatarFile,
+          name: 'avatar.jpg',
+          type: 'image/jpeg',
+        } as any);
+        
+        const uploadRes = await fetch('https://chefchina-admin.vercel.app/api/upload/avatar', {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${await getAuthToken()}`,
+          },
+          body: formData,
+        });
+        
+        const uploadData = await uploadRes.json();
+        if (!uploadData.success) {
+          throw new Error(uploadData.error || 'Upload failed');
+        }
+        
+        avatarUrl = uploadData.data.avatarUrl;
+        setUploadingAvatar(false);
+        
+        Toast.show({ 
+          type: 'success', 
+          text1: '头像上传成功' 
+        });
       }
 
       // 2. 更新个人资料
       await updateProfile({
         name: nickname.trim(),
         bio: bio.trim(),
-        // location: location.trim() || undefined,
-        // gender,
-        // avatar: avatarUrl,
+        avatar: avatarUrl,
       });
 
       Toast.show({ 
