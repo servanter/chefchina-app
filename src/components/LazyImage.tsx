@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { StyleProp, ImageStyle } from 'react-native';
+import { Platform, StyleProp, ImageStyle } from 'react-native';
 import { Image, ImageContentFit } from 'expo-image';
 
 // 默认 blurhash（柔和暖色调占位）
@@ -29,6 +29,7 @@ export interface LazyImageProps {
  *  - 磁盘 + 内存缓存（memory-disk）
  *  - blurhash 占位，150ms 淡入
  *  - 失败 → fallback 兜底
+ *  - Web 平台：添加 crossOrigin="anonymous" 修复 CORS/ORB 错误
  *
  * 与现有 `AppImage` 的差异：参数对齐需求 11 的命名（placeholder 而非 blurhash），
  * 新代码推荐使用 `LazyImage`。`AppImage` 保留，不做破坏性改动。
@@ -52,23 +53,30 @@ export const LazyImage: React.FC<LazyImageProps> = ({
   const resolvedFallback = fallback ?? DEFAULT_FALLBACK;
   const source = !uri || failed ? { uri: resolvedFallback } : { uri };
 
-  return (
-    <Image
-      source={source}
-      style={style}
-      contentFit={contentFit}
-      transition={transition}
-      cachePolicy="memory-disk"
-      placeholder={{ blurhash: placeholder ?? DEFAULT_BLURHASH }}
-      placeholderContentFit={contentFit}
-      priority={priority}
-      accessibilityLabel={accessibilityLabel}
-      onLoad={onLoad}
-      onError={() => {
-        if (!failed) setFailed(true);
-      }}
-    />
-  );
+  // Web 平台：添加 crossOrigin 支持
+  const imageProps: any = {
+    source,
+    style,
+    contentFit,
+    transition,
+    cachePolicy: "memory-disk" as const,
+    placeholder: { blurhash: placeholder ?? DEFAULT_BLURHASH },
+    placeholderContentFit: contentFit,
+    priority,
+    accessibilityLabel,
+    onLoad,
+    onError: () => {
+      if (!failed) setFailed(true);
+    },
+  };
+
+  // 在 Web 平台添加 crossOrigin 属性（通过底层 props）
+  if (Platform.OS === 'web') {
+    // @ts-ignore - Expo Image Web 会将额外的 props 传递给底层 img 元素
+    imageProps.crossOrigin = 'anonymous';
+  }
+
+  return <Image {...imageProps} />;
 };
 
 export default LazyImage;
