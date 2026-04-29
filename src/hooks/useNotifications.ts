@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from '@tanstack/react-query'
-import { apiRequest } from '../lib/api'
+import { apiClient } from '../lib/api'
 
 export type NotificationType = 'COMMENT_REPLY' | 'RECIPE_LIKED' | 'RECIPE_FAVORITED' | 'SUBMISSION_APPROVED' | 'SYSTEM'
 
@@ -27,13 +27,21 @@ export function useInfiniteNotifications(userId: string | null, tab: TabType = '
     queryKey: ['notifications', userId, tab],
     queryFn: async ({ pageParam = 1 }) => {
       if (!userId) throw new Error('userId is required')
-      const res = await apiRequest(`/notifications?userId=${userId}&tab=${tab}&page=${pageParam}&pageSize=20`)
+      const res = await apiClient.get('/notifications', {
+        params: {
+          userId,
+          tab,
+          page: pageParam,
+          pageSize: 20,
+        },
+      })
       return {
         data: res.data.notifications as Notification[],
         unreadCount: res.data.unreadCount,
         pagination: res.data.pagination,
       }
     },
+    initialPageParam: 1,
     getNextPageParam: (lastPage) => {
       const { pagination } = lastPage
       return pagination.page < pagination.totalPages ? pagination.page + 1 : undefined
@@ -49,7 +57,9 @@ export function useUnreadCount(userId: string | null) {
     queryKey: ['unreadCount', userId],
     queryFn: async () => {
       if (!userId) throw new Error('userId is required')
-      const res = await apiRequest(`/notifications/unread-count?userId=${userId}`)
+      const res = await apiClient.get('/notifications/unread-count', {
+        params: { userId },
+      })
       return res.data as {
         all: number
         like: number
@@ -69,7 +79,7 @@ export function useMarkRead(userId: string | null) {
 
   return useMutation({
     mutationFn: async (notificationId: string) => {
-      const res = await apiRequest(`/notifications/${notificationId}/read`, { method: 'PATCH' })
+      const res = await apiClient.patch(`/notifications/${notificationId}/read`)
       return res.data
     },
     onSuccess: () => {
@@ -87,7 +97,9 @@ export function useMarkAllRead(userId: string | null, tab: TabType = 'all') {
   return useMutation({
     mutationFn: async () => {
       if (!userId) throw new Error('userId is required')
-      const res = await apiRequest(`/notifications/mark-all-read?userId=${userId}&type=${tab}`, { method: 'POST' })
+      const res = await apiClient.post('/notifications/mark-all-read', null, {
+        params: { userId, type: tab },
+      })
       return res.data
     },
     onSuccess: () => {

@@ -19,7 +19,7 @@ import { useSearch, SearchType, SearchFilters } from '@/hooks/useSearch';
 import { RecipeCard } from '@/components/RecipeCard';
 import { EmptyState } from '@/components/EmptyState';
 import { Image } from 'expo-image';
-import { addSearchHistory } from '@/lib/storage';
+import { saveSearchHistory } from '@/lib/storage';
 
 type TabId = 'recipe' | 'user' | 'topic';
 
@@ -80,7 +80,7 @@ export default function SearchResultScreen() {
   const handleSearch = useCallback(() => {
     if (!inputQuery.trim()) return;
     setSearchQuery(inputQuery.trim());
-    addSearchHistory(inputQuery.trim());
+    saveSearchHistory(inputQuery.trim());
   }, [inputQuery]);
 
   const handleTabChange = useCallback((tab: TabId) => {
@@ -106,7 +106,7 @@ export default function SearchResultScreen() {
     activeTab === 'recipe' ? total.recipes : activeTab === 'user' ? total.users : total.topics;
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]} edges={['top']}>
       {/* Header */}
       <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
@@ -258,7 +258,7 @@ export default function SearchResultScreen() {
 
       {/* Results count */}
       {searchQuery && !isLoading && (
-        <View style={[styles.resultsHeader, { backgroundColor: colors.background }]}>
+        <View style={[styles.resultsHeader, { backgroundColor: colors.bg }]}>
           <Text style={[styles.resultsCount, { color: colors.subText }]}>
             {isZh
               ? `找到 ${currentTotal} 个结果`
@@ -304,7 +304,7 @@ export default function SearchResultScreen() {
               recipes.map((recipe) => (
                 <View key={recipe.id} style={styles.recipeCard}>
                   <RecipeCard
-                    recipe={recipe}
+                    recipe={recipe as any}
                     variant="list"
                     onPress={() => router.push(`/recipe/${recipe.id}`)}
                   />

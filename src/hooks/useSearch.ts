@@ -1,6 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import axios from 'axios';
-import { getApiUrl } from '@/lib/api';
+import { apiClient } from '@/lib/api';
 
 export type SearchType = 'recipe' | 'user' | 'topic';
 
@@ -13,9 +12,23 @@ export interface SearchRecipeResult {
   cover_image?: string;
   author_name: string;
   cook_time: number;
+  prep_time: number; // 添加以满足 RecipeCard
   difficulty: string;
   avg_rating: number;
   likes_count: number;
+  // RecipeCard 需要的其他字段
+  category: string;
+  servings: number;
+  ingredients: any[];
+  steps: any[];
+  comments_count: number;
+  favorites_count: number;
+  ratings_count: number;
+  is_published: boolean;
+  created_at: string;
+  updated_at: string;
+  author_id: string;
+  tags?: any[];
 }
 
 export interface SearchUserResult {
@@ -73,14 +86,13 @@ export function useSearch(
         };
       }
 
-      const params = new URLSearchParams({
-        q: query.trim(),
-        type,
-        ...filters,
+      const response = await apiClient.get<SearchResponse>('/search', {
+        params: {
+          q: query.trim(),
+          type,
+          ...filters,
+        },
       });
-
-      const url = `${getApiUrl()}/search?${params}`;
-      const response = await axios.get<SearchResponse>(url);
       return response.data;
     },
     enabled: enabled && !!query.trim(),

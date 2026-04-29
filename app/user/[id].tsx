@@ -20,7 +20,7 @@ import { useAuth } from '../../src/hooks/useAuth';
 import { useUserStats, useUserRecipes, useUserFavorites, useUserFollowing, useUserFollowers } from '../../src/hooks/useUserProfile';
 import { useTheme } from '../../src/contexts/ThemeContext';
 import { useFontScale } from '../../src/hooks/useFontScale';
-import { apiRequest } from '../../src/lib/api';
+import { apiClient } from '../../src/lib/api';
 
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = (width - 48) / 2;
@@ -46,7 +46,7 @@ export default function UserProfileScreen() {
   const { data: user, isLoading: userLoading, refetch: refetchUser } = useQuery({
     queryKey: ['user', id],
     queryFn: async () => {
-      const res = await apiRequest(`/users/${id}`);
+      const res = await apiClient.get(`/users/${id}`);
       return res.data;
     },
     enabled: !!id,
