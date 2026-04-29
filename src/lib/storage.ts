@@ -238,37 +238,3 @@ export const clearAll = async () => {
     console.warn('clearAll error', e);
   }
 };
-
-// ==================== 搜索历史 ====================
-const SEARCH_HISTORY_KEY = 'search_history';
-const MAX_SEARCH_HISTORY = 10;
-
-export const getSearchHistory = async (): Promise<string[]> => {
-  try {
-    const history = await AsyncStorage.getItem(SEARCH_HISTORY_KEY);
-    return history ? JSON.parse(history) : [];
-  } catch {
-    return [];
-  }
-};
-
-export const saveSearchHistory = async (keyword: string): Promise<void> => {
-  try {
-    const history = await getSearchHistory();
-    const updated = [
-      keyword,
-      ...history.filter(k => k !== keyword),
-    ].slice(0, MAX_SEARCH_HISTORY);
-    await AsyncStorage.setItem(SEARCH_HISTORY_KEY, JSON.stringify(updated));
-  } catch (error) {
-    console.error('Save search history error:', error);
-  }
-};
-
-export const clearSearchHistory = async (): Promise<void> => {
-  try {
-    await AsyncStorage.removeItem(SEARCH_HISTORY_KEY);
-  } catch (error) {
-    console.error('Clear search history error:', error);
-  }
-};

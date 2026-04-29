@@ -128,8 +128,7 @@ export default function HomeScreen() {
           <View style={{ flex: 1 }}>
             <Text style={styles.welcomeText}>{t('home.welcome')}</Text>
             <Text style={styles.subtitleText}>{t('home.subtitle')}</Text>
-          
-        </TouchableOpacity>
+          </View>
 
           <View style={styles.headerActions}>
             <TouchableOpacity
@@ -143,8 +142,7 @@ export default function HomeScreen() {
                   <Text style={styles.bellBadgeText}>
                     {unreadCount > 99 ? '99+' : unreadCount}
                   </Text>
-                
-        </TouchableOpacity>
+                </View>
               )}
             </TouchableOpacity>
 
@@ -152,10 +150,8 @@ export default function HomeScreen() {
               <Text style={styles.langBtnText}>🌐</Text>
               <Text style={styles.langBtnLabel}>{isZh ? 'EN' : '中'}</Text>
             </TouchableOpacity>
-          
-        </TouchableOpacity>
-        
-        </TouchableOpacity>
+          </View>
+        </View>
 
         {/* ─── Search ──────────────────────────────────────── */}
         <TouchableOpacity style={styles.searchRow} onPress={() => setSearchModalVisible(true)} activeOpacity={0.8}>
@@ -175,9 +171,7 @@ export default function HomeScreen() {
                 <Ionicons name="close-circle" size={18} color="#BBB" />
               </TouchableOpacity>
             )}
-          
-        </TouchableOpacity>
-        
+          </View>
         </TouchableOpacity>
 
         {/* ─── Categories ──────────────────────────────────── */}
@@ -227,8 +221,7 @@ export default function HomeScreen() {
           <TouchableOpacity onPress={() => router.push('/(tabs)/explore')}>
             <Text style={styles.seeAll}>{t('home.seeAll')}</Text>
           </TouchableOpacity>
-        
-        </TouchableOpacity>
+        </View>
 
         {homeLoading ? (
           <FlatList
@@ -240,8 +233,7 @@ export default function HomeScreen() {
             renderItem={() => (
               <View style={{ width: effectiveWidth * 0.72, marginRight: 12 }}>
                 <SkeletonCard />
-              
-        </TouchableOpacity>
+              </View>
             )}
           />
         ) : (
@@ -269,8 +261,7 @@ export default function HomeScreen() {
               <TouchableOpacity onPress={() => router.push('/ranking')}>
                 <Text style={styles.seeAll}>{t('home.seeAll')}</Text>
               </TouchableOpacity>
-            
-        </TouchableOpacity>
+            </View>
             <FlatList
               data={rankingData.slice(0, 5)}
               keyExtractor={(item) => item.id}
@@ -287,8 +278,7 @@ export default function HomeScreen() {
                   >
                     <View style={styles.rankBadge}>
                       <Text style={styles.rankBadgeText}>{rankBadge}</Text>
-                    
-        </TouchableOpacity>
+                    </View>
                     <LazyImage uri={item.cover_image} style={styles.rankingImage} />
                     <Text style={styles.rankingTitle} numberOfLines={1}>
                       {isZh ? item.title_zh : item.title}
@@ -306,8 +296,7 @@ export default function HomeScreen() {
           <TouchableOpacity onPress={() => router.push({ pathname: '/(tabs)/explore', params: { difficulty: 'easy' } })}>
             <Text style={styles.seeAll}>{t('home.seeAll')}</Text>
           </TouchableOpacity>
-        
-        </TouchableOpacity>
+        </View>
 
         {homeLoading ? (
           <SkeletonList count={6} />
@@ -322,8 +311,7 @@ export default function HomeScreen() {
                   onPress={() => router.push(`/recipe/${item.id}`)}
                 />
               ))}
-            
-        </TouchableOpacity>
+            </View>
             {/* 移除 ListFooter，不显示 "End of list" */}
           </>
         )}
