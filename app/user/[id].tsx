@@ -154,43 +154,43 @@ export default function UserProfileScreen() {
                 </Text>
               )}
 
-              {/* REQ-16.1: 统计数据 */}
+              {/* REQ-BF-010: 统计数据 - 添加点击跳转 */}
               <View style={styles.statsRow}>
-                <View style={styles.statItem}>
+                <TouchableOpacity style={styles.statItem} onPress={() => setActiveTab('recipes')}>
                   <Text style={[styles.statValue, { color: colors.text, fontSize: scaled(20) }]}>
                     {stats?.recipeCount || 0}
                   </Text>
                   <Text style={[styles.statLabel, { color: colors.subText, fontSize: scaled(12) }]}>
                     {isZh ? '菜谱' : 'Recipes'}
                   </Text>
-                </View>
+                </TouchableOpacity>
                 <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
-                <View style={styles.statItem}>
+                <TouchableOpacity style={styles.statItem} onPress={() => setActiveTab('liked')}>
                   <Text style={[styles.statValue, { color: colors.text, fontSize: scaled(20) }]}>
                     {stats?.totalLikes || 0}
                   </Text>
                   <Text style={[styles.statLabel, { color: colors.subText, fontSize: scaled(12) }]}>
                     {isZh ? '获赞' : 'Likes'}
                   </Text>
-                </View>
+                </TouchableOpacity>
                 <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
-                <View style={styles.statItem}>
+                <TouchableOpacity style={styles.statItem} onPress={() => setActiveTab('following')}>
                   <Text style={[styles.statValue, { color: colors.text, fontSize: scaled(20) }]}>
                     {stats?.followingCount || 0}
                   </Text>
                   <Text style={[styles.statLabel, { color: colors.subText, fontSize: scaled(12) }]}>
                     {isZh ? '关注' : 'Following'}
                   </Text>
-                </View>
+                </TouchableOpacity>
                 <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
-                <View style={styles.statItem}>
+                <TouchableOpacity style={styles.statItem} onPress={() => setActiveTab('followers')}>
                   <Text style={[styles.statValue, { color: colors.text, fontSize: scaled(20) }]}>
                     {stats?.followerCount || 0}
                   </Text>
                   <Text style={[styles.statLabel, { color: colors.subText, fontSize: scaled(12) }]}>
                     {isZh ? '粉丝' : 'Followers'}
                   </Text>
-                </View>
+                </TouchableOpacity>
               </View>
 
               {/* Action Buttons */}

@@ -105,10 +105,11 @@ async function getCacheSize(): Promise<number> {
 }
 
 export default function SettingsScreen() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const router = useRouter();
   const { colors, theme, setTheme, fontSize, setFontSize } = useTheme();
   const { scaled } = useFontScale();
+  const isZh = i18n.language === 'zh';
 
   const [cacheSize, setCacheSizeState] = useState<number | null>(null);
   const [clearing, setClearing] = useState(false);
@@ -248,6 +249,13 @@ export default function SettingsScreen() {
 
           {/* ─── 关于 ─── */}
           <Section title={t('settings.about')} colors={colors} scaled={scaled}>
+            {/* REQ-BF-015: 意见反馈入口 */}
+            <ActionRow
+              label={isZh ? '意见反馈' : 'Feedback'}
+              onPress={() => router.push('/feedback')}
+              colors={colors}
+              scaled={scaled}
+            />
             <ActionRow
               label={t('settings.version')}
               trailing={

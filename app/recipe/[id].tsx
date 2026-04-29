@@ -474,6 +474,16 @@ export default function RecipeDetailScreen() {
           <View style={styles.headerActionGroup}>
             {isAuthor ? (
               <>
+                {/* REQ-BF-002: 菜谱编辑按钮 */}
+                <TouchableOpacity
+                  style={[styles.backBtn, { backgroundColor: themeColors.inputBg }]}
+                  onPress={() => {
+                    if (!recipe) return;
+                    router.push(`/recipe/create?mode=edit&recipeId=${recipe.id}`);
+                  }}
+                >
+                  <Ionicons name="create-outline" size={20} color={COLORS.text} />
+                </TouchableOpacity>
                 <TouchableOpacity
                   style={[styles.backBtn, { backgroundColor: themeColors.inputBg }]}
                   onPress={() => {
