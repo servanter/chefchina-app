@@ -58,7 +58,7 @@ export default function HomeScreen() {
 
   const { user, isLoading: authLoading } = useAuth();
   const userId = user?.id ?? null;
-  
+
   const [searchText, setSearchText] = useState('');
   const [searchModalVisible, setSearchModalVisible] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -191,60 +191,8 @@ export default function HomeScreen() {
           ))}
         </ScrollView>
 
-      {/* 搜索模态框 */}
-      <SearchModal
-        visible={searchModalVisible}
-        onClose={() => setSearchModalVisible(false)}
-        tintColor={COLORS.primary}
-      />
-
-        {/* ─── Following Feed Entry (REQ-11.5) ──────────────────── */}
-        {userId && userId !== 'guest' && (
-          <TouchableOpacity
-            style={styles.followFeedEntry}
-            onPress={() => router.push('/follow-feed')}
-            activeOpacity={0.8}
-          >
-            <Ionicons name="people" size={20} color={COLORS.primary} />
-            <Text style={[styles.followFeedText, { color: COLORS.primary }]}>
-              {t('feed.title')}
-            </Text>
-            <Ionicons name="chevron-forward" size={18} color={COLORS.primary} />
-          </TouchableOpacity>
-        )}
-
         {/* ─── What to Eat Today? (REQ-9) ──────────────────── */}
         <WhatToEatButton tintColor={COLORS.primary} />
-
-        <TouchableOpacity
-          style={styles.tagsEntry}
-          onPress={() => router.push('/categories')}
-          activeOpacity={0.8}
-        >
-          <View style={styles.tagsEntryLeft}>
-            <Ionicons name="grid-outline" size={20} color={COLORS.primary} />
-            <View>
-              <Text style={[styles.tagsEntryTitle, { color: COLORS.primary }]}>{t('category.title')}</Text>
-              <Text style={styles.tagsEntrySubtitle}>{t('category.subtitle')}</Text>
-            </View>
-          </View>
-          <Ionicons name="chevron-forward" size={18} color={COLORS.primary} />
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.tagsEntry}
-          onPress={() => router.push('/tags')}
-          activeOpacity={0.8}
-        >
-          <View style={styles.tagsEntryLeft}>
-            <Ionicons name="pricetags-outline" size={20} color={COLORS.primary} />
-            <View>
-              <Text style={[styles.tagsEntryTitle, { color: COLORS.primary }]}>{t('tags.title')}</Text>
-              <Text style={styles.tagsEntrySubtitle}>{t('tags.subtitle')}</Text>
-            </View>
-          </View>
-          <Ionicons name="chevron-forward" size={18} color={COLORS.primary} />
-        </TouchableOpacity>
 
         {/* ─── Featured Recipes ────────────────────────────── */}
         <View style={styles.sectionHeader}>
@@ -331,7 +279,7 @@ export default function HomeScreen() {
           <RecipeSkeletonList count={4} variant="grid" />
         ) : (
           <>
-            <View style={[styles.gridContainer, { maxWidth: effectiveWidth, alignSelf: 'center', width: '100%' }]}> 
+            <View style={[styles.gridContainer, { maxWidth: effectiveWidth, alignSelf: 'center', width: '100%' }]}>
               {quickRecipes.map((item) => (
                 <RecipeCard
                   key={item.id}
@@ -547,56 +495,5 @@ const styles = StyleSheet.create({
     color: COLORS.text,
     paddingHorizontal: 8,
     paddingVertical: 6,
-  },
-  // Following Feed Entry (REQ-11.5)
-  followFeedEntry: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    marginHorizontal: 20,
-    marginVertical: 12,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    backgroundColor: COLORS.white,
-    borderRadius: 12,
-    borderWidth: 1.5,
-    borderColor: COLORS.primary,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-  },
-  followFeedText: {
-    fontSize: 14,
-    fontWeight: '700',
-  },
-  tagsEntry: {
-    marginHorizontal: 20,
-    marginBottom: 10,
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    backgroundColor: COLORS.white,
-    borderRadius: 12,
-    borderWidth: 1.5,
-    borderColor: '#F5D4C2',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  tagsEntryLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  tagsEntryTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-  },
-  tagsEntrySubtitle: {
-    marginTop: 2,
-    fontSize: 12,
-    color: '#8A7B70',
   },
 });
