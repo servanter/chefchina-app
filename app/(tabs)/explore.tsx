@@ -18,7 +18,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { RecipeCard } from '../../src/components/RecipeCard';
 import { CategoryChip } from '../../src/components/CategoryChip';
 import { EmptyState } from '../../src/components/EmptyState';
-import { SkeletonList } from '../../src/components/Skeleton';
+import { RecipeSkeletonList } from '../../src/components/RecipeSkeleton';
 import { ListFooter } from '../../src/components/ListFooter';
 import { useInfiniteRecipes, useCategories, useTags } from '../../src/hooks/useRecipes';
 import { useSearchTrending } from '../../src/hooks/useSearchTrending';
@@ -501,7 +501,9 @@ export default function ExploreScreen() {
 
           {/* ─── Recipe List ────────────────────────────── */}
           {isLoading ? (
-            <SkeletonList count={6} />
+            <View style={styles.list}>
+              <RecipeSkeletonList count={5} variant="list" />
+            </View>
           ) : showEmpty ? (
             <ScrollView
               contentContainerStyle={styles.emptyScroll}

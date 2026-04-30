@@ -5,5 +5,6 @@
     "paths": {
       "@/*": ["./src/*"]
     }
-  }
+  },
+  "exclude": ["dist", "dist-web", "node_modules"]
 }
