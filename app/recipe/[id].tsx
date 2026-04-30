@@ -453,6 +453,14 @@ export default function RecipeDetailScreen() {
     medium: '#FF9800',
     hard: '#F44336',
   };
+  const totalTime = recipe.prep_time + recipe.cook_time;
+  const difficultyDisplay = recipe.difficulty
+    ? recipe.difficulty === 'easy'
+      ? { icon: '⭐', text: t('recipe.difficultyEasy') }
+      : recipe.difficulty === 'medium'
+        ? { icon: '⭐⭐', text: t('recipe.difficultyMedium') }
+        : { icon: '⭐⭐⭐', text: t('recipe.difficultyHard') }
+    : null;
 
   return (
     <KeyboardAvoidingView
@@ -631,15 +639,27 @@ export default function RecipeDetailScreen() {
                   <View style={[styles.categoryBadge]}>
                     <Text style={styles.categoryText}>{recipe.category}</Text>
                   </View>
-                  {recipe.difficulty && (
-                    <View style={[styles.difficultyBadge, { backgroundColor: difficultyColors[recipe.difficulty] + '20' }]}>
-                      <Text style={[styles.difficultyText, { color: difficultyColors[recipe.difficulty] }]}>
-                        {t(`recipe.${recipe.difficulty}`)}
-                      </Text>
-                    </View>
-                  )}
                 </View>
                 <Text style={[styles.recipeTitle, { color: COLORS.text }]}>{title}</Text>
+                {(totalTime > 0 || difficultyDisplay) && (
+                  <View style={styles.titleMetaRow}>
+                    {totalTime > 0 && (
+                      <View style={styles.titleMetaChip}>
+                        <Ionicons name="time-outline" size={14} color={COLORS.primary} />
+                        <Text style={styles.titleMetaText}>
+                          {totalTime} {t('recipe.mins')}
+                        </Text>
+                      </View>
+                    )}
+                    {difficultyDisplay && (
+                      <View style={[styles.difficultyBadge, { backgroundColor: difficultyColors[recipe.difficulty!] + '20' }]}>
+                        <Text style={[styles.difficultyText, { color: difficultyColors[recipe.difficulty!] }]}>
+                          {difficultyDisplay.icon} {difficultyDisplay.text}
+                        </Text>
+                      </View>
+                    )}
+                  </View>
+                )}
               </View>
             </View>
 
@@ -670,25 +690,19 @@ export default function RecipeDetailScreen() {
                 只有有值才显示对应 icon。
             */}
             <View style={styles.metaBar}>
-              {recipe.cook_time > 0 && (
+              {recipe.prep_time > 0 && (
                 <View style={styles.metaChip}>
-                  <Ionicons name="time-outline" size={14} color={COLORS.primary} />
+                  <Ionicons name="cut-outline" size={14} color={COLORS.primary} />
                   <Text style={styles.metaChipText}>
-                    {recipe.cook_time} {t('recipe.mins')}
+                    {t('recipe.prepTime')} {recipe.prep_time} {t('recipe.mins')}
                   </Text>
                 </View>
               )}
-              {recipe.difficulty && (
+              {recipe.cook_time > 0 && (
                 <View style={styles.metaChip}>
                   <Ionicons name="flame-outline" size={14} color={COLORS.primary} />
                   <Text style={styles.metaChipText}>
-                    {t(
-                      recipe.difficulty === 'easy'
-                        ? 'recipe.difficultyEasy'
-                        : recipe.difficulty === 'medium'
-                        ? 'recipe.difficultyMedium'
-                        : 'recipe.difficultyHard',
-                    )}
+                    {t('recipe.cookTime')} {recipe.cook_time} {t('recipe.mins')}
                   </Text>
                 </View>
               )}
@@ -1205,6 +1219,27 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: 6,
     marginBottom: 10,
+  },
+  titleMetaRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginTop: 10,
+    marginBottom: 4,
+  },
+  titleMetaChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#FFF0E8',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 14,
+  },
+  titleMetaText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: COLORS.primary,
   },
   tagChip: {
     backgroundColor: '#F0F8FF',

@@ -368,6 +368,7 @@
     "difficulty_easy": "简单",
     "difficulty_medium": "中等",
     "difficulty_hard": "困难",
+    "prep_time": "准备时长（分钟）",
     "cook_time": "烹饪时长（分钟）",
     "servings": "份数",
     "calories": "卡路里",

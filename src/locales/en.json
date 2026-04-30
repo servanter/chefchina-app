@@ -368,6 +368,7 @@
     "difficulty_easy": "Easy",
     "difficulty_medium": "Medium",
     "difficulty_hard": "Hard",
+    "prep_time": "Prep Time (min)",
     "cook_time": "Cook Time (min)",
     "servings": "Servings",
     "calories": "Calories",

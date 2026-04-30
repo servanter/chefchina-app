@@ -135,6 +135,7 @@ export interface Recipe {
   updated_at?: string;
   category: string;
   category_slug?: string;
+  author_name?: string;
   // 需求 15：difficulty 可能为 null（菜谱未指定难度）→ App 端按 null 隐藏对应 icon
   difficulty: 'easy' | 'medium' | 'hard' | null;
   cook_time: number;
@@ -383,6 +384,7 @@ interface BackendRecipe {
   updatedAt?: string;
   // 需求 15：以下 4 个 meta 字段均允许 null（对应 Prisma 的 nullable 列）
   difficulty?: 'EASY' | 'MEDIUM' | 'HARD' | null;
+  prepTime?: number | null;
   cookTimeMin?: number | null;
   servings?: number | null;
   calories?: number | null;
@@ -464,10 +466,11 @@ export function adaptRecipe(r: BackendRecipe): Recipe {
     updated_at: r.updatedAt,
     category: r.category?.nameEn ?? '',
     category_slug: r.category?.slug ?? '',
+    author_name: (r as any).author?.name ?? undefined,
     difficulty: adaptDifficulty(r.difficulty),
     // null → 0：由 App 详情页按 > 0 条件隐藏对应 icon
     cook_time: r.cookTimeMin ?? 0,
-    prep_time: 0,
+    prep_time: r.prepTime ?? 0,
     servings: r.servings ?? 0,
     calories: r.calories ?? undefined,
     // 营养成分 (REQ-4.4)
@@ -675,6 +678,8 @@ export interface CreateRecipePayload {
   coverImage?: string;
   categoryId: string;
   difficulty?: 'EASY' | 'MEDIUM' | 'HARD';
+  prepTime?: number;
+  cookTime?: number;
   updatedAt?: string;
   cookTimeMin?: number;
   servings?: number;

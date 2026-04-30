@@ -60,6 +60,7 @@ export default function CreateRecipePage() {
   const [coverImage, setCoverImage] = useState<string>('')
   const [categoryId, setCategoryId] = useState<string>('')
   const [difficulty, setDifficulty] = useState<'EASY' | 'MEDIUM' | 'HARD'>('MEDIUM')
+  const [prepTime, setPrepTime] = useState('')
   const [cookTimeMin, setCookTimeMin] = useState('')
   const [servings, setServings] = useState('')
   const [calories, setCalories] = useState('')
@@ -102,6 +103,7 @@ export default function CreateRecipePage() {
         if (r.difficulty) {
           setDifficulty(r.difficulty.toUpperCase() as 'EASY' | 'MEDIUM' | 'HARD')
         }
+        if (r.prep_time) setPrepTime(String(r.prep_time))
         if (r.cook_time) setCookTimeMin(String(r.cook_time))
         if (r.servings) setServings(String(r.servings))
         if (r.calories) setCalories(String(r.calories))
@@ -290,6 +292,8 @@ export default function CreateRecipePage() {
       coverImage: coverImage || undefined,
       categoryId,
       difficulty,
+      prepTime: prepTime ? parseInt(prepTime) : undefined,
+      cookTime: cookTimeMin ? parseInt(cookTimeMin) : undefined,
       cookTimeMin: cookTimeMin ? parseInt(cookTimeMin) : undefined,
       servings: servings ? parseInt(servings) : undefined,
       calories: calories ? parseInt(calories) : undefined,
@@ -529,19 +533,31 @@ export default function CreateRecipePage() {
           </View>
           <View style={styles.rowInputs}>
             <View style={styles.rowInputWrapper}>
+              <Text style={styles.inputLabel}>{t('recipe_create.prep_time')}</Text>
+              <TextInput
+                style={[styles.input, styles.compactInput]}
+                placeholder="15"
+                value={prepTime}
+                onChangeText={setPrepTime}
+                keyboardType="number-pad"
+              />
+            </View>
+            <View style={styles.rowInputWrapper}>
               <Text style={styles.inputLabel}>{t('recipe_create.cook_time')}</Text>
               <TextInput
-                style={styles.smallInput}
+                style={[styles.input, styles.compactInput]}
                 placeholder="30"
                 value={cookTimeMin}
                 onChangeText={setCookTimeMin}
                 keyboardType="number-pad"
               />
             </View>
+          </View>
+          <View style={styles.rowInputs}>
             <View style={styles.rowInputWrapper}>
               <Text style={styles.inputLabel}>{t('recipe_create.servings')}</Text>
               <TextInput
-                style={styles.smallInput}
+                style={[styles.input, styles.compactInput]}
                 placeholder="4"
                 value={servings}
                 onChangeText={setServings}
@@ -551,7 +567,7 @@ export default function CreateRecipePage() {
             <View style={styles.rowInputWrapper}>
               <Text style={styles.inputLabel}>{t('recipe_create.calories')}</Text>
               <TextInput
-                style={styles.smallInput}
+                style={[styles.input, styles.compactInput]}
                 placeholder="350"
                 value={calories}
                 onChangeText={setCalories}
@@ -900,6 +916,10 @@ const styles = StyleSheet.create({
   },
   smallInput: {
     flex: 1,
+  },
+  compactInput: {
+    paddingHorizontal: 12,
+    paddingVertical: 10,
   },
   difficultyButtons: {
     flexDirection: 'row',

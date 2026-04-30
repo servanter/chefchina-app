@@ -22,18 +22,21 @@ interface RecipeCardProps {
 const DifficultyBadge = ({ difficulty }: { difficulty: Recipe['difficulty'] }) => {
   const { t } = useTranslation();
   const { scaled } = useFontScale();
-  // 需求 15：difficulty 可能为 null（未指定）→ RecipeCard 中兜底为 easy，
-  // 保持列表视觉一致。详情页会用 null 判断是否隐藏 meta icon。
-  const d = difficulty ?? 'easy';
+  if (!difficulty) return null;
   const colors: Record<string, string> = {
     easy: '#4CAF50',
     medium: '#FF9800',
     hard: '#F44336',
   };
+  const icons: Record<string, string> = {
+    easy: '⭐',
+    medium: '⭐⭐',
+    hard: '⭐⭐⭐',
+  };
   return (
-    <View style={[styles.badge, { backgroundColor: colors[d] + '20' }]}>
-      <Text style={[styles.badgeText, { color: colors[d], fontSize: scaled(11) }]}>
-        {t(`recipe.${d}`)}
+    <View style={[styles.badge, { backgroundColor: colors[difficulty] + '20' }]}>
+      <Text style={[styles.badgeText, { color: colors[difficulty], fontSize: scaled(11) }]}>
+        {icons[difficulty]} {t(`recipe.${difficulty}`)}
       </Text>
     </View>
   );
@@ -68,10 +71,19 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
             {title}
           </Text>
           <View style={styles.featuredMeta}>
-            <Ionicons name="time-outline" size={13} color="rgba(255,255,255,0.9)" />
-            <Text style={[styles.featuredMetaText, { fontSize: scaled(12) }]}>
-              {recipe.cook_time + recipe.prep_time} min
-            </Text>
+            {(recipe.cook_time + recipe.prep_time) > 0 && (
+              <>
+                <Ionicons name="time-outline" size={13} color="rgba(255,255,255,0.9)" />
+                <Text style={[styles.featuredMetaText, { fontSize: scaled(12) }]}>
+                  {recipe.cook_time + recipe.prep_time} min
+                </Text>
+              </>
+            )}
+            {recipe.difficulty && (
+              <Text style={[styles.featuredMetaText, { fontSize: scaled(12), marginLeft: 10 }]}>
+                {recipe.difficulty === 'easy' ? '⭐' : recipe.difficulty === 'medium' ? '⭐⭐' : '⭐⭐⭐'}
+              </Text>
+            )}
             <Ionicons name="heart" size={13} color="rgba(255,255,255,0.9)" style={{ marginLeft: 10 }} />
             <Text style={[styles.featuredMetaText, { fontSize: scaled(12) }]}>{recipe.likes_count}</Text>
           </View>
@@ -93,13 +105,15 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
             {title}
           </Text>
           <View style={styles.listMeta}>
+            {(recipe.cook_time + recipe.prep_time) > 0 && (
+              <View style={styles.listTimeRow}>
+                <Ionicons name="time-outline" size={12} color={colors.subText} />
+                <Text style={[styles.listMetaText, { color: colors.subText, fontSize: scaled(12) }]}> 
+                  {recipe.cook_time + recipe.prep_time} min
+                </Text>
+              </View>
+            )}
             <DifficultyBadge difficulty={recipe.difficulty} />
-            <View style={styles.listTimeRow}>
-              <Ionicons name="time-outline" size={12} color={colors.subText} />
-              <Text style={[styles.listMetaText, { color: colors.subText, fontSize: scaled(12) }]}>
-                {' '}{recipe.cook_time + recipe.prep_time} min
-              </Text>
-            </View>
           </View>
           <View style={styles.listStats}>
             <Ionicons name="heart" size={13} color={colors.tint} />
@@ -127,16 +141,25 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
           {title}
         </Text>
         <View style={styles.gridMeta}>
-          <Ionicons name="time-outline" size={12} color={colors.subText} />
-          <Text style={[styles.gridMetaText, { color: colors.subText, fontSize: scaled(11) }]}>
-            {recipe.cook_time + recipe.prep_time} min
-          </Text>
+          {(recipe.cook_time + recipe.prep_time) > 0 && (
+            <>
+              <Ionicons name="time-outline" size={12} color={colors.subText} />
+              <Text style={[styles.gridMetaText, { color: colors.subText, fontSize: scaled(11) }]}>
+                {recipe.cook_time + recipe.prep_time} min
+              </Text>
+            </>
+          )}
           <View style={styles.ratingRow}>
             <Ionicons name="star" size={12} color="#FFB800" />
             <Text style={[styles.gridMetaText, { color: colors.subText, fontSize: scaled(11) }]}>
               {recipe.avg_rating.toFixed(1)}
             </Text>
           </View>
+          {recipe.difficulty && (
+            <Text style={[styles.gridMetaText, { color: colors.subText, fontSize: scaled(11), marginLeft: 8 }]}>
+              {recipe.difficulty === 'easy' ? '⭐' : recipe.difficulty === 'medium' ? '⭐⭐' : '⭐⭐⭐'}
+            </Text>
+          )}
         </View>
         <DifficultyBadge difficulty={recipe.difficulty} />
       </View>
