@@ -20,11 +20,11 @@ import {
   useInfiniteNotifications,
   useMarkRead,
   useMarkAllRead,
-  useUnreadCount,
   type TabType,
   type Notification,
   type NotificationType,
 } from '../src/hooks/useNotifications';
+import { useUnreadCount } from '../src/hooks/useUnreadCount';
 import { getUserId } from '../src/lib/storage';
 import { useTheme } from '../src/contexts/ThemeContext';
 
@@ -57,23 +57,27 @@ function formatRelativeTime(iso: string, isZh: boolean): string {
   return new Date(iso).toLocaleDateString();
 }
 
-const COLORS = { primary: '#E85D26', background: '#FFFDF9', text: '#1A1A1A', textSecondary: '#666', inputBg: '#F5F2EE', border: '#E8E4DF', card: '#FFF', tint: '#E85D26', unreadBg: '#FFF5F0' };
 export default function NotificationsScreen() {
   const { t, i18n } = useTranslation();
   const router = useRouter();
   const isZh = i18n.language === 'zh';
   const { colors } = useTheme();
 
-  // Derive COLORS from theme for backward compat
-  const COLORS = useMemo(() => ({
-    primary: colors.tint,
-    background: colors.bg,
-    text: colors.text,
-    textSecondary: colors.subText,
-    white: colors.card,
-    border: colors.border,
-    unreadBg: colors.chipBg,
-  }), [colors]);
+  const themed = useMemo(
+    () => ({
+      primary: colors.tint,
+      background: colors.bg,
+      text: colors.text,
+      textSecondary: colors.subText,
+      border: colors.border,
+      unreadBg: colors.chipBg,
+      buttonBg: '#FFF0E8',
+      buttonBgDisabled: '#F2EFEA',
+      meta: '#999',
+      white: '#FFF',
+    }),
+    [colors],
+  );
 
   const [userId, setUserId] = useState<string | null>(null);
   const [resolvedAuth, setResolvedAuth] = useState(false);
@@ -111,7 +115,9 @@ export default function NotificationsScreen() {
   }, [refetch]);
 
   const handleLoadMore = useCallback(() => {
-    if (!isFetchingNextPage && hasNextPage) fetchNextPage();
+    if (!isFetchingNextPage && hasNextPage) {
+      fetchNextPage();
+    }
   }, [isFetchingNextPage, hasNextPage, fetchNextPage]);
 
   const handleItemPress = useCallback(
@@ -120,7 +126,7 @@ export default function NotificationsScreen() {
         try {
           await markRead.mutateAsync(n.id);
         } catch {
-          // ignore — UI updates optimistically
+          // ignore — UI updates after invalidation/polling
         }
       }
 
@@ -149,11 +155,190 @@ export default function NotificationsScreen() {
     }
   }, [markAllRead, t]);
 
-  const items = useMemo(
-    () => (data?.pages ?? []).flatMap((p) => p.data),
-    [data],
+  const items = useMemo(() => (data?.pages ?? []).flatMap((p) => p.data), [data]);
+  const unread = unreadCounts?.all ?? data?.pages?.[0]?.unreadCount ?? 0;
+
+  const styles = useMemo(
+    () =>
+      StyleSheet.create({
+        safeArea: {
+          flex: 1,
+          backgroundColor: themed.background,
+        },
+        header: {
+          flexDirection: 'row',
+          alignItems: 'center',
+          paddingHorizontal: 12,
+          paddingVertical: 10,
+          borderBottomWidth: 1,
+          borderBottomColor: themed.border,
+          backgroundColor: themed.background,
+          gap: 8,
+        },
+        iconBtn: {
+          width: 40,
+          height: 40,
+          alignItems: 'center',
+          justifyContent: 'center',
+          borderRadius: 20,
+        },
+        headerCenter: {
+          flex: 1,
+          justifyContent: 'center',
+        },
+        headerTitle: {
+          fontSize: 17,
+          fontWeight: '800',
+          color: themed.text,
+        },
+        headerSubtitle: {
+          fontSize: 12,
+          color: themed.textSecondary,
+          marginTop: 2,
+        },
+        markAllBtn: {
+          paddingHorizontal: 12,
+          paddingVertical: 8,
+          borderRadius: 10,
+          backgroundColor: themed.buttonBg,
+        },
+        markAllBtnDisabled: {
+          backgroundColor: themed.buttonBgDisabled,
+        },
+        markAllText: {
+          fontSize: 12,
+          fontWeight: '700',
+          color: themed.primary,
+        },
+        markAllTextDisabled: {
+          color: themed.meta,
+        },
+        listContent: {
+          paddingVertical: 4,
+          paddingBottom: 32,
+        },
+        row: {
+          flexDirection: 'row',
+          alignItems: 'flex-start',
+          paddingHorizontal: 16,
+          paddingVertical: 14,
+          gap: 12,
+          backgroundColor: themed.background,
+          borderBottomWidth: 1,
+          borderBottomColor: themed.border,
+        },
+        rowUnread: {
+          backgroundColor: themed.unreadBg,
+        },
+        iconCircle: {
+          width: 36,
+          height: 36,
+          borderRadius: 18,
+          alignItems: 'center',
+          justifyContent: 'center',
+          marginTop: 2,
+        },
+        rowBody: {
+          flex: 1,
+          minWidth: 0,
+        },
+        rowTitleRow: {
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: 6,
+          marginBottom: 2,
+        },
+        rowTitle: {
+          flex: 1,
+          fontSize: 14,
+          fontWeight: '700',
+          color: themed.text,
+        },
+        dot: {
+          width: 8,
+          height: 8,
+          borderRadius: 4,
+          backgroundColor: themed.primary,
+        },
+        rowText: {
+          fontSize: 13,
+          color: themed.textSecondary,
+          lineHeight: 18,
+          marginBottom: 6,
+        },
+        rowMeta: {
+          fontSize: 11,
+          color: themed.meta,
+        },
+        errorContainer: {
+          flex: 1,
+          alignItems: 'center',
+          justifyContent: 'center',
+          paddingHorizontal: 32,
+          gap: 12,
+        },
+        errorText: {
+          fontSize: 15,
+          color: themed.textSecondary,
+          textAlign: 'center',
+        },
+        retryBtn: {
+          marginTop: 4,
+          paddingHorizontal: 24,
+          paddingVertical: 10,
+          borderRadius: 20,
+          backgroundColor: themed.buttonBg,
+        },
+        retryText: {
+          fontSize: 14,
+          fontWeight: '700',
+          color: themed.primary,
+        },
+        tabBar: {
+          flexDirection: 'row',
+          backgroundColor: themed.background,
+          borderBottomWidth: 1,
+          borderBottomColor: themed.border,
+          paddingHorizontal: 8,
+        },
+        tab: {
+          flex: 1,
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'center',
+          paddingVertical: 12,
+          gap: 4,
+          borderBottomWidth: 2,
+          borderBottomColor: 'transparent',
+        },
+        tabActive: {
+          borderBottomColor: themed.primary,
+        },
+        tabText: {
+          fontSize: 14,
+          fontWeight: '600',
+          color: themed.textSecondary,
+        },
+        tabTextActive: {
+          color: themed.primary,
+        },
+        badge: {
+          backgroundColor: themed.primary,
+          borderRadius: 10,
+          minWidth: 18,
+          height: 18,
+          alignItems: 'center',
+          justifyContent: 'center',
+          paddingHorizontal: 4,
+        },
+        badgeText: {
+          fontSize: 10,
+          fontWeight: '700',
+          color: themed.white,
+        },
+      }),
+    [themed],
   );
-  const unread = data?.pages?.[0]?.unreadCount ?? 0;
 
   if (!resolvedAuth) {
     return <LoadingSpinner fullScreen />;
@@ -163,7 +348,7 @@ export default function NotificationsScreen() {
     <SafeAreaView style={styles.safeArea} edges={['top']}>
       <View style={styles.header}>
         <TouchableOpacity style={styles.iconBtn} onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={22} color={COLORS.text} />
+          <Ionicons name="arrow-back" size={22} color={themed.text} />
         </TouchableOpacity>
         <View style={styles.headerCenter}>
           <Text style={styles.headerTitle}>{t('notifications.title')}</Text>
@@ -174,89 +359,47 @@ export default function NotificationsScreen() {
           )}
         </View>
         <TouchableOpacity
-          style={[
-            styles.markAllBtn,
-            unread === 0 && styles.markAllBtnDisabled,
-          ]}
+          style={[styles.markAllBtn, unread === 0 && styles.markAllBtnDisabled]}
           onPress={handleMarkAll}
           disabled={unread === 0 || markAllRead.isPending}
         >
           {markAllRead.isPending ? (
-            <ActivityIndicator size="small" color={COLORS.primary} />
+            <ActivityIndicator size="small" color={themed.primary} />
           ) : (
-            <Text
-              style={[
-                styles.markAllText,
-                unread === 0 && styles.markAllTextDisabled,
-              ]}
-            >
+            <Text style={[styles.markAllText, unread === 0 && styles.markAllTextDisabled]}>
               {t('notifications.markAllRead')}
             </Text>
           )}
         </TouchableOpacity>
       </View>
 
-      {/* REQ-16.2: Tab 分类 */}
       <View style={styles.tabBar}>
-        <TouchableOpacity
-          style={[styles.tab, activeTab === 'all' && styles.tabActive]}
-          onPress={() => setActiveTab('all')}
-        >
-          <Text style={[styles.tabText, activeTab === 'all' && styles.tabTextActive]}>
-            {isZh ? '全部' : 'All'}
-          </Text>
-          {(unreadCounts?.all || 0) > 0 && (
-            <View style={styles.badge}>
-              <Text style={styles.badgeText}>{unreadCounts?.all}</Text>
-            </View>
-          )}
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.tab, activeTab === 'like' && styles.tabActive]}
-          onPress={() => setActiveTab('like')}
-        >
-          <Text style={[styles.tabText, activeTab === 'like' && styles.tabTextActive]}>
-            {isZh ? '点赞' : 'Likes'}
-          </Text>
-          {(unreadCounts?.like || 0) > 0 && (
-            <View style={styles.badge}>
-              <Text style={styles.badgeText}>{unreadCounts?.like}</Text>
-            </View>
-          )}
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.tab, activeTab === 'comment' && styles.tabActive]}
-          onPress={() => setActiveTab('comment')}
-        >
-          <Text style={[styles.tabText, activeTab === 'comment' && styles.tabTextActive]}>
-            {isZh ? '评论' : 'Comments'}
-          </Text>
-          {(unreadCounts?.comment || 0) > 0 && (
-            <View style={styles.badge}>
-              <Text style={styles.badgeText}>{unreadCounts?.comment}</Text>
-            </View>
-          )}
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.tab, activeTab === 'system' && styles.tabActive]}
-          onPress={() => setActiveTab('system')}
-        >
-          <Text style={[styles.tabText, activeTab === 'system' && styles.tabTextActive]}>
-            {isZh ? '系统' : 'System'}
-          </Text>
-          {(unreadCounts?.system || 0) > 0 && (
-            <View style={styles.badge}>
-              <Text style={styles.badgeText}>{unreadCounts?.system}</Text>
-            </View>
-          )}
-        </TouchableOpacity>
+        {([
+          ['all', isZh ? '全部' : 'All', unreadCounts?.all ?? 0],
+          ['like', isZh ? '点赞' : 'Likes', unreadCounts?.like ?? 0],
+          ['comment', isZh ? '评论' : 'Comments', unreadCounts?.comment ?? 0],
+          ['system', isZh ? '系统' : 'System', unreadCounts?.system ?? 0],
+        ] as const).map(([tab, label, count]) => (
+          <TouchableOpacity
+            key={tab}
+            style={[styles.tab, activeTab === tab && styles.tabActive]}
+            onPress={() => setActiveTab(tab)}
+          >
+            <Text style={[styles.tabText, activeTab === tab && styles.tabTextActive]}>{label}</Text>
+            {count > 0 && (
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>{count > 99 ? '99+' : count}</Text>
+              </View>
+            )}
+          </TouchableOpacity>
+        ))}
       </View>
 
       {isLoading && !data ? (
         <LoadingSpinner />
       ) : error && items.length === 0 ? (
         <View style={styles.errorContainer}>
-          <Ionicons name="cloud-offline-outline" size={48} color={COLORS.textSecondary} />
+          <Ionicons name="cloud-offline-outline" size={48} color={themed.textSecondary} />
           <Text style={styles.errorText}>{t('list.loadFailed')}</Text>
           <TouchableOpacity style={styles.retryBtn} onPress={() => refetch()}>
             <Text style={styles.retryText}>{t('common.retry')}</Text>
@@ -288,12 +431,13 @@ export default function NotificationsScreen() {
             <RefreshControl
               refreshing={refreshing || isFetching}
               onRefresh={onRefresh}
-              tintColor={COLORS.primary}
+              tintColor={themed.primary}
             />
           }
           renderItem={({ item }) => {
             const iconName = ICONS[item.type] ?? 'notifications-outline';
-            const tint = ICON_TINT[item.type] ?? COLORS.primary;
+            const tint = ICON_TINT[item.type] ?? themed.primary;
+
             return (
               <TouchableOpacity
                 style={[styles.row, !item.read && styles.rowUnread]}
@@ -314,8 +458,7 @@ export default function NotificationsScreen() {
                     {item.body}
                   </Text>
                   <Text style={styles.rowMeta}>
-                    {formatRelativeTime(item.created_at, isZh)} ·{' '}
-                    {t(`notifications.types.${item.type}`)}
+                    {formatRelativeTime(item.created_at, isZh)} · {t(`notifications.types.${item.type}`)}
                   </Text>
                 </View>
               </TouchableOpacity>
@@ -326,182 +469,3 @@ export default function NotificationsScreen() {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: COLORS.background,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
-    backgroundColor: COLORS.background,
-    gap: 8,
-  },
-  iconBtn: {
-    width: 40,
-    height: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 20,
-  },
-  headerCenter: {
-    flex: 1,
-    justifyContent: 'center',
-  },
-  headerTitle: {
-    fontSize: 17,
-    fontWeight: '800',
-    color: COLORS.text,
-  },
-  headerSubtitle: {
-    fontSize: 12,
-    color: COLORS.textSecondary,
-    marginTop: 2,
-  },
-  markAllBtn: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 10,
-    backgroundColor: '#FFF0E8',
-  },
-  markAllBtnDisabled: {
-    backgroundColor: '#F2EFEA',
-  },
-  markAllText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: COLORS.primary,
-  },
-  markAllTextDisabled: {
-    color: '#999',
-  },
-  listContent: {
-    paddingVertical: 4,
-    paddingBottom: 32,
-  },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    gap: 12,
-    backgroundColor: COLORS.background,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
-  },
-  rowUnread: {
-    backgroundColor: COLORS.unreadBg,
-  },
-  iconCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 2,
-  },
-  rowBody: {
-    flex: 1,
-    minWidth: 0,
-  },
-  rowTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginBottom: 2,
-  },
-  rowTitle: {
-    flex: 1,
-    fontSize: 14,
-    fontWeight: '700',
-    color: COLORS.text,
-  },
-  dot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: COLORS.primary,
-  },
-  rowText: {
-    fontSize: 13,
-    color: COLORS.textSecondary,
-    lineHeight: 18,
-    marginBottom: 6,
-  },
-  rowMeta: {
-    fontSize: 11,
-    color: '#999',
-  },
-  errorContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 32,
-    gap: 12,
-  },
-  errorText: {
-    fontSize: 15,
-    color: COLORS.textSecondary,
-    textAlign: 'center',
-  },
-  retryBtn: {
-    marginTop: 4,
-    paddingHorizontal: 24,
-    paddingVertical: 10,
-    borderRadius: 20,
-    backgroundColor: '#FFF0E8',
-  },
-  retryText: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: COLORS.primary,
-  },
-  // REQ-16.2: Tab Bar 样式
-  tabBar: {
-    flexDirection: 'row',
-    backgroundColor: COLORS.background,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
-    paddingHorizontal: 8,
-  },
-  tab: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 12,
-    gap: 4,
-    borderBottomWidth: 2,
-    borderBottomColor: 'transparent',
-  },
-  tabActive: {
-    borderBottomColor: COLORS.primary,
-  },
-  tabText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: COLORS.textSecondary,
-  },
-  tabTextActive: {
-    color: COLORS.primary,
-  },
-  badge: {
-    backgroundColor: COLORS.primary,
-    borderRadius: 10,
-    minWidth: 18,
-    height: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 4,
-  },
-  badgeText: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: '#FFF',
-  },
-});
