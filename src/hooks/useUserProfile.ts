@@ -40,7 +40,7 @@ export function useUserFavorites(userId?: string | null) {
     queryFn: async () => {
       if (!userId) throw new Error('userId is required')
       const res = await apiClient.get(`/users/${userId}/favorites`)
-      return res.data.data as any[]
+      return (res.data.data?.data ?? []) as any[]
     },
     enabled: !!userId,
   })
@@ -53,7 +53,7 @@ export function useUserFollowing(userId?: string | null) {
     queryFn: async () => {
       if (!userId) throw new Error('userId is required')
       const res = await apiClient.get(`/users/${userId}/following`)
-      return res.data.following as any[]
+      return (res.data.data?.following ?? []) as any[]
     },
     enabled: !!userId,
   })

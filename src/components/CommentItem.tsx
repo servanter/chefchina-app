@@ -62,7 +62,12 @@ export const CommentItem: React.FC<CommentItemProps> = ({ comment, canManage = f
           <Text style={styles.date}>{dateStr}</Text>
         </View>
         {comment.rating && <StarRating rating={comment.rating} />}
-        <Text style={styles.content}>{comment.content}</Text>
+        <Text style={styles.content}>
+          {comment.reply_to_user?.name ? (
+            <Text style={styles.replyToText}>{`回复 @${comment.reply_to_user.name} `}</Text>
+          ) : null}
+          {comment.content}
+        </Text>
         
         {/* 评论图片展示 */}
         {comment.images && comment.images.length > 0 && (
@@ -103,7 +108,7 @@ export const CommentItem: React.FC<CommentItemProps> = ({ comment, canManage = f
               )}
             </TouchableOpacity>
           )}
-          {!isReply && onReply && (
+          {onReply && (
             <TouchableOpacity 
               style={styles.replyButton}
               onPress={() => onReply(comment)}
@@ -237,6 +242,10 @@ const styles = StyleSheet.create({
     color: '#444',
     lineHeight: 20,
     marginTop: 6,
+  },
+  replyToText: {
+    color: '#E85D26',
+    fontWeight: '600',
   },
   imagesContainer: {
     marginTop: 8,
