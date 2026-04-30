@@ -17,6 +17,11 @@ interface StepItemProps {
 
 export const StepItem: React.FC<StepItemProps> = ({ step, isZh = false, onImagePress }) => {
   const description = isZh ? step.description_zh : step.description;
+  const images = Array.isArray(step.image)
+    ? step.image.filter(Boolean)
+    : step.image
+      ? [step.image]
+      : [];
 
   return (
     <View style={styles.container}>
@@ -28,17 +33,25 @@ export const StepItem: React.FC<StepItemProps> = ({ step, isZh = false, onImageP
       </View>
       <View style={styles.content}>
         <Text style={styles.description}>{description}</Text>
-        {step.image ? (
-          onImagePress ? (
-            <TouchableOpacity
-              activeOpacity={0.9}
-              onPress={() => onImagePress(step.image!)}
-            >
-              <LazyImage uri={step.image} style={styles.stepImage} />
-            </TouchableOpacity>
-          ) : (
-            <LazyImage uri={step.image} style={styles.stepImage} />
-          )
+        {images.length > 0 ? (
+          <View style={styles.imageList}>
+            {images.map((uri, index) => {
+              const imageNode = <LazyImage uri={uri} style={styles.stepImage} />;
+              return onImagePress ? (
+                <TouchableOpacity
+                  key={`${step.order}-${index}-${uri}`}
+                  activeOpacity={0.9}
+                  onPress={() => onImagePress(uri)}
+                >
+                  {imageNode}
+                </TouchableOpacity>
+              ) : (
+                <View key={`${step.order}-${index}-${uri}`}>
+                  {imageNode}
+                </View>
+              );
+            })}
+          </View>
         ) : null}
       </View>
     </View>
@@ -85,10 +98,13 @@ const styles = StyleSheet.create({
     lineHeight: 22,
     marginTop: 4,
   },
+  imageList: {
+    marginTop: 10,
+    gap: 10,
+  },
   stepImage: {
     width: '100%',
     height: 160,
     borderRadius: 12,
-    marginTop: 10,
   },
 });

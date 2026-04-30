@@ -104,6 +104,7 @@ export default function RecipeDetailScreen() {
   const [viewerVisible, setViewerVisible] = useState(false);
   const [viewerImages, setViewerImages] = useState<string[]>([]);
   const [viewerIndex, setViewerIndex] = useState(0);
+  const [heroImageIndex, setHeroImageIndex] = useState(0);
 
   // Report modal state (需求 4)
   const [reportVisible, setReportVisible] = useState(false);
@@ -298,7 +299,6 @@ export default function RecipeDetailScreen() {
         rating: replyingTo ? undefined : userRating,
         images: commentImages.length > 0 ? commentImages : undefined,
         parent_id: replyingTo?.id,
-        reply_to_user_id: replyingTo?.user?.id,
       });
       setCommentText('');
       setUserRating(0);
@@ -444,6 +444,29 @@ export default function RecipeDetailScreen() {
 
   const title = isZh ? recipe.title_zh : recipe.title;
   const description = isZh ? recipe.description_zh : recipe.description;
+
+  const allRecipeImages = useMemo(() => {
+    const images: string[] = [];
+    const seen = new Set<string>();
+    const addImage = (image?: string | string[] | null) => {
+      if (!image) return;
+      const list = Array.isArray(image) ? image : [image];
+      list.forEach((uri) => {
+        if (!uri || seen.has(uri)) return;
+        seen.add(uri);
+        images.push(uri);
+      });
+    };
+
+    addImage(recipe.cover_image || DEFAULT_COVER_FALLBACK);
+    recipe.steps?.forEach((step) => addImage(step.image));
+
+    return images;
+  }, [recipe]);
+
+  useEffect(() => {
+    setHeroImageIndex(0);
+  }, [recipe?.id, allRecipeImages.length]);
 
   const TABS: { id: TabId; label: string }[] = [
     { id: 'ingredients', label: t('recipe.ingredients') },
@@ -621,15 +644,38 @@ export default function RecipeDetailScreen() {
         >
           {/* ── Hero Image ── */}
           <View style={styles.heroContainer}>
-            <TouchableOpacity
-              activeOpacity={0.95}
-              onPress={() =>
-                openViewer([recipe.cover_image || DEFAULT_COVER_FALLBACK], 0)
-              }
-              style={styles.heroTouchable}
+            <ScrollView
+              horizontal
+              pagingEnabled
+              showsHorizontalScrollIndicator={false}
+              style={styles.heroCarousel}
+              onMomentumScrollEnd={(event) => {
+                const nextIndex = Math.round(event.nativeEvent.contentOffset.x / width);
+                setHeroImageIndex(Math.max(0, Math.min(allRecipeImages.length - 1, nextIndex)));
+              }}
             >
-              <LazyImage uri={recipe.cover_image} style={styles.heroImage} priority="high" />
-            </TouchableOpacity>
+              {allRecipeImages.map((imageUri, index) => (
+                <TouchableOpacity
+                  key={`${imageUri}-${index}`}
+                  activeOpacity={0.95}
+                  onPress={() => openViewer(allRecipeImages, index)}
+                  style={[styles.heroTouchable, { width }]}
+                >
+                  <LazyImage uri={imageUri} style={styles.heroImage} priority={index === 0 ? 'high' : undefined} />
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+            <View style={styles.heroPagination} pointerEvents="none">
+              {allRecipeImages.map((_, index) => (
+                <View
+                  key={`dot-${index}`}
+                  style={[
+                    styles.heroPaginationDot,
+                    index === heroImageIndex && styles.heroPaginationDotActive,
+                  ]}
+                />
+              ))}
+            </View>
             <View style={styles.heroGradient} />
           </View>
 
@@ -910,9 +956,6 @@ export default function RecipeDetailScreen() {
                   </TouchableOpacity>
                 </View>
                 {(() => {
-                  const stepImages = recipe.steps
-                    .map((s) => s.image)
-                    .filter((img): img is string => !!img);
                   if (stepMode) {
                     const currentStep = recipe.steps[stepModeIndex];
                     return (
@@ -927,8 +970,10 @@ export default function RecipeDetailScreen() {
                           onImagePress={
                             currentStep.image
                               ? (uri) => {
-                                  const idx = stepImages.indexOf(uri);
-                                  openViewer(stepImages, Math.max(0, idx));
+                                  const idx = allRecipeImages.indexOf(uri);
+                                  if (idx >= 0) {
+                                    openViewer(allRecipeImages, idx);
+                                  }
                                 }
                               : undefined
                           }
@@ -960,8 +1005,10 @@ export default function RecipeDetailScreen() {
                       onImagePress={
                         step.image
                           ? (uri) => {
-                              const idx = stepImages.indexOf(uri);
-                              openViewer(stepImages, Math.max(0, idx));
+                              const idx = allRecipeImages.indexOf(uri);
+                              if (idx >= 0) {
+                                openViewer(allRecipeImages, idx);
+                              }
                             }
                           : undefined
                       }
@@ -1233,6 +1280,10 @@ const styles = StyleSheet.create({
     width: '100%',
     height: HERO_HEIGHT,
   },
+  heroCarousel: {
+    width: '100%',
+    height: '100%',
+  },
   heroTouchable: {
     width: '100%',
     height: '100%',
@@ -1241,6 +1292,27 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
     resizeMode: 'cover',
+  },
+  heroPagination: {
+    position: 'absolute',
+    bottom: 18,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 6,
+    zIndex: 2,
+  },
+  heroPaginationDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: 'rgba(255,255,255,0.55)',
+  },
+  heroPaginationDotActive: {
+    width: 18,
+    backgroundColor: '#FFF',
   },
   heroGradient: {
     position: 'absolute',
