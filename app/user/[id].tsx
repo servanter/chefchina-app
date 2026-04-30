@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -16,6 +16,7 @@ import { useQuery } from '@tanstack/react-query';
 import { AppImage } from '../../src/components/AppImage';
 import { LoadingSpinner } from '../../src/components/LoadingSpinner';
 import { EmptyState } from '../../src/components/EmptyState';
+import { RecipeSkeletonList } from '../../src/components/RecipeSkeleton';
 import { useAuth } from '../../src/hooks/useAuth';
 import { useUserStats, useUserRecipes, useUserFavorites, useUserFollowing, useUserFollowers } from '../../src/hooks/useUserProfile';
 import { useTheme } from '../../src/contexts/ThemeContext';
@@ -56,12 +57,46 @@ export default function UserProfileScreen() {
   const { data: stats, refetch: refetchStats } = useUserStats(id);
 
   // REQ-16.1: 获取各个 Tab 的数据
-  const { data: recipes, refetch: refetchRecipes } = useUserRecipes(id, 'published');
-  const { data: likedRecipes, refetch: refetchLiked } = useUserRecipes(id, 'liked');
-  const { data: favorites, refetch: refetchFavorites } = useUserFavorites(id);
-  // BUG-002: 添加关注和粉丝数据
-  const { data: following, refetch: refetchFollowing } = useUserFollowing(id);
-  const { data: followers, refetch: refetchFollowers } = useUserFollowers(id);
+  const {
+    data: recipes,
+    refetch: refetchRecipes,
+    fetchNextPage: fetchNextRecipes,
+    hasNextPage: hasNextRecipes,
+    isFetchingNextPage: isFetchingNextRecipes,
+    isLoading: recipesLoading,
+  } = useUserRecipes(id, 'published');
+  const {
+    data: likedRecipes,
+    refetch: refetchLiked,
+    fetchNextPage: fetchNextLiked,
+    hasNextPage: hasNextLiked,
+    isFetchingNextPage: isFetchingNextLiked,
+    isLoading: likedLoading,
+  } = useUserRecipes(id, 'liked');
+  const {
+    data: favorites,
+    refetch: refetchFavorites,
+    fetchNextPage: fetchNextFavorites,
+    hasNextPage: hasNextFavorites,
+    isFetchingNextPage: isFetchingNextFavorites,
+    isLoading: favoritesLoading,
+  } = useUserFavorites(id);
+  const {
+    data: following,
+    refetch: refetchFollowing,
+    fetchNextPage: fetchNextFollowing,
+    hasNextPage: hasNextFollowing,
+    isFetchingNextPage: isFetchingNextFollowing,
+    isLoading: followingLoading,
+  } = useUserFollowing(id);
+  const {
+    data: followers,
+    refetch: refetchFollowers,
+    fetchNextPage: fetchNextFollowers,
+    hasNextPage: hasNextFollowers,
+    isFetchingNextPage: isFetchingNextFollowers,
+    isLoading: followersLoading,
+  } = useUserFollowers(id);
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -77,26 +112,44 @@ export default function UserProfileScreen() {
     setRefreshing(false);
   };
 
-  // 根据 Tab 选择数据
-  const getCurrentData = () => {
+  const currentData = useMemo(() => {
+    const flatten = (pages?: { pages?: Array<{ data: any[] }> }) =>
+      pages?.pages?.flatMap((page) => page.data ?? []) ?? [];
+
     switch (activeTab) {
       case 'recipes':
-        return recipes || [];
+        return flatten(recipes);
       case 'favorites':
-        return favorites || [];
+        return flatten(favorites);
       case 'liked':
-        return likedRecipes || [];
-      // BUG-002: 添加关注和粉丝 Tab 数据
+        return flatten(likedRecipes);
       case 'following':
-        return following || [];
+        return flatten(following);
       case 'followers':
-        return followers || [];
+        return flatten(followers);
       default:
         return [];
     }
-  };
+  }, [activeTab, favorites, followers, following, likedRecipes, recipes]);
 
-  const currentData = getCurrentData();
+  const currentLoading =
+    activeTab === 'recipes'
+      ? recipesLoading
+      : activeTab === 'favorites'
+        ? favoritesLoading
+        : activeTab === 'liked'
+          ? likedLoading
+          : activeTab === 'following'
+            ? followingLoading
+            : followersLoading;
+
+  const loadMore = () => {
+    if (activeTab === 'recipes' && hasNextRecipes && !isFetchingNextRecipes) fetchNextRecipes();
+    if (activeTab === 'favorites' && hasNextFavorites && !isFetchingNextFavorites) fetchNextFavorites();
+    if (activeTab === 'liked' && hasNextLiked && !isFetchingNextLiked) fetchNextLiked();
+    if (activeTab === 'following' && hasNextFollowing && !isFetchingNextFollowing) fetchNextFollowing();
+    if (activeTab === 'followers' && hasNextFollowers && !isFetchingNextFollowers) fetchNextFollowers();
+  };
 
   if (userLoading) {
     return <LoadingSpinner fullScreen />;
@@ -132,6 +185,8 @@ export default function UserProfileScreen() {
 
       <FlatList
         data={currentData}
+        onEndReached={loadMore}
+        onEndReachedThreshold={0.4}
         keyExtractor={(item, index) => `${activeTab}-${item.id || index}`}
         numColumns={2}
         columnWrapperStyle={styles.columnWrapper}
@@ -351,11 +406,17 @@ export default function UserProfileScreen() {
           );
         }}
         ListEmptyComponent={
-          <EmptyState
-            icon="document-text-outline"
-            title={isZh ? '暂无内容' : 'No Content'}
-            subtitle={isZh ? '快去发布第一个菜谱吧' : 'Publish your first recipe'}
-          />
+          currentLoading ? (
+            <View style={{ paddingHorizontal: 16, paddingTop: 12 }}>
+              <RecipeSkeletonList count={4} variant={activeTab === 'following' || activeTab === 'followers' ? 'grid' : 'grid'} />
+            </View>
+          ) : (
+            <EmptyState
+              icon="document-text-outline"
+              title={isZh ? '暂无内容' : 'No Content'}
+              subtitle={isZh ? '快去发布第一个菜谱吧' : 'Publish your first recipe'}
+            />
+          )
         }
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.tint} />

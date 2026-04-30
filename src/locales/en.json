@@ -31,6 +31,26 @@
   "ranking": {
     "title": "🏆 Weekly Ranking"
   },
+  "tags": {
+    "title": "Tags",
+    "subtitle": "Discover recipes by trending tags",
+    "empty": "No tags yet",
+    "emptyRecipes": "No recipes under this tag yet",
+    "usageCount": "Used {{count}} times",
+    "recipeCount": "{{count}} recipes"
+  },
+  "category": {
+    "title": "Categories",
+    "subtitle": "Browse recipes by category",
+    "empty": "No categories yet",
+    "emptyRecipes": "No recipes under this category yet",
+    "recipeCount": "{{count}} recipes",
+    "sort": {
+      "popular": "Popular",
+      "newest": "Newest",
+      "favorites": "Most Saved"
+    }
+  },
   "explore": {
     "title": "Explore Recipes",
     "filterCategory": "Category",
@@ -348,9 +368,12 @@
     "difficulty_easy": "Easy",
     "difficulty_medium": "Medium",
     "difficulty_hard": "Hard",
+    "prep_time": "Prep Time (min)",
     "cook_time": "Cook Time (min)",
     "servings": "Servings",
     "calories": "Calories",
+    "tags": "Tags",
+    "tags_placeholder": "Type a tag and press enter or comma",
     "ingredients": "Ingredients",
     "ingredient_name_en": "Ingredient (English)",
     "ingredient_name_zh": "Ingredient (Chinese)",

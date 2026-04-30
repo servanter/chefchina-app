@@ -16,8 +16,7 @@ import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { RecipeCard } from '../../src/components/RecipeCard';
 import { CategoryChip } from '../../src/components/CategoryChip';
-import { SkeletonCard, SkeletonList } from '../../src/components/Skeleton';
-import { ListFooter } from '../../src/components/ListFooter';
+import { RecipeSkeleton, RecipeSkeletonList } from '../../src/components/RecipeSkeleton';
 import { WhatToEatButton } from '../../src/components/WhatToEat';
 import { LazyImage } from '../../src/components/LazyImage';
 import { EmptyState } from '../../src/components/EmptyState';
@@ -79,8 +78,10 @@ export default function HomeScreen() {
   const rankingData = homeData?.ranking ?? [];
 
   const handleLoadMoreQuick = useCallback(() => {
-    // BFF 聚合后首页快手菜首屏直接返回固定 6 条，不再需要额外分页请求。
-  }, []);
+    // 首页当前由 home-init 聚合返回首屏内容，先保留 onEndReached 入口以满足列表体验；
+    // 触底时刷新聚合数据，避免无动作反馈。
+    refetchHome();
+  }, [refetchHome]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -215,6 +216,36 @@ export default function HomeScreen() {
         {/* ─── What to Eat Today? (REQ-9) ──────────────────── */}
         <WhatToEatButton tintColor={COLORS.primary} />
 
+        <TouchableOpacity
+          style={styles.tagsEntry}
+          onPress={() => router.push('/categories')}
+          activeOpacity={0.8}
+        >
+          <View style={styles.tagsEntryLeft}>
+            <Ionicons name="grid-outline" size={20} color={COLORS.primary} />
+            <View>
+              <Text style={[styles.tagsEntryTitle, { color: COLORS.primary }]}>{t('category.title')}</Text>
+              <Text style={styles.tagsEntrySubtitle}>{t('category.subtitle')}</Text>
+            </View>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color={COLORS.primary} />
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.tagsEntry}
+          onPress={() => router.push('/tags')}
+          activeOpacity={0.8}
+        >
+          <View style={styles.tagsEntryLeft}>
+            <Ionicons name="pricetags-outline" size={20} color={COLORS.primary} />
+            <View>
+              <Text style={[styles.tagsEntryTitle, { color: COLORS.primary }]}>{t('tags.title')}</Text>
+              <Text style={styles.tagsEntrySubtitle}>{t('tags.subtitle')}</Text>
+            </View>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color={COLORS.primary} />
+        </TouchableOpacity>
+
         {/* ─── Featured Recipes ────────────────────────────── */}
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>{t('home.featuredTitle')}</Text>
@@ -231,9 +262,7 @@ export default function HomeScreen() {
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.featuredList}
             renderItem={() => (
-              <View style={{ width: effectiveWidth * 0.72, marginRight: 12 }}>
-                <SkeletonCard />
-              </View>
+              <RecipeSkeleton variant="featured" style={{ width: effectiveWidth * 0.72 }} />
             )}
           />
         ) : (
@@ -299,7 +328,7 @@ export default function HomeScreen() {
         </View>
 
         {homeLoading ? (
-          <SkeletonList count={6} />
+          <RecipeSkeletonList count={4} variant="grid" />
         ) : (
           <>
             <View style={[styles.gridContainer, { maxWidth: effectiveWidth, alignSelf: 'center', width: '100%' }]}> 
@@ -542,5 +571,32 @@ const styles = StyleSheet.create({
   followFeedText: {
     fontSize: 14,
     fontWeight: '700',
+  },
+  tagsEntry: {
+    marginHorizontal: 20,
+    marginBottom: 10,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    backgroundColor: COLORS.white,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: '#F5D4C2',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  tagsEntryLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  tagsEntryTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  tagsEntrySubtitle: {
+    marginTop: 2,
+    fontSize: 12,
+    color: '#8A7B70',
   },
 });

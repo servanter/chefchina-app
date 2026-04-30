@@ -31,6 +31,26 @@
   "ranking": {
     "title": "🏆 每周热榜"
   },
+  "tags": {
+    "title": "标签",
+    "subtitle": "按热门标签发现菜谱",
+    "empty": "还没有标签",
+    "emptyRecipes": "该标签下还没有菜谱",
+    "usageCount": "已使用 {{count}} 次",
+    "recipeCount": "共 {{count}} 道菜谱"
+  },
+  "category": {
+    "title": "分类",
+    "subtitle": "按菜谱分类浏览灵感",
+    "empty": "还没有分类",
+    "emptyRecipes": "该分类下还没有菜谱",
+    "recipeCount": "共 {{count}} 道菜谱",
+    "sort": {
+      "popular": "最热",
+      "newest": "最新",
+      "favorites": "最多收藏"
+    }
+  },
   "explore": {
     "title": "探索菜谱",
     "filterCategory": "分类",
@@ -348,9 +368,12 @@
     "difficulty_easy": "简单",
     "difficulty_medium": "中等",
     "difficulty_hard": "困难",
+    "prep_time": "准备时长（分钟）",
     "cook_time": "烹饪时长（分钟）",
     "servings": "份数",
     "calories": "卡路里",
+    "tags": "标签",
+    "tags_placeholder": "输入标签后按回车或逗号",
     "ingredients": "食材清单",
     "ingredient_name_en": "食材名称（英文）",
     "ingredient_name_zh": "食材名称（中文）",

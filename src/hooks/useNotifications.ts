@@ -1,5 +1,6 @@
-import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from '@tanstack/react-query'
+import { useMutation, useQueryClient, useInfiniteQuery } from '@tanstack/react-query'
 import { apiClient } from '../lib/api'
+import { useUnreadCount } from './useUnreadCount'
 
 export type NotificationType = 'COMMENT_REPLY' | 'RECIPE_LIKED' | 'RECIPE_FAVORITED' | 'SUBMISSION_APPROVED' | 'SYSTEM'
 
@@ -51,28 +52,6 @@ export function useInfiniteNotifications(userId: string | null, tab: TabType = '
   })
 }
 
-// REQ-16.2: 获取未读数量（按类型分组）
-export function useUnreadCount(userId: string | null) {
-  return useQuery({
-    queryKey: ['unreadCount', userId],
-    queryFn: async () => {
-      if (!userId) throw new Error('userId is required')
-      const res = await apiClient.get('/notifications/unread-count', {
-        params: { userId },
-      })
-      return res.data as {
-        all: number
-        like: number
-        comment: number
-        system: number
-      }
-    },
-    enabled: !!userId,
-    staleTime: 30 * 1000, // 30 秒
-    refetchInterval: 60 * 1000, // 每分钟自动刷新
-  })
-}
-
 // 标记单条通知为已读
 export function useMarkRead(userId: string | null) {
   const queryClient = useQueryClient()
@@ -85,7 +64,7 @@ export function useMarkRead(userId: string | null) {
     onSuccess: () => {
       // 刷新通知列表和未读数量
       queryClient.invalidateQueries({ queryKey: ['notifications', userId] })
-      queryClient.invalidateQueries({ queryKey: ['unreadCount', userId] })
+      queryClient.invalidateQueries({ queryKey: ['notifications', 'unread-count', userId] })
     },
   })
 }
@@ -105,7 +84,7 @@ export function useMarkAllRead(userId: string | null, tab: TabType = 'all') {
     onSuccess: () => {
       // 刷新所有通知相关查询
       queryClient.invalidateQueries({ queryKey: ['notifications', userId] })
-      queryClient.invalidateQueries({ queryKey: ['unreadCount', userId] })
+      queryClient.invalidateQueries({ queryKey: ['notifications', 'unread-count', userId] })
     },
   })
 }

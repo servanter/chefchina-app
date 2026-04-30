@@ -17,8 +17,9 @@ import { Ionicons } from '@expo/vector-icons'
 import * as ImagePicker from 'expo-image-picker'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '@/hooks/useAuth'
-import { createRecipe, updateRecipe, fetchRecipeById } from '@/lib/api'
+import { createRecipe, updateRecipe, fetchRecipeById, syncRecipeTags } from '@/lib/api'
 import { useCategories, useTags } from '@/hooks/useRecipes'
+import TagInput from '@/components/TagInput'
 import Toast from 'react-native-toast-message'
 
 interface IngredientForm {
@@ -59,6 +60,7 @@ export default function CreateRecipePage() {
   const [coverImage, setCoverImage] = useState<string>('')
   const [categoryId, setCategoryId] = useState<string>('')
   const [difficulty, setDifficulty] = useState<'EASY' | 'MEDIUM' | 'HARD'>('MEDIUM')
+  const [prepTime, setPrepTime] = useState('')
   const [cookTimeMin, setCookTimeMin] = useState('')
   const [servings, setServings] = useState('')
   const [calories, setCalories] = useState('')
@@ -78,7 +80,8 @@ export default function CreateRecipePage() {
   ])
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isLoadingRecipe, setIsLoadingRecipe] = useState(false)
-  const [selectedTagIds, setSelectedTagIds] = useState<string[]>([])
+  const [selectedTags, setSelectedTags] = useState<string[]>([])
+  const [originalUpdatedAt, setOriginalUpdatedAt] = useState<string | undefined>()
 
   // ─── Pre-fill fields in edit mode ───────────────────────────────
   useEffect(() => {
@@ -100,6 +103,7 @@ export default function CreateRecipePage() {
         if (r.difficulty) {
           setDifficulty(r.difficulty.toUpperCase() as 'EASY' | 'MEDIUM' | 'HARD')
         }
+        if (r.prep_time) setPrepTime(String(r.prep_time))
         if (r.cook_time) setCookTimeMin(String(r.cook_time))
         if (r.servings) setServings(String(r.servings))
         if (r.calories) setCalories(String(r.calories))
@@ -110,9 +114,13 @@ export default function CreateRecipePage() {
         if (r.sodium) setSodium(String(r.sodium))
         if (r.sugar) setSugar(String(r.sugar))
 
+        setOriginalUpdatedAt(r.updated_at)
+
         // Backfill tags in edit mode
         if (r.tags && r.tags.length > 0) {
-          setSelectedTagIds(r.tags.map((t: { id: string }) => t.id))
+          setSelectedTags(
+            r.tags.map((t) => (i18n.language === 'zh' ? t.label_zh || t.label : t.label))
+          )
         }
 
         if (r.ingredients && r.ingredients.length > 0) {
@@ -284,6 +292,8 @@ export default function CreateRecipePage() {
       coverImage: coverImage || undefined,
       categoryId,
       difficulty,
+      prepTime: prepTime ? parseInt(prepTime) : undefined,
+      cookTime: cookTimeMin ? parseInt(cookTimeMin) : undefined,
       cookTimeMin: cookTimeMin ? parseInt(cookTimeMin) : undefined,
       servings: servings ? parseInt(servings) : undefined,
       calories: calories ? parseInt(calories) : undefined,
@@ -296,7 +306,7 @@ export default function CreateRecipePage() {
       isPublished: publish,
       ingredients: validIngredients,
       steps: validSteps.map((s, i) => ({ ...s, stepNumber: i + 1 })),
-      tagIds: selectedTagIds,
+      updatedAt: originalUpdatedAt,
     }
   }
 
@@ -318,12 +328,14 @@ export default function CreateRecipePage() {
 
       if (isEditMode) {
         await updateRecipe(recipeId, payload)
+        await syncRecipeTags(recipeId, selectedTags)
         Toast.show({
           type: 'success',
           text1: publish ? t('recipe_create.publish_success') : t('recipe_create.draft_saved'),
         })
       } else {
-        await createRecipe(payload)
+        const createdRecipe = await createRecipe(payload)
+        await syncRecipeTags(createdRecipe.id, selectedTags)
         Toast.show({
           type: 'success',
           text1: t('recipe_create.success'),
@@ -480,39 +492,14 @@ export default function CreateRecipePage() {
 
         {/* 标签 */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>
-            {t('recipe_create.tags')}
-          </Text>
-          <View style={styles.tagsWrap}>
-            {(tagsData ?? []).map((tag) => {
-              const selected = selectedTagIds.includes(tag.id)
-              return (
-                <TouchableOpacity
-                  key={tag.id}
-                  onPress={() => {
-                    setSelectedTagIds((prev) =>
-                      selected
-                        ? prev.filter((id) => id !== tag.id)
-                        : [...prev, tag.id]
-                    )
-                  }}
-                  style={[
-                    styles.categoryChip,
-                    selected && styles.categoryChipSelected,
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.categoryChipText,
-                      selected && styles.categoryChipTextSelected,
-                    ]}
-                  >
-                    {isZh ? tag.label_zh : tag.label}
-                  </Text>
-                </TouchableOpacity>
-              )
-            })}
-          </View>
+          <Text style={styles.sectionTitle}>{t('recipe_create.tags')}</Text>
+          <TagInput
+            value={selectedTags}
+            onChange={setSelectedTags}
+            suggestions={tagsData ?? []}
+            maxTags={10}
+            placeholder={t('recipe_create.tags_placeholder')}
+          />
         </View>
 
         {/* 基本信息 */}
@@ -546,19 +533,31 @@ export default function CreateRecipePage() {
           </View>
           <View style={styles.rowInputs}>
             <View style={styles.rowInputWrapper}>
+              <Text style={styles.inputLabel}>{t('recipe_create.prep_time')}</Text>
+              <TextInput
+                style={[styles.input, styles.compactInput]}
+                placeholder="15"
+                value={prepTime}
+                onChangeText={setPrepTime}
+                keyboardType="number-pad"
+              />
+            </View>
+            <View style={styles.rowInputWrapper}>
               <Text style={styles.inputLabel}>{t('recipe_create.cook_time')}</Text>
               <TextInput
-                style={styles.smallInput}
+                style={[styles.input, styles.compactInput]}
                 placeholder="30"
                 value={cookTimeMin}
                 onChangeText={setCookTimeMin}
                 keyboardType="number-pad"
               />
             </View>
+          </View>
+          <View style={styles.rowInputs}>
             <View style={styles.rowInputWrapper}>
               <Text style={styles.inputLabel}>{t('recipe_create.servings')}</Text>
               <TextInput
-                style={styles.smallInput}
+                style={[styles.input, styles.compactInput]}
                 placeholder="4"
                 value={servings}
                 onChangeText={setServings}
@@ -568,7 +567,7 @@ export default function CreateRecipePage() {
             <View style={styles.rowInputWrapper}>
               <Text style={styles.inputLabel}>{t('recipe_create.calories')}</Text>
               <TextInput
-                style={styles.smallInput}
+                style={[styles.input, styles.compactInput]}
                 placeholder="350"
                 value={calories}
                 onChangeText={setCalories}
@@ -917,6 +916,10 @@ const styles = StyleSheet.create({
   },
   smallInput: {
     flex: 1,
+  },
+  compactInput: {
+    paddingHorizontal: 12,
+    paddingVertical: 10,
   },
   difficultyButtons: {
     flexDirection: 'row',

@@ -1,5 +1,5 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { apiClient } from '../lib/api'
+import { useInfiniteQuery, useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { apiClient, PAGE_SIZE } from '../lib/api'
 
 // REQ-16.1: 获取用户统计数据
 export function useUserStats(userId?: string | null) {
@@ -20,54 +20,78 @@ export function useUserStats(userId?: string | null) {
   })
 }
 
+function createUserListQueryKey(key: string, userId?: string | null, extra?: string) {
+  return extra ? [key, userId, extra] : [key, userId]
+}
+
+function getNextPage(lastPage: any) {
+  return lastPage?.pagination?.hasMore ? lastPage.pagination.page + 1 : undefined
+}
+
 // REQ-16.1: 获取用户菜谱列表
 export function useUserRecipes(userId?: string | null, tab: 'published' | 'liked' = 'published') {
-  return useQuery({
-    queryKey: ['userRecipes', userId, tab],
-    queryFn: async () => {
+  return useInfiniteQuery({
+    queryKey: createUserListQueryKey('userRecipes', userId, tab),
+    queryFn: async ({ pageParam = 1 }) => {
       if (!userId) throw new Error('userId is required')
-      const res = await apiClient.get(`/users/${userId}/recipes`, { params: { tab } })
-      return res.data.data as any[]
+      const res = await apiClient.get(`/users/${userId}/recipes`, {
+        params: { tab, page: pageParam, limit: PAGE_SIZE },
+      })
+      return res.data.data
     },
+    initialPageParam: 1,
+    getNextPageParam: getNextPage,
     enabled: !!userId,
   })
 }
 
 // REQ-16.1: 获取用户收藏列表
 export function useUserFavorites(userId?: string | null) {
-  return useQuery({
-    queryKey: ['userFavorites', userId],
-    queryFn: async () => {
+  return useInfiniteQuery({
+    queryKey: createUserListQueryKey('userFavorites', userId),
+    queryFn: async ({ pageParam = 1 }) => {
       if (!userId) throw new Error('userId is required')
-      const res = await apiClient.get(`/users/${userId}/favorites`)
-      return (res.data.data?.data ?? []) as any[]
+      const res = await apiClient.get(`/users/${userId}/favorites`, {
+        params: { page: pageParam, limit: PAGE_SIZE },
+      })
+      return res.data.data
     },
+    initialPageParam: 1,
+    getNextPageParam: getNextPage,
     enabled: !!userId,
   })
 }
 
 // REQ-BF-010: 获取用户关注列表
 export function useUserFollowing(userId?: string | null) {
-  return useQuery({
-    queryKey: ['userFollowing', userId],
-    queryFn: async () => {
+  return useInfiniteQuery({
+    queryKey: createUserListQueryKey('userFollowing', userId),
+    queryFn: async ({ pageParam = 1 }) => {
       if (!userId) throw new Error('userId is required')
-      const res = await apiClient.get(`/users/${userId}/following`)
-      return (res.data.data?.following ?? []) as any[]
+      const res = await apiClient.get(`/users/${userId}/following`, {
+        params: { page: pageParam, limit: PAGE_SIZE },
+      })
+      return res.data.data
     },
+    initialPageParam: 1,
+    getNextPageParam: getNextPage,
     enabled: !!userId,
   })
 }
 
 // REQ-BF-010: 获取用户粉丝列表
 export function useUserFollowers(userId?: string | null) {
-  return useQuery({
-    queryKey: ['userFollowers', userId],
-    queryFn: async () => {
+  return useInfiniteQuery({
+    queryKey: createUserListQueryKey('userFollowers', userId),
+    queryFn: async ({ pageParam = 1 }) => {
       if (!userId) throw new Error('userId is required')
-      const res = await apiClient.get(`/users/${userId}/followers`)
-      return res.data.followers as any[]
+      const res = await apiClient.get(`/users/${userId}/followers`, {
+        params: { page: pageParam, limit: PAGE_SIZE },
+      })
+      return res.data.data
     },
+    initialPageParam: 1,
+    getNextPageParam: getNextPage,
     enabled: !!userId,
   })
 }
