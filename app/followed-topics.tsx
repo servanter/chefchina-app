@@ -42,7 +42,7 @@ export default function FollowedTopicsPage() {
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]} edges={['top']}>
       {/* Header */}
       <View style={[styles.header, { borderBottomColor: colors.border }]}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
@@ -58,11 +58,11 @@ export default function FollowedTopicsPage() {
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.content}
         refreshControl={
-          <RefreshControl refreshing={isLoading} onRefresh={refetch} tintColor={colors.primary} />
+          <RefreshControl refreshing={isLoading} onRefresh={refetch} tintColor={colors.tint} />
         }
         ListEmptyComponent={() =>
           isLoading ? (
-            <ActivityIndicator size="large" color={colors.primary} style={styles.loader} />
+            <ActivityIndicator size="large" color={colors.tint} style={styles.loader} />
           ) : (
             <EmptyState
               icon="pricetag-outline"

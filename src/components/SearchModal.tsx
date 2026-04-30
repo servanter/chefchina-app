@@ -14,6 +14,18 @@ import { useTranslation } from 'react-i18next';
 import { getSearchHistory, saveSearchHistory, clearSearchHistory } from '@/lib/storage';
 import { useQuery } from '@tanstack/react-query';
 
+type SearchSuggestResponse = {
+  data?: {
+    suggestions?: Array<{ text: string }>;
+  };
+};
+
+type SearchTrendingResponse = {
+  data?: {
+    keywords?: string[];
+  };
+};
+
 interface SearchModalProps {
   visible: boolean;
   onClose: () => void;
@@ -27,29 +39,29 @@ export const SearchModal: React.FC<SearchModalProps> = ({ visible, onClose, tint
   const [history, setHistory] = useState<string[]>([]);
 
   // 获取热门搜索
-  const { data: trendingData } = useQuery(
-    ['search', 'trending'],
-    async () => {
+  const { data: trendingData = [] } = useQuery<string[]>({
+    queryKey: ['search', 'trending'],
+    queryFn: async () => {
       const res = await fetch('https://chefchina-admin.vercel.app/api/search/trending');
-      const data = await res.json();
+      const data: SearchTrendingResponse = await res.json();
       return data.data?.keywords || [];
     },
-    { enabled: visible }
-  );
+    enabled: visible,
+  });
 
   // 获取搜索建议
-  const { data: suggestions } = useQuery(
-    ['search', 'suggest', query],
-    async () => {
+  const { data: suggestions = [] } = useQuery<string[]>({
+    queryKey: ['search', 'suggest', query],
+    queryFn: async () => {
       if (query.length < 2) return [];
       const res = await fetch(
         `https://chefchina-admin.vercel.app/api/search/suggest?q=${encodeURIComponent(query)}`
       );
-      const data = await res.json();
-      return data.data?.suggestions?.map((s: any) => s.text) || [];
+      const data: SearchSuggestResponse = await res.json();
+      return data.data?.suggestions?.map((s) => s.text) || [];
     },
-    { enabled: query.length >= 2 }
-  );
+    enabled: query.length >= 2,
+  });
 
   // 加载搜索历史
   useEffect(() => {
