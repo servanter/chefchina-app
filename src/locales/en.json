@@ -39,6 +39,18 @@
     "usageCount": "Used {{count}} times",
     "recipeCount": "{{count}} recipes"
   },
+  "category": {
+    "title": "Categories",
+    "subtitle": "Browse recipes by category",
+    "empty": "No categories yet",
+    "emptyRecipes": "No recipes under this category yet",
+    "recipeCount": "{{count}} recipes",
+    "sort": {
+      "popular": "Popular",
+      "newest": "Newest",
+      "favorites": "Most Saved"
+    }
+  },
   "explore": {
     "title": "Explore Recipes",
     "filterCategory": "Category",

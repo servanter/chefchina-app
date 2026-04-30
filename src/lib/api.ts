@@ -249,29 +249,35 @@ export interface Category {
   label_zh: string;
   slug: string;
   recipesCount: number;
+  icon?: string;
 }
 
 interface BackendCategory {
   id: string;
-  nameEn: string;
+  name?: string;
+  nameEn?: string;
   nameZh: string;
   slug: string;
+  icon?: string | null;
+  image?: string | null;
+  recipeCount?: number;
   _count?: { recipes: number };
 }
 
 export function adaptCategory(c: BackendCategory): Category {
   return {
     id: c.id,
-    label: c.nameEn,
+    label: c.name ?? c.nameEn ?? '',
     label_zh: c.nameZh,
     slug: c.slug,
-    recipesCount: c._count?.recipes ?? 0,
+    recipesCount: c.recipeCount ?? c._count?.recipes ?? 0,
+    icon: c.icon ?? c.image ?? undefined,
   };
 }
 
 export const fetchCategories = async (): Promise<Category[]> => {
   const res = await apiClient.get('/categories');
-  const cats = res.data.data as BackendCategory[];
+  const cats = (res.data.data?.data ?? res.data.data) as BackendCategory[];
   return cats.map(adaptCategory);
 };
 
@@ -1052,6 +1058,12 @@ export interface TagRecipesPage {
   pagination: PageMeta;
 }
 
+export interface CategoryRecipesPage {
+  category: Category;
+  data: Recipe[];
+  pagination: PageMeta;
+}
+
 export const fetchTags = async (): Promise<Tag[]> => {
   const res = await apiClient.get('/tags');
   const { tags } = res.data.data;
@@ -1078,6 +1090,35 @@ export const fetchTagRecipes = async (
       label: tag.nameEn,
       label_zh: tag.nameZh,
     },
+    data: (data as BackendRecipe[]).map(adaptRecipe),
+    pagination: {
+      page: pagination.page,
+      pageSize: pagination.pageSize,
+      total: pagination.total,
+      totalPages: pagination.totalPages,
+    },
+  };
+};
+
+export const fetchCategoryRecipes = async (
+  categoryId: string,
+  page = 1,
+  limit = PAGE_SIZE,
+  sort: 'newest' | 'popular' | 'favorites' = 'popular',
+): Promise<CategoryRecipesPage> => {
+  const res = await apiClient.get(`/categories/${categoryId}/recipes`, {
+    params: { page, limit, sort },
+  });
+  const { category, data, pagination } = res.data.data;
+  return {
+    category: adaptCategory({
+      id: category.id,
+      name: category.nameEn,
+      nameZh: category.nameZh,
+      slug: category.slug ?? '',
+      icon: category.icon,
+      recipeCount: category.recipeCount,
+    }),
     data: (data as BackendRecipe[]).map(adaptRecipe),
     pagination: {
       page: pagination.page,

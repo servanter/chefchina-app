@@ -217,6 +217,21 @@ export default function HomeScreen() {
 
         <TouchableOpacity
           style={styles.tagsEntry}
+          onPress={() => router.push('/categories')}
+          activeOpacity={0.8}
+        >
+          <View style={styles.tagsEntryLeft}>
+            <Ionicons name="grid-outline" size={20} color={COLORS.primary} />
+            <View>
+              <Text style={[styles.tagsEntryTitle, { color: COLORS.primary }]}>{t('category.title')}</Text>
+              <Text style={styles.tagsEntrySubtitle}>{t('category.subtitle')}</Text>
+            </View>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color={COLORS.primary} />
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.tagsEntry}
           onPress={() => router.push('/tags')}
           activeOpacity={0.8}
         >
