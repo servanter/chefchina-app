@@ -161,6 +161,7 @@ export const CommentItem: React.FC<CommentItemProps> = ({ comment, canManage = f
                 onEdit={onEdit}
                 onDelete={onDelete}
                 onReport={onReport}
+                onReply={onReply}
               />
             ))}
           </View>
