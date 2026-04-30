@@ -121,7 +121,7 @@ export interface Step {
   order: number;
   description: string;
   description_zh: string;
-  image?: string;
+  image?: string | string[];
   duration_min?: number;
 }
 
@@ -370,7 +370,8 @@ interface BackendStep {
   titleZh?: string;
   contentEn: string;
   contentZh: string;
-  image?: string;
+  image?: string | string[];
+  images?: string[];
   durationMin?: number;
 }
 
@@ -490,7 +491,9 @@ export function adaptRecipe(r: BackendRecipe): Recipe {
       order: s.stepNumber,
       description: s.contentEn,
       description_zh: s.contentZh,
-      image: s.image,
+      image: Array.isArray(s.images) && s.images.length > 0
+        ? s.images
+        : s.image,
       duration_min: s.durationMin,
     })),
     // 支持两种字段名：likesCount (驼峰) 和 _count.likes (下划线)
