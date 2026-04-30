@@ -215,6 +215,21 @@ export default function HomeScreen() {
         {/* ─── What to Eat Today? (REQ-9) ──────────────────── */}
         <WhatToEatButton tintColor={COLORS.primary} />
 
+        <TouchableOpacity
+          style={styles.tagsEntry}
+          onPress={() => router.push('/tags')}
+          activeOpacity={0.8}
+        >
+          <View style={styles.tagsEntryLeft}>
+            <Ionicons name="pricetags-outline" size={20} color={COLORS.primary} />
+            <View>
+              <Text style={[styles.tagsEntryTitle, { color: COLORS.primary }]}>{t('tags.title')}</Text>
+              <Text style={styles.tagsEntrySubtitle}>{t('tags.subtitle')}</Text>
+            </View>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color={COLORS.primary} />
+        </TouchableOpacity>
+
         {/* ─── Featured Recipes ────────────────────────────── */}
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>{t('home.featuredTitle')}</Text>
@@ -542,5 +557,32 @@ const styles = StyleSheet.create({
   followFeedText: {
     fontSize: 14,
     fontWeight: '700',
+  },
+  tagsEntry: {
+    marginHorizontal: 20,
+    marginBottom: 10,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    backgroundColor: COLORS.white,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: '#F5D4C2',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  tagsEntryLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  tagsEntryTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  tagsEntrySubtitle: {
+    marginTop: 2,
+    fontSize: 12,
+    color: '#8A7B70',
   },
 });

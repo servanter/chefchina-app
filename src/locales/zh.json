@@ -31,6 +31,14 @@
   "ranking": {
     "title": "🏆 每周热榜"
   },
+  "tags": {
+    "title": "标签",
+    "subtitle": "按热门标签发现菜谱",
+    "empty": "还没有标签",
+    "emptyRecipes": "该标签下还没有菜谱",
+    "usageCount": "已使用 {{count}} 次",
+    "recipeCount": "共 {{count}} 道菜谱"
+  },
   "explore": {
     "title": "探索菜谱",
     "filterCategory": "分类",
@@ -351,6 +359,8 @@
     "cook_time": "烹饪时长（分钟）",
     "servings": "份数",
     "calories": "卡路里",
+    "tags": "标签",
+    "tags_placeholder": "输入标签后按回车或逗号",
     "ingredients": "食材清单",
     "ingredient_name_en": "食材名称（英文）",
     "ingredient_name_zh": "食材名称（中文）",

@@ -132,6 +132,7 @@ export interface Recipe {
   description: string;
   description_zh: string;
   cover_image: string;
+  updated_at?: string;
   category: string;
   category_slug?: string;
   // 需求 15：difficulty 可能为 null（菜谱未指定难度）→ App 端按 null 隐藏对应 icon
@@ -373,6 +374,7 @@ interface BackendRecipe {
   descriptionEn?: string;
   descriptionZh?: string;
   coverImage?: string;
+  updatedAt?: string;
   // 需求 15：以下 4 个 meta 字段均允许 null（对应 Prisma 的 nullable 列）
   difficulty?: 'EASY' | 'MEDIUM' | 'HARD' | null;
   cookTimeMin?: number | null;
@@ -453,6 +455,7 @@ export function adaptRecipe(r: BackendRecipe): Recipe {
     description: r.descriptionEn ?? '',
     description_zh: r.descriptionZh ?? '',
     cover_image: r.coverImage ?? 'https://images.unsplash.com/photo-1563245372-f21724e3856d?w=800&q=80',
+    updated_at: r.updatedAt,
     category: r.category?.nameEn ?? '',
     category_slug: r.category?.slug ?? '',
     difficulty: adaptDifficulty(r.difficulty),
@@ -666,6 +669,7 @@ export interface CreateRecipePayload {
   coverImage?: string;
   categoryId: string;
   difficulty?: 'EASY' | 'MEDIUM' | 'HARD';
+  updatedAt?: string;
   cookTimeMin?: number;
   servings?: number;
   calories?: number;
@@ -711,6 +715,16 @@ export const updateRecipe = async (
 ): Promise<Recipe> => {
   const token = await getAuthToken();
   const res = await apiClient.patch(`/recipes/${recipeId}`, payload, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  return adaptRecipe(res.data.data as BackendRecipe);
+};
+
+export const syncRecipeTags = async (recipeId: string, tags: string[]): Promise<Recipe> => {
+  const token = await getAuthToken();
+  const res = await apiClient.post(`/recipes/${recipeId}/tags`, { tags }, {
     headers: {
       Authorization: `Bearer ${token}`,
     },
@@ -1029,16 +1043,49 @@ export interface Tag {
   id: string;
   label: string;
   label_zh: string;
+  recipesCount?: number;
+}
+
+export interface TagRecipesPage {
+  tag: Tag;
+  data: Recipe[];
+  pagination: PageMeta;
 }
 
 export const fetchTags = async (): Promise<Tag[]> => {
   const res = await apiClient.get('/tags');
   const { tags } = res.data.data;
-  return tags.map((t: { id: string; nameEn: string; nameZh: string }) => ({
+  return tags.map((t: { id: string; nameEn: string; nameZh: string; _count?: { recipes: number } }) => ({
     id: t.id,
     label: t.nameEn,
     label_zh: t.nameZh,
+    recipesCount: t._count?.recipes ?? 0,
   }));
+};
+
+export const fetchTagRecipes = async (
+  tagId: string,
+  page = 1,
+  limit = PAGE_SIZE,
+): Promise<TagRecipesPage> => {
+  const res = await apiClient.get(`/tags/${tagId}/recipes`, {
+    params: { page, limit },
+  });
+  const { tag, data, pagination } = res.data.data;
+  return {
+    tag: {
+      id: tag.id,
+      label: tag.nameEn,
+      label_zh: tag.nameZh,
+    },
+    data: (data as BackendRecipe[]).map(adaptRecipe),
+    pagination: {
+      page: pagination.page,
+      pageSize: pagination.pageSize,
+      total: pagination.total,
+      totalPages: pagination.totalPages,
+    },
+  };
 };
 
 export const fetchLikeStatus = async (

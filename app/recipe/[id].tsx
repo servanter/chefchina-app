@@ -652,8 +652,8 @@ export default function RecipeDetailScreen() {
                     style={styles.tagChip}
                     onPress={() =>
                       router.push({
-                        pathname: '/(tabs)/explore',
-                        params: { tagId: tag.id },
+                        pathname: '/tag/[id]',
+                        params: { id: tag.id },
                       })
                     }
                   >

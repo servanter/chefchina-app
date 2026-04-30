@@ -17,8 +17,9 @@ import { Ionicons } from '@expo/vector-icons'
 import * as ImagePicker from 'expo-image-picker'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '@/hooks/useAuth'
-import { createRecipe, updateRecipe, fetchRecipeById } from '@/lib/api'
+import { createRecipe, updateRecipe, fetchRecipeById, syncRecipeTags } from '@/lib/api'
 import { useCategories, useTags } from '@/hooks/useRecipes'
+import TagInput from '@/components/TagInput'
 import Toast from 'react-native-toast-message'
 
 interface IngredientForm {
@@ -78,7 +79,8 @@ export default function CreateRecipePage() {
   ])
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isLoadingRecipe, setIsLoadingRecipe] = useState(false)
-  const [selectedTagIds, setSelectedTagIds] = useState<string[]>([])
+  const [selectedTags, setSelectedTags] = useState<string[]>([])
+  const [originalUpdatedAt, setOriginalUpdatedAt] = useState<string | undefined>()
 
   // ─── Pre-fill fields in edit mode ───────────────────────────────
   useEffect(() => {
@@ -110,9 +112,13 @@ export default function CreateRecipePage() {
         if (r.sodium) setSodium(String(r.sodium))
         if (r.sugar) setSugar(String(r.sugar))
 
+        setOriginalUpdatedAt(r.updated_at)
+
         // Backfill tags in edit mode
         if (r.tags && r.tags.length > 0) {
-          setSelectedTagIds(r.tags.map((t: { id: string }) => t.id))
+          setSelectedTags(
+            r.tags.map((t) => (i18n.language === 'zh' ? t.label_zh || t.label : t.label))
+          )
         }
 
         if (r.ingredients && r.ingredients.length > 0) {
@@ -296,7 +302,7 @@ export default function CreateRecipePage() {
       isPublished: publish,
       ingredients: validIngredients,
       steps: validSteps.map((s, i) => ({ ...s, stepNumber: i + 1 })),
-      tagIds: selectedTagIds,
+      updatedAt: originalUpdatedAt,
     }
   }
 
@@ -318,12 +324,14 @@ export default function CreateRecipePage() {
 
       if (isEditMode) {
         await updateRecipe(recipeId, payload)
+        await syncRecipeTags(recipeId, selectedTags)
         Toast.show({
           type: 'success',
           text1: publish ? t('recipe_create.publish_success') : t('recipe_create.draft_saved'),
         })
       } else {
-        await createRecipe(payload)
+        const createdRecipe = await createRecipe(payload)
+        await syncRecipeTags(createdRecipe.id, selectedTags)
         Toast.show({
           type: 'success',
           text1: t('recipe_create.success'),
@@ -480,39 +488,14 @@ export default function CreateRecipePage() {
 
         {/* 标签 */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>
-            {t('recipe_create.tags')}
-          </Text>
-          <View style={styles.tagsWrap}>
-            {(tagsData ?? []).map((tag) => {
-              const selected = selectedTagIds.includes(tag.id)
-              return (
-                <TouchableOpacity
-                  key={tag.id}
-                  onPress={() => {
-                    setSelectedTagIds((prev) =>
-                      selected
-                        ? prev.filter((id) => id !== tag.id)
-                        : [...prev, tag.id]
-                    )
-                  }}
-                  style={[
-                    styles.categoryChip,
-                    selected && styles.categoryChipSelected,
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.categoryChipText,
-                      selected && styles.categoryChipTextSelected,
-                    ]}
-                  >
-                    {isZh ? tag.label_zh : tag.label}
-                  </Text>
-                </TouchableOpacity>
-              )
-            })}
-          </View>
+          <Text style={styles.sectionTitle}>{t('recipe_create.tags')}</Text>
+          <TagInput
+            value={selectedTags}
+            onChange={setSelectedTags}
+            suggestions={tagsData ?? []}
+            maxTags={10}
+            placeholder={t('recipe_create.tags_placeholder')}
+          />
         </View>
 
         {/* 基本信息 */}
