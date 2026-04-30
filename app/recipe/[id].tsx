@@ -456,7 +456,7 @@ export default function RecipeDetailScreen() {
     medium: '#FF9800',
     hard: '#F44336',
   };
-  const totalTime = recipe.prep_time + recipe.cook_time;
+  const totalTime = (recipe.prep_time || 0) + (recipe.cook_time || 0);
   const difficultyDisplay = recipe.difficulty
     ? recipe.difficulty === 'easy'
       ? { icon: '⭐', text: t('recipe.difficultyEasy') }
