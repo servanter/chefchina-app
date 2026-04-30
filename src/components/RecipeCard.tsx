@@ -5,6 +5,8 @@ import {
   TouchableOpacity,
   StyleSheet,
   useWindowDimensions,
+  type StyleProp,
+  type ViewStyle,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
@@ -17,6 +19,7 @@ interface RecipeCardProps {
   recipe: Recipe;
   onPress: () => void;
   variant?: 'featured' | 'grid' | 'list';
+  style?: StyleProp<ViewStyle>;
 }
 
 const DifficultyBadge = ({ difficulty }: { difficulty: Recipe['difficulty'] }) => {
@@ -43,6 +46,7 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
   recipe,
   onPress,
   variant = 'grid',
+  style,
 }) => {
   const { i18n } = useTranslation();
   const { width } = useWindowDimensions();
@@ -56,7 +60,7 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
   if (variant === 'featured') {
     return (
       <TouchableOpacity
-        style={[styles.featuredCard, { width: effectiveWidth * 0.72 }]}
+        style={[styles.featuredCard, { width: effectiveWidth * 0.72 }, style]}
         onPress={onPress}
         activeOpacity={0.9}
       >
@@ -83,7 +87,7 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
   if (variant === 'list') {
     return (
       <TouchableOpacity
-        style={[styles.listCard, { backgroundColor: colors.card }]}
+        style={[styles.listCard, { backgroundColor: colors.card }, style]}
         onPress={onPress}
         activeOpacity={0.9}
       >
@@ -117,7 +121,7 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
   // Grid variant (default)
   return (
     <TouchableOpacity
-      style={[styles.gridCard, { width: (effectiveWidth - 48) / 2, backgroundColor: colors.card }]}
+      style={[styles.gridCard, { width: (effectiveWidth - 48) / 2, backgroundColor: colors.card }, style]}
       onPress={onPress}
       activeOpacity={0.9}
     >

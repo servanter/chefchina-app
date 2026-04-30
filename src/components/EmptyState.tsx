@@ -7,35 +7,43 @@ interface EmptyStateProps {
   icon: keyof typeof Ionicons.glyphMap;
   title: string;
   subtitle?: string;
+  description?: string;
   action?: {
     label: string;
     onPress: () => void;
   };
+  actionText?: string;
+  onAction?: () => void;
 }
 
 export const EmptyState: React.FC<EmptyStateProps> = ({
   icon,
   title,
   subtitle,
+  description,
   action,
+  actionText,
+  onAction,
 }) => {
+  const resolvedSubtitle = subtitle ?? description;
+  const resolvedAction = action ?? (actionText && onAction ? { label: actionText, onPress: onAction } : undefined);
   const { colors } = useTheme();
 
   return (
     <View style={styles.container}>
       <Ionicons name={icon} size={80} color="#CCC" />
       <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
-      {subtitle && (
-        <Text style={[styles.subtitle, { color: colors.subText }]}>
-          {subtitle}
+      {resolvedSubtitle && (
+        <Text style={[styles.subtitle, { color: colors.subText }]}> 
+          {resolvedSubtitle}
         </Text>
       )}
-      {action && (
+      {resolvedAction && (
         <TouchableOpacity
           style={[styles.button, { backgroundColor: colors.tint }]}
-          onPress={action.onPress}
+          onPress={resolvedAction.onPress}
         >
-          <Text style={styles.buttonText}>{action.label}</Text>
+          <Text style={styles.buttonText}>{resolvedAction.label}</Text>
         </TouchableOpacity>
       )}
     </View>

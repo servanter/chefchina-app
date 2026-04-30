@@ -61,28 +61,26 @@ export default function TopicDetailPage() {
 
   if (topicLoading) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-        <ActivityIndicator size="large" color={colors.primary} style={styles.loader} />
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]}>
+        <ActivityIndicator size="large" color={colors.tint} style={styles.loader} />
       </SafeAreaView>
     );
   }
 
   if (!topic) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]}> 
         <EmptyState
           icon="pricetag-outline"
           title={isZh ? '话题不存在' : 'Topic not found'}
-          description={isZh ? '该话题可能已被删除' : 'This topic may have been deleted'}
-          actionText={isZh ? '返回' : 'Go Back'}
-          onAction={() => router.back()}
+          subtitle={isZh ? '该话题可能已被删除' : 'This topic may have been deleted'}
         />
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]} edges={['top']}>
       {/* Header */}
       <View style={[styles.header, { borderBottomColor: colors.border }]}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
@@ -100,13 +98,13 @@ export default function TopicDetailPage() {
           style={[
             styles.followButton,
             topic.isFollowing
-              ? { backgroundColor: colors.primary }
+              ? { backgroundColor: colors.tint }
               : { borderColor: colors.border, borderWidth: 1 }
           ]}
           disabled={toggleFollow.isPending}
         >
           {toggleFollow.isPending ? (
-            <ActivityIndicator size="small" color={topic.isFollowing ? '#fff' : colors.primary} />
+            <ActivityIndicator size="small" color={topic.isFollowing ? '#fff' : colors.tint} />
           ) : (
             <Text style={[
               styles.followButtonText,
@@ -125,7 +123,7 @@ export default function TopicDetailPage() {
         columnWrapperStyle={styles.row}
         contentContainerStyle={styles.content}
         refreshControl={
-          <RefreshControl refreshing={false} onRefresh={handleRefresh} tintColor={colors.primary} />
+          <RefreshControl refreshing={false} onRefresh={handleRefresh} tintColor={colors.tint} />
         }
         ListHeaderComponent={() => (
           <View>
@@ -149,12 +147,12 @@ export default function TopicDetailPage() {
                 onPress={() => setSort('latest')}
                 style={[
                   styles.tab,
-                  sort === 'latest' && { borderBottomColor: colors.primary, borderBottomWidth: 2 }
+                  sort === 'latest' && { borderBottomColor: colors.tint, borderBottomWidth: 2 }
                 ]}
               >
                 <Text style={[
                   styles.tabText,
-                  { color: sort === 'latest' ? colors.primary : colors.subText }
+                  { color: sort === 'latest' ? colors.tint : colors.subText }
                 ]}>
                   {isZh ? '最新' : 'Latest'}
                 </Text>
@@ -164,12 +162,12 @@ export default function TopicDetailPage() {
                 onPress={() => setSort('hot')}
                 style={[
                   styles.tab,
-                  sort === 'hot' && { borderBottomColor: colors.primary, borderBottomWidth: 2 }
+                  sort === 'hot' && { borderBottomColor: colors.tint, borderBottomWidth: 2 }
                 ]}
               >
                 <Text style={[
                   styles.tabText,
-                  { color: sort === 'hot' ? colors.primary : colors.subText }
+                  { color: sort === 'hot' ? colors.tint : colors.subText }
                 ]}>
                   {isZh ? '最热' : 'Hot'}
                 </Text>
@@ -179,7 +177,7 @@ export default function TopicDetailPage() {
         )}
         ListEmptyComponent={() =>
           recipesLoading ? (
-            <ActivityIndicator size="large" color={colors.primary} style={styles.loader} />
+            <ActivityIndicator size="large" color={colors.tint} style={styles.loader} />
           ) : (
             <EmptyState
               icon="document-text-outline"
