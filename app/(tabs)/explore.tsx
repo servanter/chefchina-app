@@ -63,7 +63,25 @@ export default function ExploreScreen() {
   const [selectedCategory, setSelectedCategory] = useState(params.category ?? 'all');
   const [selectedDifficulty, setSelectedDifficulty] = useState(params.difficulty ?? 'all');
   const [selectedTag, setSelectedTag] = useState<string | undefined>(params.tagId);
+  const [selectedSearchFilter, setSelectedSearchFilter] = useState<'all' | 'home' | 'diet' | 'breakfast'>('all');
   const [selectedSort, setSelectedSort] = useState<'recommended' | 'latest' | 'popular'>('recommended');
+
+  const handleSearchModeChipPress = useCallback((key: 'all' | 'home' | 'diet' | 'breakfast' | 'popular' | 'latest') => {
+    if (key === 'popular') {
+      setSelectedSearchFilter('all');
+      setSelectedSort('popular');
+      return;
+    }
+
+    if (key === 'latest') {
+      setSelectedSearchFilter('all');
+      setSelectedSort('latest');
+      return;
+    }
+
+    setSelectedSearchFilter(key);
+    setSelectedSort('recommended');
+  }, []);
   const [refreshing, setRefreshing] = useState(false);
   const [hideSearchChrome, setHideSearchChrome] = useState(false);
   const lastScrollY = useRef(0);
@@ -98,7 +116,21 @@ export default function ExploreScreen() {
     sort: selectedSort,
     tagId: selectedTag,
   });
-  const searchQuery = useRecipeSearch(isSearchMode ? committedQuery : '');
+  const searchQuery = useRecipeSearch(isSearchMode ? committedQuery : '', {
+    category:
+      selectedSearchFilter === 'home'
+        ? (isZh ? '家常菜' : 'Home')
+        : selectedSearchFilter === 'breakfast'
+          ? (isZh ? '早餐' : 'Breakfast')
+          : undefined,
+    tag: selectedSearchFilter === 'diet' ? (isZh ? '减脂' : 'Diet') : undefined,
+    sort:
+      selectedSort === 'popular'
+        ? 'hot'
+        : selectedSort === 'latest'
+          ? 'latest'
+          : 'relevance',
+  });
 
   const activeQuery = isSearchMode ? searchQuery : filterQuery;
   const {
@@ -452,14 +484,48 @@ export default function ExploreScreen() {
 
           {/* ─── 搜索模式：标题栏，显示当前查询 + 清除按钮 ─── */}
           {isSearchMode && (
-            <View style={styles.searchModeBar}>
-              <Text style={styles.searchModeText} numberOfLines={1}>
-                {t('search.resultsFor', { query: committedQuery })}
-              </Text>
-              <TouchableOpacity onPress={clearSearch} hitSlop={8}>
-                <Text style={styles.searchModeClear}>{t('search.clearQuery')}</Text>
-              </TouchableOpacity>
-            </View>
+            <>
+              <View style={styles.searchModeBar}>
+                <Text style={styles.searchModeText} numberOfLines={1}>
+                  {t('search.resultsFor', { query: committedQuery })}
+                </Text>
+                <TouchableOpacity onPress={clearSearch} hitSlop={8}>
+                  <Text style={styles.searchModeClear}>{t('search.clearQuery')}</Text>
+                </TouchableOpacity>
+              </View>
+              <View style={styles.sortRow}>
+                {[
+                  { key: 'all', label: isZh ? '全部' : 'All' },
+                  { key: 'home', label: isZh ? '家常菜' : 'Home' },
+                  { key: 'diet', label: isZh ? '减脂' : 'Diet' },
+                  { key: 'breakfast', label: isZh ? '早餐' : 'Breakfast' },
+                  { key: 'popular', label: isZh ? '热门' : 'Hot' },
+                  { key: 'latest', label: isZh ? '最新' : 'Latest' },
+                ].map((item) => (
+                  <TouchableOpacity
+                    key={item.key}
+                    style={[
+                      styles.sortChip,
+                      ((item.key === 'popular' && selectedSort === 'popular') ||
+                        (item.key === 'latest' && selectedSort === 'latest') ||
+                        (item.key !== 'popular' && item.key !== 'latest' && selectedSort === 'recommended' && selectedSearchFilter === item.key)) && styles.sortChipActive,
+                    ]}
+                    onPress={() => handleSearchModeChipPress(item.key as 'all' | 'home' | 'diet' | 'breakfast' | 'popular' | 'latest')}
+                  >
+                    <Text
+                      style={[
+                        styles.sortChipText,
+                        ((item.key === 'popular' && selectedSort === 'popular') ||
+                          (item.key === 'latest' && selectedSort === 'latest') ||
+                          (item.key !== 'popular' && item.key !== 'latest' && selectedSort === 'recommended' && selectedSearchFilter === item.key)) && styles.sortChipTextActive,
+                      ]}
+                    >
+                      {item.label}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </>
           )}
 
           {!isSearchMode && (

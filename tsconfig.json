@@ -6,5 +6,5 @@
       "@/*": ["./src/*"]
     }
   },
-  "exclude": ["dist", "dist-web", "node_modules"]
+  "exclude": ["node_modules", "dist", "dist-web", ".expo"]
 }

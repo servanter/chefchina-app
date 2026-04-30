@@ -84,6 +84,8 @@ export default function RecipeDetailScreen() {
   const isZh = i18n.language === 'zh';
 
   const [activeTab, setActiveTab] = useState<TabId>('ingredients');
+  const [stepMode, setStepMode] = useState(false);
+  const [stepModeIndex, setStepModeIndex] = useState(0);
   const { user, isLoading: authLoading } = useAuth();
   const userId = user?.id ?? 'guest';
   const userName = user?.name ?? null;
@@ -296,6 +298,7 @@ export default function RecipeDetailScreen() {
         rating: replyingTo ? undefined : userRating,
         images: commentImages.length > 0 ? commentImages : undefined,
         parent_id: replyingTo?.id,
+        reply_to_user_id: replyingTo?.user?.id,
       });
       setCommentText('');
       setUserRating(0);
@@ -892,11 +895,63 @@ export default function RecipeDetailScreen() {
             {/* ── Steps Tab ── */}
             {activeTab === 'steps' && (
               <View style={styles.tabContent}>
+                <View style={styles.stepModeHeader}>
+                  <Text style={[styles.relatedTitle, { color: COLORS.text }]}>{isZh ? '步骤' : 'Steps'}</Text>
+                  <TouchableOpacity
+                    style={[styles.stepModeToggle, stepMode && styles.stepModeToggleActive]}
+                    onPress={() => {
+                      setStepMode((prev) => !prev);
+                      setStepModeIndex(0);
+                    }}
+                  >
+                    <Text style={[styles.stepModeToggleText, stepMode && styles.stepModeToggleTextActive]}>
+                      {stepMode ? (isZh ? '退出分步模式' : 'Exit Step Mode') : (isZh ? '分步模式' : 'Step Mode')}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
                 {(() => {
-                  // 把本菜谱有图片的 step 顺序整理成查看器资源
                   const stepImages = recipe.steps
                     .map((s) => s.image)
                     .filter((img): img is string => !!img);
+                  if (stepMode) {
+                    const currentStep = recipe.steps[stepModeIndex];
+                    return (
+                      <View style={styles.stepModeCard}>
+                        <Text style={styles.stepModeProgress}>
+                          {isZh ? `第 ${stepModeIndex + 1} / ${recipe.steps.length} 步` : `Step ${stepModeIndex + 1} / ${recipe.steps.length}`}
+                        </Text>
+                        <StepItem
+                          key={currentStep.order}
+                          step={currentStep}
+                          isZh={isZh}
+                          onImagePress={
+                            currentStep.image
+                              ? (uri) => {
+                                  const idx = stepImages.indexOf(uri);
+                                  openViewer(stepImages, Math.max(0, idx));
+                                }
+                              : undefined
+                          }
+                        />
+                        <View style={styles.stepModeActions}>
+                          <TouchableOpacity
+                            style={[styles.stepModeNavBtn, stepModeIndex === 0 && styles.postBtnDisabled]}
+                            disabled={stepModeIndex === 0}
+                            onPress={() => setStepModeIndex((prev) => Math.max(0, prev - 1))}
+                          >
+                            <Text style={styles.postBtnText}>{isZh ? '上一步' : 'Previous'}</Text>
+                          </TouchableOpacity>
+                          <TouchableOpacity
+                            style={[styles.stepModeNavBtn, stepModeIndex === recipe.steps.length - 1 && styles.postBtnDisabled]}
+                            disabled={stepModeIndex === recipe.steps.length - 1}
+                            onPress={() => setStepModeIndex((prev) => Math.min(recipe.steps.length - 1, prev + 1))}
+                          >
+                            <Text style={styles.postBtnText}>{isZh ? '下一步' : 'Next'}</Text>
+                          </TouchableOpacity>
+                        </View>
+                      </View>
+                    );
+                  }
                   return recipe.steps.map((step) => (
                     <StepItem
                       key={step.order}
@@ -1100,7 +1155,7 @@ export default function RecipeDetailScreen() {
               title: isZh ? recipe.title_zh : recipe.title,
               coverImage: recipe.cover_image,
               author: {
-                name: recipe.author_name || 'Anonymous',
+                name: 'Anonymous',
                 avatar: undefined,
               },
             }}
@@ -1596,5 +1651,51 @@ const styles = StyleSheet.create({
   },
   relatedCardWrap: {
     marginRight: 0,
+  },
+  stepModeHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  stepModeToggle: {
+    backgroundColor: '#FFF0E8',
+    borderRadius: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  stepModeToggleActive: {
+    backgroundColor: COLORS.primary,
+  },
+  stepModeToggleText: {
+    color: COLORS.primary,
+    fontWeight: '700',
+    fontSize: 12,
+  },
+  stepModeToggleTextActive: {
+    color: '#FFF',
+  },
+  stepModeCard: {
+    backgroundColor: '#FFF',
+    borderRadius: 16,
+    padding: 12,
+  },
+  stepModeProgress: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: COLORS.primary,
+    marginBottom: 8,
+  },
+  stepModeActions: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 12,
+  },
+  stepModeNavBtn: {
+    flex: 1,
+    backgroundColor: COLORS.primary,
+    borderRadius: 10,
+    alignItems: 'center',
+    paddingVertical: 10,
   },
 });
