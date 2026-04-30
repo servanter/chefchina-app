@@ -971,7 +971,9 @@ export default function RecipeDetailScreen() {
                             currentStep.image
                               ? (uri) => {
                                   const idx = allRecipeImages.indexOf(uri);
-                                  openViewer(allRecipeImages, Math.max(0, idx));
+                                  if (idx >= 0) {
+                                    openViewer(allRecipeImages, idx);
+                                  }
                                 }
                               : undefined
                           }
@@ -1004,7 +1006,9 @@ export default function RecipeDetailScreen() {
                         step.image
                           ? (uri) => {
                               const idx = allRecipeImages.indexOf(uri);
-                              openViewer(allRecipeImages, Math.max(0, idx));
+                              if (idx >= 0) {
+                                openViewer(allRecipeImages, idx);
+                              }
                             }
                           : undefined
                       }
