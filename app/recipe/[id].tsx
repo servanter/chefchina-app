@@ -104,6 +104,7 @@ export default function RecipeDetailScreen() {
   const [viewerVisible, setViewerVisible] = useState(false);
   const [viewerImages, setViewerImages] = useState<string[]>([]);
   const [viewerIndex, setViewerIndex] = useState(0);
+  const [heroImageIndex, setHeroImageIndex] = useState(0);
 
   // Report modal state (需求 4)
   const [reportVisible, setReportVisible] = useState(false);
@@ -463,6 +464,10 @@ export default function RecipeDetailScreen() {
     return images;
   }, [recipe]);
 
+  useEffect(() => {
+    setHeroImageIndex(0);
+  }, [recipe?.id, allRecipeImages.length]);
+
   const TABS: { id: TabId; label: string }[] = [
     { id: 'ingredients', label: t('recipe.ingredients') },
     { id: 'steps', label: t('recipe.steps') },
@@ -644,6 +649,10 @@ export default function RecipeDetailScreen() {
               pagingEnabled
               showsHorizontalScrollIndicator={false}
               style={styles.heroCarousel}
+              onMomentumScrollEnd={(event) => {
+                const nextIndex = Math.round(event.nativeEvent.contentOffset.x / width);
+                setHeroImageIndex(Math.max(0, Math.min(allRecipeImages.length - 1, nextIndex)));
+              }}
             >
               {allRecipeImages.map((imageUri, index) => (
                 <TouchableOpacity
@@ -662,7 +671,7 @@ export default function RecipeDetailScreen() {
                   key={`dot-${index}`}
                   style={[
                     styles.heroPaginationDot,
-                    index === 0 && styles.heroPaginationDotActive,
+                    index === heroImageIndex && styles.heroPaginationDotActive,
                   ]}
                 />
               ))}
