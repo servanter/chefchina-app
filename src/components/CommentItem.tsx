@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Modal, Image } from 'react-native';
+import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Comment } from '../lib/api';
 import { AppImage } from './AppImage';
@@ -47,18 +48,22 @@ export const CommentItem: React.FC<CommentItemProps> = ({ comment, canManage = f
         delayLongPress={500}
         style={{ flex: 1, flexDirection: 'row' }}
       >
-      <AppImage
-        uri={
-          comment.user?.avatar_url && comment.user.avatar_url.length > 0
-            ? comment.user.avatar_url
-            : `https://i.pravatar.cc/50?u=${comment.user_id}`
-        }
-        fallback={`https://i.pravatar.cc/50?u=${comment.user_id}`}
-        style={styles.avatar}
-      />
+      <TouchableOpacity onPress={() => router.push(`/profile/${comment.user?.id ?? comment.user_id}`)}>
+        <AppImage
+          uri={
+            comment.user?.avatar_url && comment.user.avatar_url.length > 0
+              ? comment.user.avatar_url
+              : `https://i.pravatar.cc/50?u=${comment.user_id}`
+          }
+          fallback={`https://i.pravatar.cc/50?u=${comment.user_id}`}
+          style={styles.avatar}
+        />
+      </TouchableOpacity>
       <View style={styles.body}>
         <View style={styles.header}>
-          <Text style={styles.name}>{comment.user?.name ?? 'User'}</Text>
+          <TouchableOpacity onPress={() => router.push(`/profile/${comment.user?.id ?? comment.user_id}`)}>
+            <Text style={styles.name}>{comment.user?.name ?? 'User'}</Text>
+          </TouchableOpacity>
           <Text style={styles.date}>{dateStr}</Text>
         </View>
         {comment.rating && <StarRating rating={comment.rating} />}

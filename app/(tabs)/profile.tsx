@@ -15,6 +15,7 @@ import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../../src/hooks/useAuth';
+import { useUserStats } from '../../src/hooks/useUserProfile';
 import { useUserBadges, useUserLevel } from '../../src/hooks/useAchievements';
 import { changeLanguage } from '../../src/lib/i18n';
 import { AppImage } from '../../src/components/AppImage';
@@ -106,6 +107,7 @@ export default function ProfileScreen() {
   // Achievements data
   const { data: userBadges } = useUserBadges(user?.id);
   const { data: levelInfo } = useUserLevel(user?.id);
+  const { data: stats } = useUserStats(user?.id);
 
   const LEVEL_ICONS: Record<number, string> = {
     1: '🥄',
@@ -259,20 +261,26 @@ export default function ProfileScreen() {
         <View style={[styles.statsRow, { backgroundColor: colors.card }]}>
           <StatCard
             icon="document-text"
-            value={user?.recipes_count ?? 0}
-            label={isZh ? '发布' : 'Recipes'}
+            value={stats?.recipeCount ?? user?.recipes_count ?? 0}
+            label={t('profile.recipes')}
+          />
+          <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
+          <StatCard
+            icon="people-outline"
+            value={stats?.followingCount ?? user?.following_count ?? 0}
+            label={t('profile.following')}
+          />
+          <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
+          <StatCard
+            icon="people"
+            value={stats?.followerCount ?? user?.followers_count ?? 0}
+            label={t('profile.followers')}
           />
           <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
           <StatCard
             icon="heart"
-            value={user?.favorites_count ?? 0}
-            label={t('profile.favorites')}
-          />
-          <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
-          <StatCard
-            icon="chatbubble"
-            value={user?.comments_count ?? 0}
-            label={t('profile.comments')}
+            value={stats?.totalLikes ?? 0}
+            label={t('profile.likes')}
           />
         </View>
 

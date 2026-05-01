@@ -199,6 +199,16 @@ export interface Comment {
   updated_at?: string;
   is_visible?: boolean;
   likes_count?: number; // 点赞数 (REQ-11.2)
+  recipe?: {
+    id: string;
+    title: string;
+    title_zh: string;
+    cover_image: string;
+  };
+  reply_to_user?: {
+    id?: string;
+    name: string;
+  };
   user?: {
     id?: string;
     name: string;
@@ -211,6 +221,7 @@ export interface User {
   email: string;
   name: string;
   avatar_url: string;
+  avatar?: string;
   bio: string;
   cover?: string;  // REQ-12.4: 用户头图
   specialties?: string[];  // REQ-12.4: 擅长菜系
@@ -420,6 +431,8 @@ interface BackendComment {
   updatedAt?: string;
   isVisible?: boolean;
   user?: { id: string; name?: string; avatar?: string };
+  recipe?: { id: string; titleEn?: string; titleZh?: string; coverImage?: string | null };
+  replyToUser?: { id: string; name?: string };
   _count?: { likes: number };
 }
 
@@ -439,6 +452,7 @@ interface BackendRecipeDetailFullData {
     liked?: boolean;
     favorited?: boolean;
   };
+  commentLikeStatus?: Record<string, boolean>;
   authorLevel?: {
     level: number;
     exp: number;
@@ -526,8 +540,22 @@ export function adaptComment(c: BackendComment): Comment {
     updated_at: c.updatedAt,
     is_visible: c.isVisible,
     likes_count: c._count?.likes ?? 0,
+    recipe: c.recipe
+      ? {
+          id: c.recipe.id,
+          title: c.recipe.titleEn ?? '',
+          title_zh: c.recipe.titleZh ?? '',
+          cover_image: c.recipe.coverImage ?? 'https://images.unsplash.com/photo-1563245372-f21724e3856d?w=800&q=80',
+        }
+      : undefined,
+    reply_to_user: c.replyToUser
+      ? {
+          id: c.replyToUser.id,
+          name: c.replyToUser.name ?? 'Anonymous',
+        }
+      : undefined,
     user: c.user
-      ? { name: c.user.name ?? 'Anonymous', avatar_url: c.user.avatar ?? '' }
+      ? { id: c.user.id, name: c.user.name ?? 'Anonymous', avatar_url: c.user.avatar ?? '' }
       : undefined,
   };
 }
@@ -634,6 +662,7 @@ export const fetchRecipeDetailFull = async (
       liked: data.userStatus?.liked ?? false,
       favorited: data.userStatus?.favorited ?? false,
     },
+    commentLikeStatus: data.commentLikeStatus ?? {},
     authorLevel: data.authorLevel,
   };
 };
@@ -929,6 +958,9 @@ export const upsertUser = async (params: {
     avatar_url: u.avatar && u.avatar.length > 0
       ? u.avatar
       : `https://i.pravatar.cc/150?u=${u.id}`,
+    avatar: u.avatar && u.avatar.length > 0
+      ? u.avatar
+      : `https://i.pravatar.cc/150?u=${u.id}`,
     bio: u.bio ?? '',
     favorites_count: u._count?.favorites ?? 0,
     comments_count: u._count?.comments ?? 0,
@@ -944,6 +976,9 @@ export const fetchUser = async (userId: string): Promise<User> => {
     email: u.email,
     name: u.name ?? '',
     avatar_url: u.avatar && u.avatar.length > 0
+      ? u.avatar
+      : `https://i.pravatar.cc/150?u=${u.id}`,
+    avatar: u.avatar && u.avatar.length > 0
       ? u.avatar
       : `https://i.pravatar.cc/150?u=${u.id}`,
     bio: u.bio ?? '',

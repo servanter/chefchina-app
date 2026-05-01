@@ -305,7 +305,11 @@ export default function RecipeDetailScreen() {
       setCommentImages([]);
       setReplyingTo(null);
       triggerHaptic('success');
-      Toast.show({ type: 'success', text1: t('recipe.commentPosted'), visibilityTime: 1500 });
+      Toast.show({
+        type: 'success',
+        text1: replyingTo ? t('comment.replySuccess') : t('recipe.commentPosted'),
+        visibilityTime: 1500,
+      });
     } catch {
       Toast.show({ type: 'error', text1: t('common.error'), visibilityTime: 2000 });
     }
@@ -1027,7 +1031,7 @@ export default function RecipeDetailScreen() {
                   {replyingTo && (
                     <View style={styles.replyingBox}>
                       <Text style={styles.replyingText}>
-                        回复给 {replyingTo.user?.name ?? 'User'}
+                        {t('comment.replyingTo', { username: replyingTo.user?.name ?? 'User' })}
                       </Text>
                       <TouchableOpacity onPress={handleCancelReply}>
                         <Ionicons name="close" size={18} color="#666" />
@@ -1049,7 +1053,7 @@ export default function RecipeDetailScreen() {
 
                   <TextInput
                     style={[styles.commentTextInput, { color: COLORS.text }]}
-                    placeholder={editingComment ? (isZh ? '编辑你的评论...' : 'Edit your comment...') : replyingTo ? '写下你的回复...' : t('recipe.writeComment')}
+                    placeholder={editingComment ? (isZh ? '编辑你的评论...' : 'Edit your comment...') : replyingTo ? (isZh ? '写下你的回复...' : 'Write your reply...') : t('recipe.writeComment')}
                     placeholderTextColor="#AAA"
                     value={commentText}
                     onChangeText={setCommentText}
