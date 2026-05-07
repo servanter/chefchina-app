@@ -463,11 +463,11 @@ export default function RecipeDetailScreen() {
     recipe.steps?.forEach((step) => addImage(step.image));
 
     return images;
-  }, [recipe?.id, recipe?.cover_image, JSON.stringify(recipe?.steps?.map(s => s.image))]);
+  }, [recipe?.id]);  // 只依赖 id，recipe 内容变化时 id 也会变
 
   useEffect(() => {
     setHeroImageIndex(0);
-  }, [recipe?.id, allRecipeImages.length]);
+  }, [recipe?.id]);  // 移除 allRecipeImages.length 依赖，避免循环
 
   const TABS: { id: TabId; label: string }[] = [
     { id: 'ingredients', label: t('recipe.ingredients') },
