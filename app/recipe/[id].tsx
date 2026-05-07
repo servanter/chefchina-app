@@ -422,11 +422,12 @@ export default function RecipeDetailScreen() {
   }, [userId, t]);
 
   // 监听 detailData 变化，更新 liked 和 favorited 状态
+  // FIX: 使用具体的值作为依赖，避免对象引用变化导致无限循环
   useEffect(() => {
     if (!detailData?.userStatus) return;
     setLiked(detailData.userStatus.liked);
     setFavorited(detailData.userStatus.favorited);
-  }, [detailData?.userStatus]);
+  }, [detailData?.userStatus?.liked, detailData?.userStatus?.favorited]);
 
   const isAuthor = userId !== 'guest' && !!recipe && userId === (detailData as any)?.recipe?.author?.id;
 
