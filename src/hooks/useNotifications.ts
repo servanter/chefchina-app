@@ -37,9 +37,9 @@ export function useInfiniteNotifications(userId: string | null, tab: TabType = '
         },
       })
       return {
-        data: res.data.notifications as Notification[],
-        unreadCount: res.data.unreadCount,
-        pagination: res.data.pagination,
+        data: res.data.data?.notifications ?? [],
+        unreadCount: res.data.data?.unreadCount ?? 0,
+        pagination: res.data.data?.pagination ?? { page: 1, pageSize: 20, total: 0, totalPages: 0 },
       }
     },
     initialPageParam: 1,
