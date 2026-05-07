@@ -1787,3 +1787,85 @@ export const fetchTrendingKeywords = async (limit = 10): Promise<TrendingRespons
 export const recordSearch = async (query: string, resultCount: number, clicked: boolean): Promise<void> => {
   await apiClient.post('/search/record', { query, resultCount, clicked });
 };
+
+// ─── 健康档案系统 (Nutrition Profile) ────────────────────────────────────
+
+export interface HealthProfile {
+  goal: 'weight_loss' | 'muscle_gain' | 'maintain';
+  dailyCalories: number;
+  proteinPercent: number;
+  fatPercent: number;
+  carbsPercent: number;
+  sodiumLimit?: number;
+  sugarLimit?: number;
+}
+
+export interface NutritionProgress {
+  calories: { current: number; target: number };
+  protein: { current: number; target: number };
+  sodium: { current: number; target: number };
+}
+
+export interface IntakeRecord {
+  id: number;
+  recipeName: string;
+  mealType: string;
+  servings: number;
+  calories: number;
+  protein: number;
+  createdAt: string;
+}
+
+export const healthAPI = {
+  // 获取健康档案
+  getProfile: async (): Promise<{ profile: HealthProfile | null }> => {
+    const res = await apiClient.get('/health/profile');
+    return res.data.data;
+  },
+
+  // 保存/更新健康档案
+  saveProfile: async (profile: HealthProfile): Promise<{ profile: HealthProfile }> => {
+    const res = await apiClient.post('/health/profile', profile);
+    return res.data.data;
+  },
+
+  // 获取每日营养数据
+  getDailyNutrition: async (): Promise<{
+    nutrition: NutritionProgress;
+    intakes: IntakeRecord[];
+  }> => {
+    const res = await apiClient.get('/health/daily');
+    return res.data.data;
+  },
+
+  // 记录摄入
+  logIntake: async (data: {
+    recipeId: number;
+    mealType: string;
+    servings: number;
+  }): Promise<{ intake: IntakeRecord }> => {
+    const res = await apiClient.post('/health/intake', data);
+    return res.data.data;
+  },
+
+  // 获取周报告
+  getWeeklyReport: async (): Promise<{
+    summary: {
+      daysOnTrack: number;
+      avgCalories: number;
+      avgProtein: number;
+      bestDay: string;
+      worstDay: string;
+    };
+    dailyData: Array<{
+      date: string;
+      calories: number;
+      protein: number;
+      onTrack: boolean;
+    }>;
+    aiSuggestions: string[];
+  }> => {
+    const res = await apiClient.get('/health/report');
+    return res.data.data;
+  },
+};
