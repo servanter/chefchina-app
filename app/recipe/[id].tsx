@@ -429,23 +429,8 @@ export default function RecipeDetailScreen() {
     setFavorited(detailData.userStatus.favorited);
   }, [detailData?.userStatus?.liked, detailData?.userStatus?.favorited]);
 
-  const isAuthor = userId !== 'guest' && !!recipe && userId === (detailData as any)?.recipe?.author?.id;
-
-  if (isLoading) return <RecipeDetailSkeleton />;
-
-  if (error || !recipe) {
-    return (
-      <EmptyState
-        icon="alert-circle-outline"
-        title={t('common.error')}
-        subtitle={t('common.retry')}
-      />
-    );
-  }
-
-  const title = isZh ? recipe.title_zh : recipe.title;
-  const description = isZh ? recipe.description_zh : recipe.description;
-
+  // ⚠️ CRITICAL: 所有 hooks 必须在 early return 之前调用
+  // 修复 React Error #310: useMemo/useEffect 不能在条件返回后调用
   const allRecipeImages = useMemo(() => {
     if (!recipe) return [];
     const images: string[] = [];
@@ -467,8 +452,27 @@ export default function RecipeDetailScreen() {
   }, [recipe?.id]);  // 只依赖 id，recipe 内容变化时 id 也会变
 
   useEffect(() => {
-    setHeroImageIndex(0);
+    if (recipe?.id) {
+      setHeroImageIndex(0);
+    }
   }, [recipe?.id]);  // 移除 allRecipeImages.length 依赖，避免循环
+
+  const isAuthor = userId !== 'guest' && !!recipe && userId === (detailData as any)?.recipe?.author?.id;
+
+  if (isLoading) return <RecipeDetailSkeleton />;
+
+  if (error || !recipe) {
+    return (
+      <EmptyState
+        icon="alert-circle-outline"
+        title={t('common.error')}
+        subtitle={t('common.retry')}
+      />
+    );
+  }
+
+  const title = isZh ? recipe.title_zh : recipe.title;
+  const description = isZh ? recipe.description_zh : recipe.description;
 
   const TABS: { id: TabId; label: string }[] = [
     { id: 'ingredients', label: t('recipe.ingredients') },
