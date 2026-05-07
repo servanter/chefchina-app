@@ -159,7 +159,7 @@ export default function RecipeDetailScreen() {
     if (userId && userId !== 'guest') {
       saveViewHistoryRemote(recipe.id).catch(() => {});
     }
-  }, [recipe, userId]);
+  }, [recipe?.id, userId]);  // 只依赖 recipe.id，不是整个 recipe 对象
   const refetchComments = refetchRecipeDetail;
   const fetchNextComments = async () => undefined;
   const hasMoreComments = false;
@@ -225,7 +225,7 @@ export default function RecipeDetailScreen() {
         visibilityTime: 2000,
       });
     }
-  }, [recipe, liked, userId, t, toggleLikeMutation, router, likeBounce]);
+  }, [recipe?.id, liked, userId, t, toggleLikeMutation, router, likeBounce]);
 
   const handleFavorite = useCallback(async () => {
     if (!recipe) return;
@@ -257,7 +257,7 @@ export default function RecipeDetailScreen() {
         visibilityTime: 2000,
       });
     }
-  }, [recipe, favorited, userId, t, toggleFavoriteMutation, router, favBounce]);
+  }, [recipe?.id, favorited, userId, t, toggleFavoriteMutation, router, favBounce]);
 
   const handlePostComment = useCallback(async () => {
     if (userId === 'guest') {
@@ -381,7 +381,7 @@ export default function RecipeDetailScreen() {
     if (!recipe) return;
     // 打开海报生成对话框
     setPosterVisible(true);
-  }, [recipe]);
+  }, [recipe?.id]);
 
   const { mutate: toggleCommentLike } = useToggleCommentLike();
 
