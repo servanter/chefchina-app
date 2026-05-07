@@ -446,6 +446,7 @@ export default function RecipeDetailScreen() {
   const description = isZh ? recipe.description_zh : recipe.description;
 
   const allRecipeImages = useMemo(() => {
+    if (!recipe) return [];
     const images: string[] = [];
     const seen = new Set<string>();
     const addImage = (image?: string | string[] | null) => {
@@ -462,7 +463,7 @@ export default function RecipeDetailScreen() {
     recipe.steps?.forEach((step) => addImage(step.image));
 
     return images;
-  }, [recipe]);
+  }, [recipe?.id, recipe?.cover_image, JSON.stringify(recipe?.steps?.map(s => s.image))]);
 
   useEffect(() => {
     setHeroImageIndex(0);

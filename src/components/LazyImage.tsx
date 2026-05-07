@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Platform, StyleProp, ImageStyle } from 'react-native';
 import { Image, ImageContentFit } from 'expo-image';
+import { processImageUrl } from '../lib/imageProxy';
 
 // 默认 blurhash（柔和暖色调占位）
 const DEFAULT_BLURHASH = 'L6PZfSi_.AyE_3t7t7R**0o#DgR4';
@@ -51,7 +52,14 @@ export const LazyImage: React.FC<LazyImageProps> = ({
   useEffect(() => setFailed(false), [uri]);
 
   const resolvedFallback = fallback ?? DEFAULT_FALLBACK;
-  const source = !uri || failed ? { uri: resolvedFallback } : { uri };
+  
+  // 自动使用图片代理解决 CORS 问题
+  const proxiedUri = processImageUrl(uri);
+  const proxiedFallback = processImageUrl(resolvedFallback);
+  
+  const source = !proxiedUri || failed 
+    ? { uri: proxiedFallback || resolvedFallback } 
+    : { uri: proxiedUri };
 
   // Web 平台：添加 crossOrigin 支持
   const imageProps: any = {
