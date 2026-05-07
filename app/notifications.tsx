@@ -158,6 +158,20 @@ export default function NotificationsScreen() {
   const items = useMemo(() => (data?.pages ?? []).flatMap((p) => p.data), [data]);
   const unread = unreadCounts?.all ?? data?.pages?.[0]?.unreadCount ?? 0;
 
+  // DEBUG: 调试日志
+  useEffect(() => {
+    console.log('[Notifications Debug]', {
+      userId,
+      resolvedAuth,
+      isLoading,
+      isFetching,
+      hasData: !!data,
+      pagesCount: data?.pages?.length,
+      itemsLength: items.length,
+      error: error?.message,
+    });
+  }, [userId, resolvedAuth, isLoading, isFetching, data, items, error]);
+
   const styles = useMemo(
     () =>
       StyleSheet.create({
@@ -395,7 +409,7 @@ export default function NotificationsScreen() {
         ))}
       </View>
 
-      {isLoading && items.length === 0 ? (
+      {!resolvedAuth || (isLoading && !data) ? (
         <LoadingSpinner />
       ) : error ? (
         <View style={styles.errorContainer}>
