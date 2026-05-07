@@ -395,9 +395,9 @@ export default function NotificationsScreen() {
         ))}
       </View>
 
-      {isLoading && !data ? (
+      {isLoading && items.length === 0 ? (
         <LoadingSpinner />
-      ) : error && items.length === 0 ? (
+      ) : error ? (
         <View style={styles.errorContainer}>
           <Ionicons name="cloud-offline-outline" size={48} color={themed.textSecondary} />
           <Text style={styles.errorText}>{t('list.loadFailed')}</Text>
