@@ -398,8 +398,7 @@
     "carbs": "碳水化合物(g)",
     "fiber_label": "膳食纤维(g)",
     "sodium_label": "钠(mg)",
-    "sugar_label": "糖(g)",
-    "tags": "标签"
+    "sugar_label": "糖(g)"
   },
   "collections": {
     "featuredTitle": "📚 精选专题",
@@ -433,5 +432,25 @@
       "5": "传奇大厨"
     },
     "recentBadges": "最近成就"
+  },
+  "health": {
+    "title": "营养档案",
+    "saveSuccess": "保存成功",
+    "saveSuccessDesc": "健康档案已更新",
+    "saveFailed": "保存失败",
+    "goal": "健康目标",
+    "goals": {
+      "weight_loss": "减脂",
+      "muscle_gain": "增肌",
+      "maintain": "保持"
+    },
+    "dailyCalories": "每日热量目标",
+    "caloriesUnit": "千卡",
+    "macroRatio": "营养比例",
+    "protein": "蛋白质",
+    "fat": "脂肪",
+    "carbs": "碳水化合物",
+    "save": "保存设置",
+    "cancel": "取消"
   }
 }
