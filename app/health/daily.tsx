@@ -22,11 +22,21 @@ interface NutritionProgress {
 
 interface IntakeRecord {
   id: number
-  recipeName: string
   mealType: string
   servings: number
   calories: number
   protein: number
+  fat: number
+  carbs: number
+  fiber?: number | null
+  sodium?: number | null
+  sugar?: number | null
+  recipe: {
+    id: string
+    titleEn: string
+    titleZh: string
+    coverImage?: string | null
+  }
   createdAt: string
 }
 
@@ -51,8 +61,25 @@ export default function DailyNutritionScreen() {
   const loadData = async () => {
     try {
       const data = await healthAPI.getDailyNutrition()
-      setNutrition(data.nutrition)
-      setIntakes(data.intakes || [])
+      
+      // 适配后端返回的数据结构
+      if (data.goal && data.current) {
+        setNutrition({
+          calories: { 
+            current: data.current.calories, 
+            target: data.goal.calories 
+          },
+          protein: { 
+            current: data.current.protein, 
+            target: data.goal.protein 
+          },
+          sodium: { 
+            current: data.current.sodium || 0, 
+            target: data.goal.sodium || 2300 
+          },
+        })
+        setIntakes(data.meals || [])  // ✅ 使用 meals 字段
+      }
     } catch (error) {
       console.error('Failed to load nutrition data:', error)
     } finally {
@@ -135,7 +162,9 @@ export default function DailyNutritionScreen() {
             intakes.map((intake) => (
               <View key={intake.id} style={styles.intakeItem}>
                 <View style={styles.intakeHeader}>
-                  <Text style={styles.recipeName}>{intake.recipeName}</Text>
+                  <Text style={styles.recipeName}>
+                    {intake.recipe.titleZh || intake.recipe.titleEn}
+                  </Text>
                   <Text style={styles.mealType}>{getMealTypeLabel(intake.mealType)}</Text>
                 </View>
                 <View style={styles.intakeStats}>
