@@ -61,7 +61,7 @@ export default function MealLogger({ visible, onClose, onSuccess }: MealLoggerPr
   }, [visible])
 
   useEffect(() => {
-    if (searchQuery.length > 1) {
+    if (searchQuery.length >= 1) {
       searchRecipes()
     } else {
       setRecipes([])
@@ -180,6 +180,7 @@ export default function MealLogger({ visible, onClose, onSuccess }: MealLoggerPr
                       onPress={() => {
                         setSelectedRecipe(recipe)
                         setSearchQuery('')
+                        setRecipes([])  // 清空搜索结果列表
                       }}
                     >
                       <Text style={styles.recipeName}>{recipe.title}</Text>
