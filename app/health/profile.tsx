@@ -9,6 +9,7 @@ import {
 } from 'react-native'
 import { router } from 'expo-router'
 import { useTranslation } from 'react-i18next'
+import { Ionicons } from '@expo/vector-icons'
 import Toast from 'react-native-toast-message'
 import { healthAPI } from '@/lib/api'
 import Slider from '@react-native-community/slider'
@@ -119,6 +120,15 @@ export default function HealthProfileScreen() {
 
   return (
     <View style={styles.container}>
+      {/* Header with Back Button */}
+      <View style={styles.headerRow}>
+        <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
+          <Ionicons name="arrow-back" size={20} color="#333" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>{t('health.profile')}</Text>
+        <View style={{ width: 36 }} />
+      </View>
+
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
         {/* 快捷入口 */}
         <View style={styles.quickActions}>
@@ -305,6 +315,30 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#F5F5F5',
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 8,
+    backgroundColor: '#FFF',
+  },
+  backBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#F5F2EE',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#333',
+    flex: 1,
+    textAlign: 'center',
   },
   loadingContainer: {
     flex: 1,
