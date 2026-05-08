@@ -1881,7 +1881,7 @@ export const recipeAPI = {
     offset?: number;
   }): Promise<{
     recipes: Array<{
-      id: number;
+      id: number | string;
       title: string;
       titleEn?: string;
       titleZh?: string;
@@ -1908,7 +1908,7 @@ export const recipeAPI = {
     // 适配后端返回格式到 MealLogger 期望的格式
     return {
       recipes: items.map((item: BackendRecipe) => ({
-        id: Number(item.id),
+        id: item.id,  // 保持原始类型,不强制转换
         title: item.titleZh || item.titleEn,
         titleEn: item.titleEn,
         titleZh: item.titleZh,
