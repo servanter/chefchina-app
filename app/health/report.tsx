@@ -27,7 +27,10 @@ interface WeeklyReport {
     protein: number
     onTrack: boolean
   }>
-  aiSuggestions: string[]
+  aiSuggestions: Array<{
+    content: string
+    source: 'ai' | 'rule'
+  }>
 }
 
 export default function WeeklyReportScreen() {
@@ -138,10 +141,21 @@ export default function WeeklyReportScreen() {
           <Text style={styles.cardTitle}>💡 {t('health.aiAdvice')}</Text>
           {aiSuggestions.map((suggestion, index) => (
             <View key={index} style={styles.suggestionItem}>
-              <Text style={styles.suggestionBullet}>•</Text>
-              <Text style={styles.suggestionText}>{suggestion}</Text>
+              <Text style={styles.suggestionIcon}>
+                {suggestion.source === 'ai' ? '🤖' : '📊'}
+              </Text>
+              <Text style={styles.suggestionText}>{suggestion.content}</Text>
             </View>
           ))}
+          
+          {/* 图例说明 */}
+          {aiSuggestions.length > 0 && (
+            <View style={styles.legend}>
+              <Text style={styles.legendText}>
+                🤖 AI生成 | 📊 规则分析
+              </Text>
+            </View>
+          )}
         </View>
       </ScrollView>
     </View>
@@ -359,9 +373,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     marginBottom: 12,
   },
-  suggestionBullet: {
+  suggestionIcon: {
     fontSize: 16,
-    color: '#FF6B35',
     marginRight: 8,
     marginTop: 2,
   },
@@ -370,5 +383,16 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: '#333',
     lineHeight: 22,
+  },
+  legend: {
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#E5E5E5',
+  },
+  legendText: {
+    fontSize: 12,
+    color: '#999',
+    textAlign: 'center',
   },
 })
