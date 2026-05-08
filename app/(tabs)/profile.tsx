@@ -323,6 +323,11 @@ export default function ProfileScreen() {
             onPress={() => router.push('/achievements' as any)}
           />
           <MenuRow
+            icon="fitness-outline"
+            label={isZh ? '营养档案' : 'Nutrition Profile'}
+            onPress={() => router.push('/health/profile' as any)}
+          />
+          <MenuRow
             icon="time-outline"
             label={t('profile.recentHistory')}
             onPress={() => router.push('/recent-history')}
