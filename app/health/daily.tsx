@@ -94,12 +94,12 @@ export default function DailyNutritionScreen() {
       >
         {/* 营养进度环 */}
         <View style={styles.progressSection}>
-          <Text style={styles.sectionTitle}>今日营养摄入</Text>
+          <Text style={styles.sectionTitle}>{t('health.todayProgress')}</Text>
           <View style={styles.progressContainer}>
             <CircularProgress
               current={nutrition.calories.current}
               target={nutrition.calories.target}
-              label="热量"
+              label={t('health.calories')}
               unit="kcal"
               color="#FF6B35"
               size={120}
@@ -107,7 +107,7 @@ export default function DailyNutritionScreen() {
             <CircularProgress
               current={nutrition.protein.current}
               target={nutrition.protein.target}
-              label="蛋白质"
+              label={t('health.protein')}
               unit="g"
               color="#4CAF50"
               size={100}
@@ -115,7 +115,7 @@ export default function DailyNutritionScreen() {
             <CircularProgress
               current={nutrition.sodium.current}
               target={nutrition.sodium.target}
-              label="钠"
+              label={t('health.sodium')}
               unit="mg"
               color="#2196F3"
               size={100}
@@ -125,11 +125,11 @@ export default function DailyNutritionScreen() {
 
         {/* 摄入记录列表 */}
         <View style={styles.listSection}>
-          <Text style={styles.sectionTitle}>今日摄入</Text>
+          <Text style={styles.sectionTitle}>{t('health.mealHistory')}</Text>
           {intakes.length === 0 ? (
             <View style={styles.emptyState}>
-              <Text style={styles.emptyText}>还没有记录哦</Text>
-              <Text style={styles.emptyHint}>点击下方按钮记录你的饮食</Text>
+              <Text style={styles.emptyText}>{t('health.noData')}</Text>
+              <Text style={styles.emptyHint}>{t('health.startLogging')}</Text>
             </View>
           ) : (
             intakes.map((intake) => (
@@ -143,10 +143,10 @@ export default function DailyNutritionScreen() {
                     {intake.calories} kcal
                   </Text>
                   <Text style={styles.intakeStat}>
-                    蛋白质 {intake.protein}g
+                    {t('health.protein')} {intake.protein}g
                   </Text>
                   <Text style={styles.intakeStat}>
-                    {intake.servings}份
+                    {intake.servings}{t('common.servings', { defaultValue: '份' })}
                   </Text>
                 </View>
                 <Text style={styles.intakeTime}>
@@ -164,7 +164,7 @@ export default function DailyNutritionScreen() {
       {/* 记录按钮 */}
       <View style={styles.footer}>
         <TouchableOpacity style={styles.logButton} onPress={handleLogMeal}>
-          <Text style={styles.logButtonText}>+ 记录摄入</Text>
+          <Text style={styles.logButtonText}>+ {t('health.logMeal')}</Text>
         </TouchableOpacity>
       </View>
 

@@ -451,6 +451,27 @@
     "fat": "脂肪",
     "carbs": "碳水化合物",
     "save": "保存设置",
-    "cancel": "取消"
+    "cancel": "取消",
+    "dailyLog": "每日记录",
+    "aiReport": "AI周报",
+    "dailyNutrition": "今日营养",
+    "todayProgress": "今日进度",
+    "logMeal": "记录一餐",
+    "mealHistory": "用餐记录",
+    "calories": "热量",
+    "sodium": "钠",
+    "target": "目标",
+    "remaining": "剩余",
+    "exceeded": "超出",
+    "noData": "暂无数据",
+    "startLogging": "开始记录",
+    "weeklyReport": "营养周报",
+    "weekSummary": "本周总结",
+    "daysOnTrack": "达标天数",
+    "avgCalories": "平均热量",
+    "avgProtein": "平均蛋白质",
+    "trend": "趋势分析",
+    "aiAdvice": "AI 建议",
+    "generating": "AI 分析中..."
   }
 }

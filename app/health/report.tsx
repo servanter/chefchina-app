@@ -68,12 +68,12 @@ export default function WeeklyReportScreen() {
   if (!report) {
     return (
       <View style={styles.emptyContainer}>
-        <Text style={styles.emptyText}>暂无数据</Text>
+        <Text style={styles.emptyText}>{t('health.noData')}</Text>
         <TouchableOpacity
           style={styles.emptyButton}
-          onPress={() => router.push('/health/daily')}
+          onPress={() => router.push('/health/daily' as any)}
         >
-          <Text style={styles.emptyButtonText}>开始记录</Text>
+          <Text style={styles.emptyButtonText}>{t('health.startLogging')}</Text>
         </TouchableOpacity>
       </View>
     )
@@ -92,34 +92,34 @@ export default function WeeklyReportScreen() {
       >
         {/* 概览卡片 */}
         <View style={styles.summaryCard}>
-          <Text style={styles.cardTitle}>本周概览</Text>
+          <Text style={styles.cardTitle}>{t('health.weekSummary')}</Text>
           
           <View style={styles.statRow}>
             <View style={styles.statItem}>
               <Text style={styles.statValue}>{summary.daysOnTrack}/7</Text>
-              <Text style={styles.statLabel}>达标天数</Text>
+              <Text style={styles.statLabel}>{t('health.daysOnTrack')}</Text>
             </View>
             <View style={styles.statDivider} />
             <View style={styles.statItem}>
               <Text style={styles.statValue}>{Math.round(summary.avgCalories)}</Text>
-              <Text style={styles.statLabel}>平均热量(kcal)</Text>
+              <Text style={styles.statLabel}>{t('health.avgCalories')} (kcal)</Text>
             </View>
             <View style={styles.statDivider} />
             <View style={styles.statItem}>
               <Text style={styles.statValue}>{Math.round(summary.avgProtein)}g</Text>
-              <Text style={styles.statLabel}>平均蛋白质</Text>
+              <Text style={styles.statLabel}>{t('health.avgProtein')}</Text>
             </View>
           </View>
 
           <View style={styles.bestWorst}>
             <View style={styles.dayBadge}>
-              <Text style={styles.dayBadgeLabel}>最佳</Text>
+              <Text style={styles.dayBadgeLabel}>{t('common.best', { defaultValue: '最佳' })}</Text>
               <Text style={styles.dayBadgeValue}>
                 {formatDate(summary.bestDay)}
               </Text>
             </View>
             <View style={[styles.dayBadge, styles.worstBadge]}>
-              <Text style={styles.dayBadgeLabel}>需改进</Text>
+              <Text style={styles.dayBadgeLabel}>{t('common.needImprove', { defaultValue: '需改进' })}</Text>
               <Text style={styles.dayBadgeValue}>
                 {formatDate(summary.worstDay)}
               </Text>
@@ -129,13 +129,13 @@ export default function WeeklyReportScreen() {
 
         {/* 趋势图 */}
         <View style={styles.chartCard}>
-          <Text style={styles.cardTitle}>7天趋势</Text>
+          <Text style={styles.cardTitle}>{t('health.trend')}</Text>
           <WeeklyChart data={dailyData} />
         </View>
 
         {/* AI 建议 */}
         <View style={styles.suggestionsCard}>
-          <Text style={styles.cardTitle}>💡 AI 建议</Text>
+          <Text style={styles.cardTitle}>💡 {t('health.aiAdvice')}</Text>
           {aiSuggestions.map((suggestion, index) => (
             <View key={index} style={styles.suggestionItem}>
               <Text style={styles.suggestionBullet}>•</Text>

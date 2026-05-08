@@ -451,6 +451,27 @@
     "fat": "Fat",
     "carbs": "Carbs",
     "save": "Save",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "dailyLog": "Daily Log",
+    "aiReport": "AI Report",
+    "dailyNutrition": "Daily Nutrition",
+    "todayProgress": "Today Progress",
+    "logMeal": "Log Meal",
+    "mealHistory": "Meal History",
+    "calories": "Calories",
+    "sodium": "Sodium",
+    "target": "Target",
+    "remaining": "Remaining",
+    "exceeded": "Exceeded",
+    "noData": "No data",
+    "startLogging": "Start Logging",
+    "weeklyReport": "Weekly Report",
+    "weekSummary": "Week Summary",
+    "daysOnTrack": "Days On Track",
+    "avgCalories": "Avg Calories",
+    "avgProtein": "Avg Protein",
+    "trend": "Trend",
+    "aiAdvice": "AI Advice",
+    "generating": "Analyzing..."
   }
 }
