@@ -25,14 +25,16 @@ interface HealthProfile {
   sugarLimit?: number
 }
 
-const GOAL_OPTIONS = [
-  { value: 'weight_loss', label: '减脂', emoji: '🔥' },
-  { value: 'muscle_gain', label: '增肌', emoji: '💪' },
-  { value: 'maintain', label: '保持', emoji: '⚖️' },
-] as const
+// Goal options moved to component body to access t()
 
 export default function HealthProfileScreen() {
   const { t } = useTranslation()
+  
+  const GOAL_OPTIONS = [
+    { value: 'weight_loss' as Goal, label: t('health.goals.weight_loss'), emoji: '🔥' },
+    { value: 'muscle_gain' as Goal, label: t('health.goals.muscle_gain'), emoji: '💪' },
+    { value: 'maintain' as Goal, label: t('health.goals.maintain'), emoji: '⚖️' },
+  ]
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   
@@ -91,16 +93,16 @@ export default function HealthProfileScreen() {
 
       Toast.show({
         type: 'success',
-        text1: '保存成功',
-        text2: '健康档案已更新',
+        text1: t('health.saveSuccess'),
+        text2: t('health.saveSuccessDesc'),
       })
 
       router.back()
     } catch (error: any) {
       Toast.show({
         type: 'error',
-        text1: '保存失败',
-        text2: error.message || '请稍后重试',
+        text1: t('health.saveFailed'),
+        text2: error.message || t('common.retry'),
       })
     } finally {
       setSaving(false)
@@ -120,7 +122,7 @@ export default function HealthProfileScreen() {
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
         {/* 健康目标 */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>健康目标</Text>
+          <Text style={styles.sectionTitle}>{t('health.goal')}</Text>
           <View style={styles.goalContainer}>
             {GOAL_OPTIONS.map((option) => (
               <TouchableOpacity
@@ -147,9 +149,9 @@ export default function HealthProfileScreen() {
 
         {/* 每日热量 */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>每日热量目标</Text>
+          <Text style={styles.sectionTitle}>{t('health.dailyCalories')}</Text>
           <View style={styles.sliderContainer}>
-            <Text style={styles.calorieValue}>{dailyCalories} kcal</Text>
+            <Text style={styles.calorieValue}>{dailyCalories} {t('health.caloriesUnit')}</Text>
             <Slider
               style={styles.slider}
               minimumValue={1200}
@@ -170,12 +172,12 @@ export default function HealthProfileScreen() {
 
         {/* 营养比例 */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>营养比例</Text>
+          <Text style={styles.sectionTitle}>{t('health.macroRatio')}</Text>
           
           {/* 蛋白质 */}
           <View style={styles.macroItem}>
             <View style={styles.macroHeader}>
-              <Text style={styles.macroLabel}>🥩 蛋白质</Text>
+              <Text style={styles.macroLabel}>🥩 {t('health.protein')}</Text>
               <Text style={styles.macroValue}>{proteinPercent}%</Text>
             </View>
             <Slider
@@ -199,7 +201,7 @@ export default function HealthProfileScreen() {
           {/* 脂肪 */}
           <View style={styles.macroItem}>
             <View style={styles.macroHeader}>
-              <Text style={styles.macroLabel}>🥑 脂肪</Text>
+              <Text style={styles.macroLabel}>🥑 {t('health.fat')}</Text>
               <Text style={styles.macroValue}>{fatPercent}%</Text>
             </View>
             <Slider
@@ -223,7 +225,7 @@ export default function HealthProfileScreen() {
           {/* 碳水化合物 */}
           <View style={styles.macroItem}>
             <View style={styles.macroHeader}>
-              <Text style={styles.macroLabel}>🍚 碳水</Text>
+              <Text style={styles.macroLabel}>🍚 {t('health.carbs')}</Text>
               <Text style={styles.macroValue}>{carbsPercent}%</Text>
             </View>
             <Slider
@@ -248,7 +250,7 @@ export default function HealthProfileScreen() {
 
           {/* 总计显示 */}
           <View style={styles.totalContainer}>
-            <Text style={styles.totalLabel}>总计</Text>
+            <Text style={styles.totalLabel}>{t('common.all')}</Text>
             <Text
               style={[
                 styles.totalValue,
@@ -273,7 +275,7 @@ export default function HealthProfileScreen() {
           {saving ? (
             <ActivityIndicator color="#FFF" />
           ) : (
-            <Text style={styles.saveButtonText}>保存设置</Text>
+            <Text style={styles.saveButtonText}>{t('health.save')}</Text>
           )}
         </TouchableOpacity>
       </View>

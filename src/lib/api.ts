@@ -58,6 +58,7 @@ apiClient.interceptors.request.use(
       url.startsWith('/likes') ||
       url.startsWith('/favorites') ||
       url.startsWith('/users/') ||
+      url.startsWith('/health') ||
       url.includes('/push-token') ||
       url.includes('/recipes/mine');
     if (needsAuth) {
