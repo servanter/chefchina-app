@@ -451,6 +451,8 @@
     "fat": "Fat",
     "carbs": "Carbs",
     "save": "Save",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "dailyLog": "Daily Log",
+    "aiReport": "AI Report"
   }
 }

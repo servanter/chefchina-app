@@ -451,6 +451,8 @@
     "fat": "脂肪",
     "carbs": "碳水化合物",
     "save": "保存设置",
-    "cancel": "取消"
+    "cancel": "取消",
+    "dailyLog": "每日记录",
+    "aiReport": "AI周报"
   }
 }

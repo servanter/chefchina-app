@@ -120,6 +120,24 @@ export default function HealthProfileScreen() {
   return (
     <View style={styles.container}>
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
+        {/* 快捷入口 */}
+        <View style={styles.quickActions}>
+          <TouchableOpacity
+            style={styles.quickActionButton}
+            onPress={() => router.push('/health/daily' as any)}
+          >
+            <Text style={styles.quickActionEmoji}>📊</Text>
+            <Text style={styles.quickActionLabel}>{t('health.dailyLog')}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.quickActionButton}
+            onPress={() => router.push('/health/report' as any)}
+          >
+            <Text style={styles.quickActionEmoji}>🤖</Text>
+            <Text style={styles.quickActionLabel}>{t('health.aiReport')}</Text>
+          </TouchableOpacity>
+        </View>
+
         {/* 健康目标 */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>{t('health.goal')}</Text>
@@ -299,6 +317,29 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: 16,
+  },
+  quickActions: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 16,
+  },
+  quickActionButton: {
+    flex: 1,
+    backgroundColor: '#FFF',
+    borderRadius: 12,
+    padding: 16,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#FFD4B8',
+  },
+  quickActionEmoji: {
+    fontSize: 32,
+    marginBottom: 8,
+  },
+  quickActionLabel: {
+    fontSize: 13,
+    color: '#FF6B35',
+    fontWeight: '600',
   },
   section: {
     backgroundColor: '#FFF',
