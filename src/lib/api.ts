@@ -1870,3 +1870,60 @@ export const healthAPI = {
     return res.data.data;
   },
 };
+
+// ─── Recipe API (菜谱搜索) ────────────────────────────────────────────────────
+
+export const recipeAPI = {
+  // 搜索菜谱 (用于 MealLogger 组件)
+  searchRecipes: async (params: {
+    keyword: string;
+    limit?: number;
+    offset?: number;
+  }): Promise<{
+    recipes: Array<{
+      id: number;
+      title: string;
+      titleEn?: string;
+      titleZh?: string;
+      calories?: number;
+      protein?: number;
+      fat?: number;
+      carbs?: number;
+      coverImage?: string;
+    }>;
+    total: number;
+  }> => {
+    const res = await apiClient.get('/recipes/search', {
+      params: {
+        q: params.keyword,
+        limit: params.limit ?? 10,
+        cursor: params.offset ? String(params.offset) : undefined,
+      },
+    });
+    
+    const body = res.data?.data ?? {};
+    const items = Array.isArray(body.items) ? body.items : [];
+    const pagination = body.pagination ?? {};
+    
+    // 适配后端返回格式到 MealLogger 期望的格式
+    return {
+      recipes: items.map((item: BackendRecipe) => ({
+        id: Number(item.id),
+        title: item.titleZh || item.titleEn,
+        titleEn: item.titleEn,
+        titleZh: item.titleZh,
+        calories: item.calories ?? 0,
+        protein: item.protein ?? 0,
+        fat: item.fat ?? 0,
+        carbs: item.carbs ?? 0,
+        coverImage: item.coverImage,
+      })),
+      total: typeof pagination.total === 'number' ? pagination.total : items.length,
+    };
+  },
+
+  // 获取菜谱详情 (如果需要)
+  getRecipeDetail: async (id: number): Promise<Recipe> => {
+    return fetchRecipeById(String(id));
+  },
+};
