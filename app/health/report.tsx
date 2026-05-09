@@ -13,6 +13,8 @@ import { useTranslation } from 'react-i18next'
 import { Ionicons } from '@expo/vector-icons'
 import { healthAPI } from '@/lib/api'
 import Svg, { Line, Circle, Polyline } from 'react-native-svg'
+import { useAuth } from '@/hooks/useAuth'
+import { useSubscriptionStatus } from '@/hooks/useSubscription'
 
 interface WeeklyReport {
   summary: {
@@ -36,6 +38,8 @@ interface WeeklyReport {
 
 export default function WeeklyReportScreen() {
   const { t } = useTranslation()
+  const { user } = useAuth()
+  const { data: subscriptionStatus } = useSubscriptionStatus(user?.id)
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [report, setReport] = useState<WeeklyReport | null>(null)
@@ -148,23 +152,56 @@ export default function WeeklyReportScreen() {
 
         {/* AI 建议 */}
         <View style={styles.suggestionsCard}>
-          <Text style={styles.cardTitle}>💡 {t('health.aiAdvice')}</Text>
-          {aiSuggestions.map((suggestion, index) => (
-            <View key={index} style={styles.suggestionItem}>
-              <Text style={styles.suggestionIcon}>
-                {suggestion.source === 'ai' ? '🤖' : '📊'}
-              </Text>
-              <Text style={styles.suggestionText}>{suggestion.content}</Text>
-            </View>
-          ))}
+          <View style={styles.aiHeaderRow}>
+            <Text style={styles.cardTitle}>💡 {t('health.aiAdvice')}</Text>
+            {!subscriptionStatus?.isPremium && (
+              <View style={styles.lockBadge}>
+                <Ionicons name="lock-closed" size={12} color="#E85D26" />
+                <Text style={styles.lockText}>Premium</Text>
+              </View>
+            )}
+          </View>
           
-          {/* 图例说明 */}
-          {aiSuggestions.length > 0 && (
-            <View style={styles.legend}>
-              <Text style={styles.legendText}>
-                🤖 AI生成 | 📊 规则分析
+          {subscriptionStatus?.isPremium ? (
+            // Premium 用户：显示 AI 建议
+            <>
+              {aiSuggestions.map((suggestion, index) => (
+                <View key={index} style={styles.suggestionItem}>
+                  <Text style={styles.suggestionIcon}>
+                    {suggestion.source === 'ai' ? '🤖' : '📊'}
+                  </Text>
+                  <Text style={styles.suggestionText}>{suggestion.content}</Text>
+                </View>
+              ))}
+              
+              {/* 图例说明 */}
+              {aiSuggestions.length > 0 && (
+                <View style={styles.legend}>
+                  <Text style={styles.legendText}>
+                    🤖 AI生成 | 📊 规则分析
+                  </Text>
+                </View>
+              )}
+            </>
+          ) : (
+            // 免费用户：显示升级提示
+            <TouchableOpacity
+              style={styles.premiumPrompt}
+              onPress={() => router.push('/pricing')}
+              activeOpacity={0.7}
+            >
+              <View style={styles.lockIconCircle}>
+                <Ionicons name="lock-closed" size={24} color="#E85D26" />
+              </View>
+              <Text style={styles.premiumPromptTitle}>升级到 Premium 解锁 AI 营养师</Text>
+              <Text style={styles.premiumPromptDesc}>
+                获取个性化营养建议、饮食优化方案
               </Text>
-            </View>
+              <View style={styles.premiumPromptButton}>
+                <Text style={styles.premiumPromptButtonText}>立即升级</Text>
+                <Ionicons name="arrow-forward" size={16} color="#E85D26" />
+              </View>
+            </TouchableOpacity>
           )}
         </View>
       </ScrollView>
@@ -402,6 +439,68 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 16,
     marginBottom: 16,
+  },
+  aiHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  lockBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#FFF0E8',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  lockText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#E85D26',
+  },
+  premiumPrompt: {
+    alignItems: 'center',
+    paddingVertical: 24,
+    paddingHorizontal: 16,
+  },
+  lockIconCircle: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#FFF0E8',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
+  },
+  premiumPromptTitle: {
+    fontSize: 17,
+    fontWeight: '700',
+    color: '#333',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  premiumPromptDesc: {
+    fontSize: 14,
+    color: '#666',
+    textAlign: 'center',
+    marginBottom: 16,
+    lineHeight: 20,
+  },
+  premiumPromptButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#FFF0E8',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 20,
+  },
+  premiumPromptButtonText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#E85D26',
   },
   suggestionItem: {
     flexDirection: 'row',
