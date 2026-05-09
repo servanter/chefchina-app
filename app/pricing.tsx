@@ -12,7 +12,9 @@ import {
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '@/hooks/useAuth';
-import { API_URL } from '@/config/api';
+import { config } from '@/config/env';
+
+const API_URL = config.API_URL;
 
 type PlanType = 'first-month' | 'monthly' | 'yearly';
 

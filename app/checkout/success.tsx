@@ -8,7 +8,9 @@ import {
 } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { API_URL } from '@/config/api';
+import { config } from '@/config/env';
+
+const API_URL = config.API_URL;
 
 export default function CheckoutSuccessScreen() {
   const { session_id } = useLocalSearchParams<{ session_id: string }>();
