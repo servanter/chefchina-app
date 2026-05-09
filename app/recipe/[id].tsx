@@ -48,6 +48,7 @@ import { saveViewHistoryItem } from '../../src/lib/storage';
 import { ReportModal } from '../../src/components/ReportModal';
 import SharePoster from '../../src/components/SharePoster';
 import type { ReportTargetType } from '../../src/lib/api';
+import { useSubscriptionStatus } from '../../src/hooks/useSubscription';
 
 const COLORS = { primary: '#E85D26', background: '#FFFDF9', text: '#1A1A1A', textSecondary: '#666', inputBg: '#F5F2EE', border: '#E8E4DF', card: '#FFF', tint: '#E85D26' };
 const HERO_HEIGHT = 280;
@@ -87,6 +88,7 @@ export default function RecipeDetailScreen() {
   const [stepMode, setStepMode] = useState(false);
   const [stepModeIndex, setStepModeIndex] = useState(0);
   const { user, isLoading: authLoading } = useAuth();
+  const { data: subscriptionStatus } = useSubscriptionStatus(user?.id);
   const userId = user?.id ?? 'guest';
   const userName = user?.name ?? null;
   
@@ -236,7 +238,24 @@ export default function RecipeDetailScreen() {
       ]);
       return;
     }
+    
+    // 检查收藏上限（免费用户 20 条）
     const nextFavorited = !favorited;
+    if (nextFavorited && !subscriptionStatus?.isPremium) {
+      const currentFavorites = user?.favorites_count ?? 0;
+      if (currentFavorites >= 20) {
+        Alert.alert(
+          '收藏已达上限',
+          '免费版最多收藏 20 个菜谱，升级 Premium 享受无限收藏',
+          [
+            { text: t('common.cancel'), style: 'cancel' },
+            { text: '升级', onPress: () => router.push('/pricing') },
+          ]
+        );
+        return;
+      }
+    }
+    
     setFavorited(nextFavorited);
     try {
       await toggleFavoriteMutation.mutateAsync({ recipeId: recipe.id, userId });
@@ -257,7 +276,7 @@ export default function RecipeDetailScreen() {
         visibilityTime: 2000,
       });
     }
-  }, [recipe?.id, favorited, userId, t, toggleFavoriteMutation, router, favBounce]);
+  }, [recipe?.id, favorited, userId, user?.favorites_count, subscriptionStatus?.isPremium, t, toggleFavoriteMutation, router, favBounce]);
 
   const handlePostComment = useCallback(async () => {
     if (userId === 'guest') {

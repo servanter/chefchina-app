@@ -20,6 +20,8 @@ import { changeLanguage } from '../../src/lib/i18n';
 import { AppImage } from '../../src/components/AppImage';
 import { useTheme } from '../../src/contexts/ThemeContext';
 import { useFontScale } from '../../src/hooks/useFontScale';
+import { useSubscriptionStatus } from '../../src/hooks/useSubscription';
+import { PremiumCard } from '../../src/components/PremiumCard';
 
 const COLORS = {
   primary: '#E85D26',
@@ -106,6 +108,9 @@ export default function ProfileScreen() {
   // Achievements data
   const { data: userBadges } = useUserBadges(user?.id);
   const { data: levelInfo } = useUserLevel(user?.id);
+  
+  // Subscription status
+  const { data: subscriptionStatus } = useSubscriptionStatus(user?.id);
 
   const LEVEL_ICONS: Record<number, string> = {
     1: '🥄',
@@ -181,6 +186,14 @@ export default function ProfileScreen() {
             {t('profile.title')}
           </Text>
         </View>
+
+        {/* ─── Premium Card ────────────────────────── */}
+        {isLoggedIn && subscriptionStatus && (
+          <PremiumCard
+            isPremium={subscriptionStatus.isPremium}
+            expiresAt={subscriptionStatus.expiresAt}
+          />
+        )}
 
         {/* ─── Avatar & Name ───────────────────────── */}
         <View style={styles.avatarSection}>
