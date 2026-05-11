@@ -1,5 +1,5 @@
-import React, { useRef } from 'react';
-import { View, StyleSheet, ActivityIndicator, TouchableOpacity, Text } from 'react-native';
+import React, { useRef, useEffect } from 'react';
+import { View, StyleSheet, ActivityIndicator, TouchableOpacity, Text, Platform } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -9,6 +9,18 @@ export default function StripeCheckoutScreen() {
   const { url, sessionId } = useLocalSearchParams<{ url: string; sessionId: string }>();
   const webViewRef = useRef<WebView>(null);
   const { pollPaymentStatus } = usePaymentPolling();
+
+  // Web 环境的降级方案：重定向到轮询页面
+  useEffect(() => {
+    if (Platform.OS === 'web') {
+      // 在 Web 环境下，直接跳转到轮询页面
+      // 因为 WebView 在 Web 上不可用
+      router.replace({
+        pathname: '/payment-result',
+        params: { sessionId: sessionId as string },
+      });
+    }
+  }, [sessionId]);
 
   const handleNavigationStateChange = (navState: any) => {
     const currentUrl = navState.url;
@@ -41,6 +53,16 @@ export default function StripeCheckoutScreen() {
   const handleGoBack = () => {
     router.back();
   };
+
+  // 如果是 Web 环境，显示加载状态（实际上会重定向）
+  if (Platform.OS === 'web') {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#f97316" />
+        <Text style={styles.loadingText}>正在跳转到支付结果页面...</Text>
+      </View>
+    );
+  }
 
   if (!url) {
     return (
