@@ -112,6 +112,13 @@ export default function ProfileScreen() {
   // Subscription status
   const { data: subscriptionStatus } = useSubscriptionStatus(user?.id);
 
+  // Debug: log subscription status when it changes
+  useEffect(() => {
+    if (subscriptionStatus) {
+      console.log('[Profile] Subscription status:', subscriptionStatus);
+    }
+  }, [subscriptionStatus]);
+
   const LEVEL_ICONS: Record<number, string> = {
     1: '🥄',
     2: '🍴',
@@ -127,10 +134,11 @@ export default function ProfileScreen() {
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     try {
-      // 只刷新 profile 相关数据，不要全量刷新
+      // 刷新 profile 相关数据，包括订阅状态
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ['userBadges', user?.id] }),
         queryClient.invalidateQueries({ queryKey: ['userLevel', user?.id] }),
+        queryClient.invalidateQueries({ queryKey: ['subscription', 'status', user?.id] }),
       ]);
     } catch {
       // ignore

@@ -20,6 +20,9 @@ export function PremiumCard({ isPremium, expiresAt }: PremiumCardProps) {
     router.push('/pricing');
   };
 
+  // Debug: log props to verify correct values
+  console.log('[PremiumCard] Rendering with isPremium:', isPremium, 'expiresAt:', expiresAt);
+
   if (isPremium) {
     // Premium 用户显示会员状态
     const expiryDate = expiresAt ? new Date(expiresAt).toLocaleDateString('zh-CN') : '';
