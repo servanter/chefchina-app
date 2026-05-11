@@ -38,8 +38,15 @@ export function useSubscriptionStatus(userId?: string) {
         // 后端返回 { success: true, data: {...} } 格式
         // 需要提取嵌套的 data 对象
         if (response.data.success && response.data.data) {
-          console.log('[useSubscriptionStatus] API response:', response.data.data);
-          return response.data.data;
+          const apiData = response.data.data;
+          console.log('[useSubscriptionStatus] API response:', apiData);
+          
+          // 字段映射：后端 currentPeriodEnd → 前端 expiresAt
+          return {
+            isPremium: apiData.isPremium,
+            expiresAt: apiData.currentPeriodEnd,  // 映射字段名
+            planType: apiData.planType?.toLowerCase() as 'monthly' | 'yearly' | 'first-month',
+          };
         }
         
         // 如果后端返回 success: false，抛出错误
