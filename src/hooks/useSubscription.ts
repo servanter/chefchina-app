@@ -35,7 +35,13 @@ export function useSubscriptionStatus(userId?: string) {
           },
         });
 
-        return response.data;
+        // 后端返回格式: { success: true, data: { isPremium, planType, ... } }
+        // 需要提取嵌套的 data 对象
+        if (response.data?.success === false) {
+          throw new Error(response.data?.message || 'Failed to fetch subscription status');
+        }
+
+        return response.data.data;
       } catch (error) {
         if (axios.isAxiosError(error) && error.response?.status === 401) {
           // Token 无效，需要重新登录
