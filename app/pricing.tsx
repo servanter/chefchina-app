@@ -7,7 +7,6 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Alert,
-  Linking,
 } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -109,14 +108,17 @@ export default function PricingScreen() {
         throw new Error(data.error || 'Failed to create checkout session');
       }
 
-      // 在移动端打开 Stripe Checkout URL
-      if (data.url) {
-        const supported = await Linking.canOpenURL(data.url);
-        if (supported) {
-          await Linking.openURL(data.url);
-        } else {
-          Alert.alert('错误', '无法打开支付页面');
-        }
+      // 使用 WebView 打开 Stripe Checkout
+      if (data.url && data.sessionId) {
+        router.push({
+          pathname: '/stripe-checkout',
+          params: {
+            url: data.url,
+            sessionId: data.sessionId,
+          },
+        });
+      } else {
+        Alert.alert('错误', '支付链接无效');
       }
     } catch (error) {
       console.error('Subscription error:', error);
