@@ -112,28 +112,38 @@ export default function PricingScreen() {
       // 根据平台选择不同的支付方式
       if (data.url && data.sessionId) {
         if (Platform.OS === 'web') {
-          // Web 环境：使用新标签页打开（降级方案）
+          // Web 环境：保存 sessionId 到 localStorage 并自动检测窗口关闭
+          if (typeof window !== 'undefined') {
+            window.localStorage.setItem('pendingSessionId', data.sessionId);
+          }
+          
           const win = window.open(data.url, '_blank');
           if (!win) {
             Alert.alert('错误', '无法打开支付页面，请检查浏览器弹窗设置');
+            // 清理 localStorage
+            if (typeof window !== 'undefined') {
+              window.localStorage.removeItem('pendingSessionId');
+            }
           } else {
-            Alert.alert(
-              '支付提示',
-              '支付页面已在新窗口打开，完成支付后请返回此页面',
-              [
-                {
-                  text: '我已完成支付',
-                  onPress: () => {
-                    // 可以导航到一个轮询页面或刷新当前状态
-                    router.push({
-                      pathname: '/payment-result',
-                      params: { sessionId: data.sessionId },
-                    });
-                  },
-                },
-                { text: '稍后再说', style: 'cancel' },
-              ]
-            );
+            // 轮询检测支付窗口关闭
+            const checkClosed = setInterval(() => {
+              if (win?.closed) {
+                clearInterval(checkClosed);
+                // 从 localStorage 读取 sessionId
+                const sessionId = typeof window !== 'undefined' 
+                  ? window.localStorage.getItem('pendingSessionId')
+                  : null;
+                
+                if (sessionId) {
+                  window.localStorage.removeItem('pendingSessionId');
+                  // 自动跳转到支付结果页面，开始轮询
+                  router.push({
+                    pathname: '/payment-result',
+                    params: { sessionId },
+                  });
+                }
+              }
+            }, 1000); // 每秒检测一次
           }
         } else {
           // iOS/Android：使用 WebView + 轮询（原方案）
