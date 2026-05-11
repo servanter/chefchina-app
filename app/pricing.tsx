@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Alert,
+  Platform,
 } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -108,15 +109,42 @@ export default function PricingScreen() {
         throw new Error(data.error || 'Failed to create checkout session');
       }
 
-      // 使用 WebView 打开 Stripe Checkout
+      // 根据平台选择不同的支付方式
       if (data.url && data.sessionId) {
-        router.push({
-          pathname: '/stripe-checkout',
-          params: {
-            url: data.url,
-            sessionId: data.sessionId,
-          },
-        });
+        if (Platform.OS === 'web') {
+          // Web 环境：使用新标签页打开（降级方案）
+          const win = window.open(data.url, '_blank');
+          if (!win) {
+            Alert.alert('错误', '无法打开支付页面，请检查浏览器弹窗设置');
+          } else {
+            Alert.alert(
+              '支付提示',
+              '支付页面已在新窗口打开，完成支付后请返回此页面',
+              [
+                {
+                  text: '我已完成支付',
+                  onPress: () => {
+                    // 可以导航到一个轮询页面或刷新当前状态
+                    router.push({
+                      pathname: '/payment-result',
+                      params: { sessionId: data.sessionId },
+                    });
+                  },
+                },
+                { text: '稍后再说', style: 'cancel' },
+              ]
+            );
+          }
+        } else {
+          // iOS/Android：使用 WebView + 轮询（原方案）
+          router.push({
+            pathname: '/stripe-checkout',
+            params: {
+              url: data.url,
+              sessionId: data.sessionId,
+            },
+          });
+        }
       } else {
         Alert.alert('错误', '支付链接无效');
       }
