@@ -48,7 +48,7 @@ export function useInfiniteNotifications(userId: string | null, tab: TabType = '
       return pagination.page < pagination.totalPages ? pagination.page + 1 : undefined
     },
     enabled: !!userId,
-    staleTime: 30 * 1000, // 30 秒
+    staleTime: 180 * 1000, // 3 分钟
   })
 }
 

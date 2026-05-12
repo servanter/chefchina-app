@@ -23,7 +23,7 @@ export function useUnreadCount(userId: string | null) {
       return res.data.data as NotificationUnreadCount;
     },
     enabled: !!userId,
-    staleTime: 30 * 1000,
-    refetchInterval: 30 * 1000,
+    staleTime: 180 * 1000, // 3 分钟
+    refetchInterval: 180 * 1000, // 3 分钟轮询一次
   });
 }

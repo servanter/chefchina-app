@@ -124,6 +124,7 @@ export default function RecipeDetailScreen() {
   // AI 分析状态
   const [aiAnalysisResult, setAiAnalysisResult] = useState<AIAnalysisResult | null>(null);
   const [showQuotaPrompt, setShowQuotaPrompt] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false); // 独立的 loading 状态
   
   // AI 配额查询
   const { data: quotaData, refetch: refetchQuota } = useAIQuota();
@@ -452,28 +453,29 @@ export default function RecipeDetailScreen() {
       return;
     }
 
-    // 尝试查询配额
+    // ✅ FIX: 立即显示 loading（用户点击后立刻反馈）
+    setIsAnalyzing(true);
+    
     try {
+      // ✅ FIX: 传递用户语言设置
+      const language = i18n.language === 'zh' ? 'zh' : 'en';
+      
+      // 串行请求：先查配额，再调用分析
       await refetchQuota();
-      const quota = quotaData?.analysis;
+      const analysisResult = await analyzeRecipeMutation.mutateAsync({ 
+        recipeId: recipe.id, 
+        language 
+      });
 
-      if (quota && quota.remaining <= 0) {
-        // 配额已用完，显示 Premium 引导
-        setShowQuotaPrompt(true);
-        return;
-      }
-
-      // 调用 AI 分析
-      const result = await analyzeRecipeMutation.mutateAsync(recipe.id);
-
-      if (result.success) {
-        setAiAnalysisResult(result.data);
+      // 分析成功
+      if (analysisResult.success) {
+        setAiAnalysisResult(analysisResult.data);
         setShowQuotaPrompt(false);
         triggerHaptic('success');
         Toast.show({
           type: 'success',
           text1: isZh ? '分析完成' : 'Analysis Complete',
-          text2: result.cached
+          text2: analysisResult.cached
             ? isZh ? '（使用缓存结果）' : '(Cached result)'
             : undefined,
           visibilityTime: 2000,
@@ -483,7 +485,10 @@ export default function RecipeDetailScreen() {
       triggerHaptic('error');
 
       // 处理各种错误
-      if (error.message === 'PROFILE_REQUIRED') {
+      if (error.message === 'QUOTA_EXCEEDED') {
+        // 配额已用完，显示 Premium 引导
+        setShowQuotaPrompt(true);
+      } else if (error.message === 'PROFILE_REQUIRED') {
         Alert.alert(
           isZh ? '未设置健康档案' : 'Health Profile Required',
           isZh
@@ -497,8 +502,6 @@ export default function RecipeDetailScreen() {
             },
           ]
         );
-      } else if (error.message === 'QUOTA_EXCEEDED') {
-        setShowQuotaPrompt(true);
       } else if (error.message === 'NUTRITION_DATA_MISSING') {
         Alert.alert(
           isZh ? '无法分析' : 'Cannot Analyze',
@@ -515,6 +518,9 @@ export default function RecipeDetailScreen() {
           visibilityTime: 2000,
         });
       }
+    } finally {
+      // 关闭 loading
+      setIsAnalyzing(false);
     }
   }, [
     recipe,
@@ -1091,23 +1097,23 @@ export default function RecipeDetailScreen() {
                   style={[
                     styles.aiAnalyzeButton,
                     { backgroundColor: COLORS.primary },
-                    analyzeRecipeMutation.isPending && styles.aiAnalyzeButtonDisabled,
+                    isAnalyzing && styles.aiAnalyzeButtonDisabled,
                   ]}
                   onPress={handleAIAnalyze}
-                  disabled={analyzeRecipeMutation.isPending}
+                  disabled={isAnalyzing}
                 >
-                  {analyzeRecipeMutation.isPending ? (
+                  {isAnalyzing ? (
                     <>
                       <ActivityIndicator size="small" color="#FFF" />
                       <Text style={styles.aiAnalyzeButtonText}>
-                        {isZh ? '分析中...' : 'Analyzing...'}
+                        {t('ai.analyzing')}
                       </Text>
                     </>
                   ) : (
                     <>
                       <Ionicons name="sparkles" size={18} color="#FFF" />
                       <Text style={styles.aiAnalyzeButtonText}>
-                        {isZh ? 'AI 分析是否适合我' : 'AI Analyze for Me'}
+                        {t('ai.analyzeButton')}
                       </Text>
                     </>
                   )}

@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { AIAnalysisResult } from '../lib/api';
 import { useTheme } from '../contexts/ThemeContext';
 
@@ -21,6 +22,7 @@ export const AIAnalysisCard: React.FC<AIAnalysisCardProps> = ({
   analysis,
   onClose,
 }) => {
+  const { t } = useTranslation();
   const { colors } = useTheme();
   const [modificationsExpanded, setModificationsExpanded] = useState(false);
 
@@ -41,7 +43,7 @@ export const AIAnalysisCard: React.FC<AIAnalysisCardProps> = ({
         <View style={styles.headerLeft}>
           <Ionicons name="sparkles" size={24} color="#FFB800" />
           <Text style={[styles.headerTitle, { color: colors.text }]}>
-            AI 适配分析
+            {t('ai.analysisTitle')}
           </Text>
         </View>
         {onClose && (
@@ -66,7 +68,7 @@ export const AIAnalysisCard: React.FC<AIAnalysisCardProps> = ({
             {analysis.matchScore}
           </Text>
           <Text style={[styles.scoreLabel, { color: colors.subText }]}>
-            分
+            {t('ai.score')}
           </Text>
         </View>
         <View style={styles.scoreBar}>
@@ -95,7 +97,7 @@ export const AIAnalysisCard: React.FC<AIAnalysisCardProps> = ({
           <View style={styles.sectionHeader}>
             <Ionicons name="checkmark-circle" size={18} color="#4CAF50" />
             <Text style={[styles.sectionTitle, { color: colors.text }]}>
-              优点
+              {t('ai.pros')}
             </Text>
           </View>
           {analysis.pros.map((pro, index) => (
@@ -115,7 +117,7 @@ export const AIAnalysisCard: React.FC<AIAnalysisCardProps> = ({
           <View style={styles.sectionHeader}>
             <Ionicons name="alert-circle" size={18} color="#FF9800" />
             <Text style={[styles.sectionTitle, { color: colors.text }]}>
-              需要注意
+              {t('ai.cons')}
             </Text>
           </View>
           {analysis.cons.map((con, index) => (
@@ -139,7 +141,7 @@ export const AIAnalysisCard: React.FC<AIAnalysisCardProps> = ({
             <View style={styles.sectionHeader}>
               <Ionicons name="bulb" size={18} color="#2196F3" />
               <Text style={[styles.sectionTitle, { color: colors.text }]}>
-                改良建议
+                {t('ai.modifications')}
               </Text>
             </View>
             <Ionicons
