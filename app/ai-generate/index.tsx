@@ -17,7 +17,7 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import Toast from 'react-native-toast-message';
 import { useTheme } from '../../src/contexts/ThemeContext';
-import { api } from '../../src/utils/api';
+import { apiClient as api } from '@/lib/api';
 
 const MAX_INGREDIENTS = 10;
 
