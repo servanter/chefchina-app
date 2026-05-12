@@ -59,6 +59,7 @@ apiClient.interceptors.request.use(
       url.startsWith('/favorites') ||
       url.startsWith('/users/') ||
       url.startsWith('/health') ||
+      url.startsWith('/ai') ||  // AI 功能需要认证
       url.includes('/push-token') ||
       url.includes('/recipes/mine');
     if (needsAuth) {
