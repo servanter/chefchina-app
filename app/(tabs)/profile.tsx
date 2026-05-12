@@ -333,6 +333,12 @@ export default function ProfileScreen() {
             label={t('profile.myRecipes')}
             onPress={() => router.push('/my-recipes')}
           />
+          {/* ✅ FIX: 添加收藏入口 */}
+          <MenuRow
+            icon="heart"
+            label={t('profile.favorites')}
+            onPress={() => router.push('/favorites')}
+          />
           <MenuRow
             icon="notifications-outline"
             label={t('notifications.title')}
