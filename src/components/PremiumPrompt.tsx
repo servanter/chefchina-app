@@ -5,6 +5,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '../contexts/ThemeContext';
 
 interface PremiumPromptProps {
@@ -20,20 +21,23 @@ export const PremiumPrompt: React.FC<PremiumPromptProps> = ({
   resetAt,
   onClose,
 }) => {
+  const { t, i18n } = useTranslation();
   const router = useRouter();
   const { colors } = useTheme();
+  const isZh = i18n.language === 'zh';
 
   const formatResetTime = (isoString?: string): string => {
-    if (!isoString) return '明天';
+    const tomorrow = t('ai.quotaPrompt.tomorrow');
+    if (!isoString) return tomorrow;
     const date = new Date(isoString);
     const now = new Date();
-    const tomorrow = new Date(now);
-    tomorrow.setDate(now.getDate() + 1);
+    const tomorrowDate = new Date(now);
+    tomorrowDate.setDate(now.getDate() + 1);
     
-    if (date.toDateString() === tomorrow.toDateString()) {
-      return '明天';
+    if (date.toDateString() === tomorrowDate.toDateString()) {
+      return tomorrow;
     }
-    return date.toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' });
+    return date.toLocaleDateString(isZh ? 'zh-CN' : 'en-US', { month: 'short', day: 'numeric' });
   };
 
   return (
@@ -44,10 +48,10 @@ export const PremiumPrompt: React.FC<PremiumPromptProps> = ({
         </View>
         <View style={styles.headerText}>
           <Text style={[styles.title, { color: colors.text }]}>
-            今日剩余 {remainingQuota}/{dailyLimit} 次
+            {t('ai.quotaPrompt.title', { remaining: remainingQuota, limit: dailyLimit })}
           </Text>
           <Text style={[styles.subtitle, { color: colors.subText }]}>
-            {formatResetTime(resetAt)} 重置
+            {t('ai.quotaPrompt.reset', { time: formatResetTime(resetAt) })}
           </Text>
         </View>
         {onClose && (
@@ -61,19 +65,19 @@ export const PremiumPrompt: React.FC<PremiumPromptProps> = ({
         <View style={styles.feature}>
           <Ionicons name="checkmark-circle" size={16} color="#4CAF50" />
           <Text style={[styles.featureText, { color: colors.text }]}>
-            升级 Premium 获得 20 次/天
+            {t('ai.quotaPrompt.features.unlimited')}
           </Text>
         </View>
         <View style={styles.feature}>
           <Ionicons name="checkmark-circle" size={16} color="#4CAF50" />
           <Text style={[styles.featureText, { color: colors.text }]}>
-            个性化营养建议
+            {t('ai.quotaPrompt.features.priority')}
           </Text>
         </View>
         <View style={styles.feature}>
           <Ionicons name="checkmark-circle" size={16} color="#4CAF50" />
           <Text style={[styles.featureText, { color: colors.text }]}>
-            无限收藏菜谱
+            {t('ai.quotaPrompt.features.advice')}
           </Text>
         </View>
       </View>
@@ -82,7 +86,7 @@ export const PremiumPrompt: React.FC<PremiumPromptProps> = ({
         style={[styles.upgradeBtn, { backgroundColor: colors.tint }]}
         onPress={() => router.push('/pricing')}
       >
-        <Text style={styles.upgradeBtnText}>立即升级</Text>
+        <Text style={styles.upgradeBtnText}>{t('ai.quotaPrompt.upgradeButton')}</Text>
         <Ionicons name="arrow-forward" size={16} color="#FFF" />
       </TouchableOpacity>
     </View>

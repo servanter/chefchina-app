@@ -474,4 +474,28 @@
     "aiAdvice": "AI 建议",
     "generating": "AI 分析中..."
   }
+  },
+  "ai": {
+    "analysisTitle": "AI 适配分析",
+    "score": "分",
+    "pros": "优点",
+    "cons": "需要注意",
+    "modifications": "改良建议",
+    "analyzing": "分析中...",
+    "analyzeButton": "AI 分析是否适合我",
+    "quotaPrompt": {
+      "title": "今日剩余 {{remaining}}/{{limit}} 次",
+      "reset": "{{time}} 重置",
+      "tomorrow": "明天",
+      "description": "免费用户每天 {{limit}} 次 AI 分析",
+      "upgradeTitle": "无限 AI 分析",
+      "upgradeDesc": "升级 Premium，随时随地智能建议",
+      "upgradeButton": "了解 Premium",
+      "features": {
+        "unlimited": "无限 AI 分析",
+        "priority": "优先响应速度",
+        "advice": "更深度的建议"
+      }
+    }
+  }
 }

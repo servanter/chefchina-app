@@ -474,4 +474,28 @@
     "aiAdvice": "AI Advice",
     "generating": "Analyzing..."
   }
+  },
+  "ai": {
+    "analysisTitle": "AI Analysis",
+    "score": "Score",
+    "pros": "Pros",
+    "cons": "Considerations",
+    "modifications": "Suggestions",
+    "analyzing": "Analyzing...",
+    "analyzeButton": "AI Analyze for Me",
+    "quotaPrompt": {
+      "title": "{{remaining}}/{{limit}} left today",
+      "reset": "Resets {{time}}",
+      "tomorrow": "tomorrow",
+      "description": "Free users get {{limit}} AI analyses per day",
+      "upgradeTitle": "Unlimited AI Analysis",
+      "upgradeDesc": "Upgrade to Premium for anytime intelligent suggestions",
+      "upgradeButton": "Learn More",
+      "features": {
+        "unlimited": "Unlimited AI analysis",
+        "priority": "Priority response",
+        "advice": "Deeper insights"
+      }
+    }
+  }
 }

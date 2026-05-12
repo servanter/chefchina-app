@@ -1132,14 +1132,14 @@ export default function RecipeDetailScreen() {
                     <>
                       <ActivityIndicator size="small" color="#FFF" />
                       <Text style={styles.aiAnalyzeButtonText}>
-                        {isZh ? '分析中...' : 'Analyzing...'}
+                        {t('ai.analyzing')}
                       </Text>
                     </>
                   ) : (
                     <>
                       <Ionicons name="sparkles" size={18} color="#FFF" />
                       <Text style={styles.aiAnalyzeButtonText}>
-                        {isZh ? 'AI 分析是否适合我' : 'AI Analyze for Me'}
+                        {t('ai.analyzeButton')}
                       </Text>
                     </>
                   )}
