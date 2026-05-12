@@ -474,10 +474,10 @@ export default function RecipeDetailScreen() {
         triggerHaptic('success');
         Toast.show({
           type: 'success',
-          text1: isZh ? '分析完成' : 'Analysis Complete',
+          text1: isZh ? 'AI 营养分析完成' : 'AI Nutrition Analysis Complete',
           text2: analysisResult.cached
-            ? isZh ? '（使用缓存结果）' : '(Cached result)'
-            : undefined,
+            ? isZh ? '已为您生成个性化建议' : 'Personalized recommendations ready'
+            : isZh ? '已为您生成个性化建议' : 'Personalized recommendations ready',
           visibilityTime: 2000,
         });
       }
@@ -531,6 +531,7 @@ export default function RecipeDetailScreen() {
     router,
     t,
     isZh,
+    i18n.language,
   ]);
 
   const { mutate: toggleCommentLike } = useToggleCommentLike();

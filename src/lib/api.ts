@@ -40,7 +40,7 @@ type RetriableConfig = AxiosRequestConfig & { _retryCount?: number };
 
 export const apiClient = axios.create({
   baseURL: BASE_URL,
-  timeout: 10000,
+  timeout: 30000,  // AI 接口需要更长的处理时间
   headers: {
     'Content-Type': 'application/json',
   },
