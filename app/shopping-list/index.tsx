@@ -24,10 +24,10 @@ import {
   useShoppingList,
   useGenerateShoppingList,
   useClearShoppingList,
-} from '../hooks/useShoppingList';
-import ShoppingListItem from '../components/ShoppingListItem';
-import AddIngredientModal from '../components/AddIngredientModal';
-import EmptyShoppingList from '../components/EmptyShoppingList';
+} from '@/hooks/useShoppingList';
+import ShoppingListItem from '../../components/ShoppingListItem';
+import AddIngredientModal from '../../components/AddIngredientModal';
+import EmptyShoppingList from '../../components/EmptyShoppingList';
 
 export default function ShoppingListScreen() {
   const router = useRouter();
