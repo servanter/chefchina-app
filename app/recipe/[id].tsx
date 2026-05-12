@@ -457,10 +457,13 @@ export default function RecipeDetailScreen() {
     setIsAnalyzing(true);
     
     try {
+      // ✅ FIX: 传递用户语言设置
+      const language = i18n.language === 'zh' ? 'zh' : 'en';
+      
       // 并行请求 quota 和 analysis
       const [quotaResult, analysisResult] = await Promise.all([
         refetchQuota(),
-        analyzeRecipeMutation.mutateAsync(recipe.id),
+        analyzeRecipeMutation.mutateAsync({ recipeId: recipe.id, language }),
       ]);
 
       const quota = quotaResult.data?.analysis;

@@ -23,8 +23,8 @@ export const useAnalyzeRecipe = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (recipeId: string) => {
-      const result = await analyzeRecipeForUser(recipeId);
+    mutationFn: async (params: { recipeId: string; language: 'zh' | 'en' }) => {
+      const result = await analyzeRecipeForUser(params.recipeId, params.language);
       if (!result.success) {
         // 抛出错误，包含 error code
         const error = new Error(result.error);

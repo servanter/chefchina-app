@@ -1974,7 +1974,10 @@ export const fetchAIQuota = async (): Promise<AIQuotaInfo> => {
 /**
  * 请求 AI 分析菜谱适配度
  */
-export const analyzeRecipeForUser = async (recipeId: string): Promise<{
+export const analyzeRecipeForUser = async (
+  recipeId: string,
+  language: 'zh' | 'en' = 'zh'
+): Promise<{
   success: true;
   data: AIAnalysisResult;
   quotaRemaining: number;
@@ -1986,7 +1989,7 @@ export const analyzeRecipeForUser = async (recipeId: string): Promise<{
   resetAt?: string;
 }> => {
   try {
-    const res = await apiClient.post('/ai/analyze-recipe', { recipeId });
+    const res = await apiClient.post('/ai/analyze-recipe', { recipeId, language });
     return res.data;
   } catch (error: any) {
     // 处理后端错误响应
