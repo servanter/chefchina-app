@@ -13,6 +13,7 @@ import {
   Alert,
   RefreshControl,
   Image,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -48,6 +49,10 @@ import { saveViewHistoryItem } from '../../src/lib/storage';
 import { ReportModal } from '../../src/components/ReportModal';
 import SharePoster from '../../src/components/SharePoster';
 import type { ReportTargetType } from '../../src/lib/api';
+import { useAIQuota, useAnalyzeRecipe } from '../../src/hooks/useAIAnalysis';
+import { AIAnalysisCard } from '../../src/components/AIAnalysisCard';
+import { PremiumPrompt } from '../../src/components/PremiumPrompt';
+import { AIAnalysisResult } from '../../src/lib/api';
 import { useSubscriptionStatus } from '../../src/hooks/useSubscription';
 
 const COLORS = { primary: '#E85D26', background: '#FFFDF9', text: '#1A1A1A', textSecondary: '#666', inputBg: '#F5F2EE', border: '#E8E4DF', card: '#FFF', tint: '#E85D26' };
@@ -115,6 +120,16 @@ export default function RecipeDetailScreen() {
 
   // Share poster state (需求 16.3)
   const [posterVisible, setPosterVisible] = useState(false);
+
+  // AI 分析状态
+  const [aiAnalysisResult, setAiAnalysisResult] = useState<AIAnalysisResult | null>(null);
+  const [showQuotaPrompt, setShowQuotaPrompt] = useState(false);
+  
+  // AI 配额查询
+  const { data: quotaData, refetch: refetchQuota } = useAIQuota();
+  
+  // AI 分析 mutation
+  const analyzeRecipeMutation = useAnalyzeRecipe();
 
   const openViewer = useCallback((images: string[], index: number) => {
     // 防重入：查看器已经打开 or 没有图，则忽略
@@ -401,6 +416,116 @@ export default function RecipeDetailScreen() {
     // 打开海报生成对话框
     setPosterVisible(true);
   }, [recipe?.id]);
+
+  // AI 分析处理
+  const handleAIAnalyze = useCallback(async () => {
+    if (!recipe) return;
+
+    // 检查登录状态
+    if (userId === 'guest') {
+      Alert.alert(
+        t('auth.loginRequired'),
+        '需要登录后才能使用 AI 分析功能',
+        [
+          { text: t('common.cancel'), style: 'cancel' },
+          {
+            text: t('auth.login'),
+            onPress: () => router.push({
+              pathname: '/auth/login',
+              params: { redirect: `/recipe/${recipe.id}` },
+            }),
+          },
+        ]
+      );
+      return;
+    }
+
+    // 检查营养数据
+    if (!recipe.calories || !recipe.protein || !recipe.fat || !recipe.carbs) {
+      Alert.alert(
+        isZh ? '无法分析' : 'Cannot Analyze',
+        isZh
+          ? '该菜谱缺少完整的营养数据，无法进行 AI 分析。'
+          : 'This recipe lacks complete nutrition data for AI analysis.',
+        [{ text: t('common.ok') }]
+      );
+      return;
+    }
+
+    // 尝试查询配额
+    try {
+      await refetchQuota();
+      const quota = quotaData?.analysis;
+
+      if (quota && quota.remaining <= 0) {
+        // 配额已用完，显示 Premium 引导
+        setShowQuotaPrompt(true);
+        return;
+      }
+
+      // 调用 AI 分析
+      const result = await analyzeRecipeMutation.mutateAsync(recipe.id);
+
+      if (result.success) {
+        setAiAnalysisResult(result.data);
+        setShowQuotaPrompt(false);
+        triggerHaptic('success');
+        Toast.show({
+          type: 'success',
+          text1: isZh ? '分析完成' : 'Analysis Complete',
+          text2: result.cached
+            ? isZh ? '（使用缓存结果）' : '(Cached result)'
+            : undefined,
+          visibilityTime: 2000,
+        });
+      }
+    } catch (error: any) {
+      triggerHaptic('error');
+
+      // 处理各种错误
+      if (error.message === 'PROFILE_REQUIRED') {
+        Alert.alert(
+          isZh ? '未设置健康档案' : 'Health Profile Required',
+          isZh
+            ? '请先完成健康档案设置，让 AI 为你提供个性化建议。'
+            : 'Please set up your health profile first for personalized recommendations.',
+          [
+            { text: t('common.cancel'), style: 'cancel' },
+            {
+              text: isZh ? '去设置' : 'Go to Settings',
+              onPress: () => router.push('/profile/edit'),
+            },
+          ]
+        );
+      } else if (error.message === 'QUOTA_EXCEEDED') {
+        setShowQuotaPrompt(true);
+      } else if (error.message === 'NUTRITION_DATA_MISSING') {
+        Alert.alert(
+          isZh ? '无法分析' : 'Cannot Analyze',
+          isZh
+            ? '该菜谱缺少完整的营养数据。'
+            : 'This recipe lacks complete nutrition data.',
+          [{ text: t('common.ok') }]
+        );
+      } else {
+        Toast.show({
+          type: 'error',
+          text1: isZh ? '分析失败' : 'Analysis Failed',
+          text2: error.message || t('common.error'),
+          visibilityTime: 2000,
+        });
+      }
+    }
+  }, [
+    recipe,
+    userId,
+    quotaData,
+    analyzeRecipeMutation,
+    refetchQuota,
+    router,
+    t,
+    isZh,
+  ]);
 
   const { mutate: toggleCommentLike } = useToggleCommentLike();
 
@@ -959,6 +1084,51 @@ export default function RecipeDetailScreen() {
                       )}
                     </View>
                   </View>
+                )}
+
+                {/* AI 分析按钮 */}
+                <TouchableOpacity
+                  style={[
+                    styles.aiAnalyzeButton,
+                    { backgroundColor: COLORS.primary },
+                    analyzeRecipeMutation.isPending && styles.aiAnalyzeButtonDisabled,
+                  ]}
+                  onPress={handleAIAnalyze}
+                  disabled={analyzeRecipeMutation.isPending}
+                >
+                  {analyzeRecipeMutation.isPending ? (
+                    <>
+                      <ActivityIndicator size="small" color="#FFF" />
+                      <Text style={styles.aiAnalyzeButtonText}>
+                        {isZh ? '分析中...' : 'Analyzing...'}
+                      </Text>
+                    </>
+                  ) : (
+                    <>
+                      <Ionicons name="sparkles" size={18} color="#FFF" />
+                      <Text style={styles.aiAnalyzeButtonText}>
+                        {isZh ? 'AI 分析是否适合我' : 'AI Analyze for Me'}
+                      </Text>
+                    </>
+                  )}
+                </TouchableOpacity>
+
+                {/* AI 分析结果 */}
+                {aiAnalysisResult && (
+                  <AIAnalysisCard
+                    analysis={aiAnalysisResult}
+                    onClose={() => setAiAnalysisResult(null)}
+                  />
+                )}
+
+                {/* Premium 引导卡片 */}
+                {showQuotaPrompt && quotaData && (
+                  <PremiumPrompt
+                    remainingQuota={quotaData.analysis.remaining}
+                    dailyLimit={quotaData.analysis.limit}
+                    resetAt={quotaData.analysis.resetAt}
+                    onClose={() => setShowQuotaPrompt(false)}
+                  />
                 )}
               </View>
             )}
@@ -1613,6 +1783,29 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '700',
     color: COLORS.primary,
+  },
+  // AI 分析按钮样式
+  aiAnalyzeButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 14,
+    borderRadius: 12,
+    marginTop: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  aiAnalyzeButtonDisabled: {
+    opacity: 0.6,
+  },
+  aiAnalyzeButtonText: {
+    color: '#FFF',
+    fontSize: 15,
+    fontWeight: '700',
   },
   commentInput: {
     backgroundColor: COLORS.card,

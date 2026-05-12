@@ -1927,3 +1927,76 @@ export const recipeAPI = {
     return fetchRecipeById(String(id));
   },
 };
+
+// ─── AI 分析相关接口 ────────────────────────────────────────────────────────
+
+export interface AIAnalysisResult {
+  analysisId: string;
+  matchScore: number;  // 0-100
+  summary: string;
+  pros: string[];
+  cons: string[];
+  modifications: string[];
+  alternatives: string[];
+}
+
+export interface AIQuotaInfo {
+  isPremium: boolean;
+  analysis: {
+    used: number;
+    limit: number;
+    remaining: number;
+    resetAt: string;
+  };
+  generator: {
+    used: number;
+    limit: number;
+    remaining: number;
+    resetAt: string;
+  };
+}
+
+export interface AIAnalysisError {
+  error: string;
+  message?: string;
+  resetAt?: string;
+}
+
+/**
+ * 获取 AI 配额信息
+ */
+export const fetchAIQuota = async (): Promise<AIQuotaInfo> => {
+  const res = await apiClient.get('/ai/quota');
+  return res.data.data;
+};
+
+/**
+ * 请求 AI 分析菜谱适配度
+ */
+export const analyzeRecipeForUser = async (recipeId: string): Promise<{
+  success: true;
+  data: AIAnalysisResult;
+  quotaRemaining: number;
+  cached?: boolean;
+} | {
+  success: false;
+  error: string;
+  message?: string;
+  resetAt?: string;
+}> => {
+  try {
+    const res = await apiClient.post('/ai/analyze-recipe', { recipeId });
+    return res.data;
+  } catch (error: any) {
+    // 处理后端错误响应
+    if (error.response?.data) {
+      return {
+        success: false,
+        error: error.response.data.error,
+        message: error.response.data.message,
+        resetAt: error.response.data.resetAt,
+      };
+    }
+    throw error;
+  }
+};
