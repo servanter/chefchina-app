@@ -453,20 +453,19 @@ export default function RecipeDetailScreen() {
       return;
     }
 
-    // ✅ FIX: 立刻显示 loading，并行请求 quota 和 analyze
+    // ✅ FIX: 立即显示 loading（用户点击后立刻反馈）
     setIsAnalyzing(true);
     
     try {
       // ✅ FIX: 传递用户语言设置
       const language = i18n.language === 'zh' ? 'zh' : 'en';
       
-      // 并行请求 quota 和 analysis
-      const [quotaResult, analysisResult] = await Promise.all([
-        refetchQuota(),
-        analyzeRecipeMutation.mutateAsync({ recipeId: recipe.id, language }),
-      ]);
-
-      const quota = quotaResult.data?.analysis;
+      // 串行请求：先查配额，再调用分析
+      await refetchQuota();
+      const analysisResult = await analyzeRecipeMutation.mutateAsync({ 
+        recipeId: recipe.id, 
+        language 
+      });
 
       // 分析成功
       if (analysisResult.success) {
@@ -522,31 +521,6 @@ export default function RecipeDetailScreen() {
     } finally {
       // 关闭 loading
       setIsAnalyzing(false);
-    }
-  }, [
-    recipe,
-    userId,
-    quotaData,
-    analyzeRecipeMutation,
-    refetchQuota,
-    router,
-    t,
-    isZh,
-  ]);
-          isZh ? '无法分析' : 'Cannot Analyze',
-          isZh
-            ? '该菜谱缺少完整的营养数据。'
-            : 'This recipe lacks complete nutrition data.',
-          [{ text: t('common.ok') }]
-        );
-      } else {
-        Toast.show({
-          type: 'error',
-          text1: isZh ? '分析失败' : 'Analysis Failed',
-          text2: error.message || t('common.error'),
-          visibilityTime: 2000,
-        });
-      }
     }
   }, [
     recipe,
