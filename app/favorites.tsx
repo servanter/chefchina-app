@@ -11,13 +11,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
-import { RecipeCard } from '../../src/components/RecipeCard';
-import { EmptyState } from '../../src/components/EmptyState';
-import { SkeletonList } from '../../src/components/Skeleton';
-import { ListFooter } from '../../src/components/ListFooter';
-import { useInfiniteFavoritesList } from '../../src/hooks/useRecipes';
-import { getUserId } from '../../src/lib/storage';
-import { useTheme } from '../../src/contexts/ThemeContext';
+import { RecipeCard } from '../src/components/RecipeCard';
+import { EmptyState } from '../src/components/EmptyState';
+import { SkeletonList } from '../src/components/Skeleton';
+import { ListFooter } from '../src/components/ListFooter';
+import { useInfiniteFavoritesList } from '../src/hooks/useRecipes';
+import { getUserId } from '../src/lib/storage';
+import { useTheme } from '../src/contexts/ThemeContext';
 
 // Fallback values for static StyleSheet.create
 const COLORS = {
