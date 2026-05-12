@@ -15,7 +15,9 @@
   "tabs": {
     "home": "Home",
     "explore": "Explore",
+    "aiGenerate": "AI Generate",
     "favorites": "Favorites",
+    "shoppingList": "Shopping List",
     "profile": "Profile"
   },
   "home": {

@@ -15,7 +15,9 @@
   "tabs": {
     "home": "首页",
     "explore": "探索",
+    "aiGenerate": "AI 生成",
     "favorites": "收藏",
+    "shoppingList": "购物清单",
     "profile": "我的"
   },
   "home": {
