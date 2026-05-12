@@ -60,6 +60,7 @@ apiClient.interceptors.request.use(
       url.startsWith('/users/') ||
       url.startsWith('/health') ||
       url.startsWith('/ai') ||  // AI 功能需要认证
+      url.startsWith('/shopping-list') ||  // 智能购物清单需要认证
       url.includes('/push-token') ||
       url.includes('/recipes/mine');
     if (needsAuth) {
@@ -2003,4 +2004,90 @@ export const analyzeRecipeForUser = async (
     }
     throw error;
   }
+};
+
+// ─── 智能购物清单接口 ────────────────────────────────────────────────────────
+
+export interface ShoppingListItem {
+  id: string;
+  userId: string;
+  name: string;
+  amount: number;
+  unit: string;
+  recipeIds: string[];
+  checked: boolean;
+  isManual: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ShoppingListData {
+  items: ShoppingListItem[];
+  totalItems: number;
+  checkedItems: number;
+  lastUpdated: string;
+}
+
+/**
+ * 获取购物清单
+ */
+export const fetchShoppingList = async (): Promise<ShoppingListData> => {
+  const res = await apiClient.get('/shopping-list');
+  return res.data.data;
+};
+
+/**
+ * 重新生成购物清单
+ */
+export const generateShoppingList = async (data?: {
+  recipeIds?: string[];
+  keepManual?: boolean;
+}): Promise<ShoppingListData> => {
+  const res = await apiClient.post('/shopping-list/generate', data);
+  return res.data.data;
+};
+
+/**
+ * 手动添加食材
+ */
+export const addShoppingListItem = async (data: {
+  name: string;
+  amount: number;
+  unit: string;
+}): Promise<ShoppingListItem> => {
+  const res = await apiClient.post('/shopping-list/items', data);
+  return res.data.data;
+};
+
+/**
+ * 更新食材（勾选/修改数量）
+ */
+export const updateShoppingListItem = async (
+  id: string,
+  data: {
+    checked?: boolean;
+    amount?: number;
+    unit?: string;
+  }
+): Promise<ShoppingListItem> => {
+  const res = await apiClient.patch(`/shopping-list/items/${id}`, data);
+  return res.data.data;
+};
+
+/**
+ * 删除单个食材
+ */
+export const deleteShoppingListItem = async (id: string): Promise<void> => {
+  await apiClient.delete(`/shopping-list/items/${id}`);
+};
+
+/**
+ * 批量清空购物清单
+ */
+export const clearShoppingList = async (data?: {
+  clearAll?: boolean;
+  keepManual?: boolean;
+}): Promise<{ deletedCount: number }> => {
+  const res = await apiClient.delete('/shopping-list', { data });
+  return res.data.data;
 };
