@@ -18,6 +18,7 @@
     "@supabase/supabase-js": "^2.104.0",
     "@tanstack/react-query": "^5.99.2",
     "axios": "^1.15.1",
+    "date-fns": "^4.1.0",
     "expo": "^55.0.17",
     "expo-checkbox": "^55.0.4",
     "expo-file-system": "~19.0.21",
