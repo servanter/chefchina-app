@@ -404,7 +404,7 @@ function getStyles(colors: any) {
       textDecorationLine: 'underline',
     },
     recipeCard: {
-      backgroundColor: colors.cardBg,
+      backgroundColor: colors.card,
       marginHorizontal: 16,
       marginTop: 16,
       borderRadius: 12,
@@ -539,14 +539,13 @@ function getStyles(colors: any) {
       left: 0,
       right: 0,
       flexDirection: 'row',
-      backgroundColor: colors.cardBg,
+      backgroundColor: colors.card, // ✅ 修复：使用 card 而不是 cardBg
       paddingHorizontal: 16,
       paddingVertical: 12,
       borderTopWidth: 1,
       borderTopColor: colors.border,
       gap: 8,
-      // ✅ FIX 问题 1: 提高 z-index，确保按钮在最上层
-      zIndex: 100,
+      zIndex: 100, // 确保在最上层
       elevation: 8, // Android 阴影
       shadowColor: '#000', // iOS 阴影
       shadowOffset: { width: 0, height: -2 },
@@ -563,7 +562,7 @@ function getStyles(colors: any) {
       borderWidth: 1,
       borderColor: colors.tint,
       gap: 6,
-      backgroundColor: colors.cardBg, // ✅ 确保按钮有背景色
+      backgroundColor: colors.card, // ✅ 修复：使用 card 确保按钮完全不透明
     },
     footerButtonSecondaryText: {
       fontSize: 14,
