@@ -77,9 +77,7 @@ export default function HomeScreen() {
   const categories = homeData?.categories ?? [];
   const rankingData = homeData?.ranking ?? [];
 
-  const handleLoadMoreQuick = useCallback(() => {
-    router.push('/(tabs)/explore'); // ✅ 跳转而非 refetch
-  }, [router]);
+
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -112,15 +110,7 @@ export default function HomeScreen() {
         style={styles.scroll}
         showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.primary} />}
-        onScroll={({ nativeEvent }) => {
-          // 滚到底 80% 时自动拉下一页(Quick 列表)
-          const { layoutMeasurement, contentOffset, contentSize } = nativeEvent;
-          const reachedEnd =
-            layoutMeasurement.height + contentOffset.y >=
-            contentSize.height - contentSize.height * 0.5;
-          if (reachedEnd) handleLoadMoreQuick();
-        }}
-        scrollEventThrottle={250}
+
       >
         {/* ─── Header ──────────────────────────────────────── */}
         <View style={styles.header}>
