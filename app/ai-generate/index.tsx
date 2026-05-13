@@ -16,14 +16,20 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import Toast from 'react-native-toast-message';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../src/contexts/ThemeContext';
 import { apiClient as api } from '@/lib/api';
+import { useAuth } from '../../src/hooks/useAuth';
+import { useSubscriptionStatus } from '../../src/hooks/useSubscription';
 
 const MAX_INGREDIENTS = 10;
 
 export default function AIGenerateScreen() {
+  const { t } = useTranslation();
   const { colors } = useTheme();
   const router = useRouter();
+  const { user } = useAuth();
+  const { data: subscriptionStatus } = useSubscriptionStatus(user?.id);
 
   const [ingredients, setIngredients] = useState<string[]>(['']);
   const [style, setStyle] = useState<string>('');
@@ -37,13 +43,25 @@ export default function AIGenerateScreen() {
   const styles = getStyles(colors);
 
   // 菜系选项
-  const styleOptions = ['川菜', '粤菜', '日式', '西式', 'Fusion', '不限'];
-  const difficultyOptions = [
-    { key: 'EASY', label: '简单' },
-    { key: 'MEDIUM', label: '中等' },
-    { key: 'HARD', label: '困难' },
+  const styleOptions = [
+    { key: 'sichuan', label: t('aiGenerate.form.styleOptions.sichuan') },
+    { key: 'cantonese', label: t('aiGenerate.form.styleOptions.cantonese') },
+    { key: 'japanese', label: t('aiGenerate.form.styleOptions.japanese') },
+    { key: 'western', label: t('aiGenerate.form.styleOptions.western') },
+    { key: 'fusion', label: t('aiGenerate.form.styleOptions.fusion') },
+    { key: 'any', label: t('aiGenerate.form.styleOptions.any') },
   ];
-  const restrictionOptions = ['低钠', '无糖', '素食', '低脂'];
+  const difficultyOptions = [
+    { key: 'EASY', label: t('aiGenerate.form.difficultyOptions.easy') },
+    { key: 'MEDIUM', label: t('aiGenerate.form.difficultyOptions.medium') },
+    { key: 'HARD', label: t('aiGenerate.form.difficultyOptions.hard') },
+  ];
+  const restrictionOptions = [
+    { key: 'lowSodium', label: t('aiGenerate.form.restrictionOptions.lowSodium') },
+    { key: 'sugarFree', label: t('aiGenerate.form.restrictionOptions.sugarFree') },
+    { key: 'vegetarian', label: t('aiGenerate.form.restrictionOptions.vegetarian') },
+    { key: 'lowFat', label: t('aiGenerate.form.restrictionOptions.lowFat') },
+  ];
 
   // 获取配额信息（TODO: 需要后端 API）
   useEffect(() => {
@@ -83,7 +101,7 @@ export default function AIGenerateScreen() {
     if (validIngredients.length === 0) {
       Toast.show({
         type: 'error',
-        text1: '至少需要 1 个食材',
+        text1: t('aiGenerate.errors.noIngredients'),
       });
       return;
     }
@@ -102,19 +120,19 @@ export default function AIGenerateScreen() {
       if (response.data.success) {
         Toast.show({
           type: 'success',
-          text1: '菜谱生成成功！',
+          text1: t('aiGenerate.result.publishSuccess'),
         });
         router.push(`/ai-generate/result/${response.data.data.generatedId}`);
       }
     } catch (error: any) {
       console.error('[AI Generate] Error:', error);
-      const message = error?.response?.data?.error || '生成失败，请重试';
+      const message = error?.response?.data?.error || t('aiGenerate.errors.generateFailed');
       
       if (error?.response?.data?.code === 'QUOTA_EXCEEDED') {
         Toast.show({
           type: 'error',
-          text1: '配额已用尽',
-          text2: '升级 Premium 获得更多次数',
+          text1: t('aiGenerate.errors.quotaExceeded'),
+          text2: t('aiGenerate.errors.quotaExceededHint'),
         });
         // 可以引导到订阅页
         // router.push('/pricing');
@@ -145,20 +163,29 @@ export default function AIGenerateScreen() {
         >
           <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
-        <Text style={styles.title}>AI 菜谱生成器</Text>
+        <Text style={styles.title}>{t('aiGenerate.title')}</Text>
         <View style={{ width: 24 }} />
       </View>
 
       {quotaInfo && (
         <View style={styles.quotaBanner}>
           <Ionicons name="flash" size={18} color={colors.tint} />
-          <Text style={styles.quotaText}>
-            本月剩余 {quotaInfo.limit - quotaInfo.used} 次（共 {quotaInfo.limit} 次）
-          </Text>
-          {quotaInfo.limit === 5 && (
-            <TouchableOpacity onPress={() => router.push('/pricing')}>
-              <Text style={styles.upgradeLink}>升级 Premium</Text>
-            </TouchableOpacity>
+          {subscriptionStatus?.isPremium ? (
+            <Text style={styles.quotaText}>
+              {t('aiGenerate.quota.premiumUnlimited')}
+            </Text>
+          ) : (
+            <>
+              <Text style={styles.quotaText}>
+                {t('aiGenerate.quota.remaining', {
+                  remaining: quotaInfo.limit - quotaInfo.used,
+                  total: quotaInfo.limit,
+                })}
+              </Text>
+              <TouchableOpacity onPress={() => router.push('/pricing')}>
+                <Text style={styles.upgradeLink}>{t('aiGenerate.quota.upgradeLink')}</Text>
+              </TouchableOpacity>
+            </>
           )}
         </View>
       )}
@@ -166,12 +193,12 @@ export default function AIGenerateScreen() {
       <ScrollView style={styles.content} contentContainerStyle={styles.contentContainer}>
         {/* 食材输入 */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>食材（必填）</Text>
+          <Text style={styles.sectionTitle}>{t('aiGenerate.form.ingredientsTitle')}</Text>
           {ingredients.map((ing, index) => (
             <View key={index} style={styles.ingredientRow}>
               <TextInput
                 style={styles.ingredientInput}
-                placeholder={`食材 ${index + 1}`}
+                placeholder={t('aiGenerate.form.ingredientPlaceholder', { number: index + 1 })}
                 placeholderTextColor={colors.subText}
                 value={ing}
                 onChangeText={(text) => updateIngredient(index, text)}
@@ -189,31 +216,31 @@ export default function AIGenerateScreen() {
           {ingredients.length < MAX_INGREDIENTS && (
             <TouchableOpacity onPress={addIngredient} style={styles.addButton}>
               <Ionicons name="add-circle-outline" size={20} color={colors.tint} />
-              <Text style={styles.addButtonText}>添加食材</Text>
+              <Text style={styles.addButtonText}>{t('aiGenerate.form.addIngredient')}</Text>
             </TouchableOpacity>
           )}
         </View>
 
         {/* 菜系风格 */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>菜系风格</Text>
+          <Text style={styles.sectionTitle}>{t('aiGenerate.form.styleTitle')}</Text>
           <View style={styles.chipContainer}>
             {styleOptions.map((option) => (
               <TouchableOpacity
-                key={option}
-                onPress={() => setStyle(option === '不限' ? '' : option)}
+                key={option.key}
+                onPress={() => setStyle(option.key === 'any' ? '' : option.key)}
                 style={[
                   styles.chip,
-                  (style === option || (option === '不限' && !style)) && styles.chipActive,
+                  (style === option.key || (option.key === 'any' && !style)) && styles.chipActive,
                 ]}
               >
                 <Text
                   style={[
                     styles.chipText,
-                    (style === option || (option === '不限' && !style)) && styles.chipTextActive,
+                    (style === option.key || (option.key === 'any' && !style)) && styles.chipTextActive,
                   ]}
                 >
-                  {option}
+                  {option.label}
                 </Text>
               </TouchableOpacity>
             ))}
@@ -222,7 +249,7 @@ export default function AIGenerateScreen() {
 
         {/* 难度 */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>难度</Text>
+          <Text style={styles.sectionTitle}>{t('aiGenerate.form.difficultyTitle')}</Text>
           <View style={styles.chipContainer}>
             {difficultyOptions.map((option) => (
               <TouchableOpacity
@@ -245,10 +272,10 @@ export default function AIGenerateScreen() {
 
         {/* 烹饪时间 */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>烹饪时间（分钟）</Text>
+          <Text style={styles.sectionTitle}>{t('aiGenerate.form.cookTimeTitle')}</Text>
           <TextInput
             style={styles.input}
-            placeholder="30"
+            placeholder={t('aiGenerate.form.cookTimePlaceholder')}
             placeholderTextColor={colors.subText}
             keyboardType="number-pad"
             value={cookTime > 0 ? String(cookTime) : ''}
@@ -258,10 +285,10 @@ export default function AIGenerateScreen() {
 
         {/* 人份 */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>人份</Text>
+          <Text style={styles.sectionTitle}>{t('aiGenerate.form.servingsTitle')}</Text>
           <TextInput
             style={styles.input}
-            placeholder="2"
+            placeholder={t('aiGenerate.form.servingsPlaceholder')}
             placeholderTextColor={colors.subText}
             keyboardType="number-pad"
             value={String(servings)}
@@ -271,24 +298,24 @@ export default function AIGenerateScreen() {
 
         {/* 饮食限制 */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>饮食限制</Text>
+          <Text style={styles.sectionTitle}>{t('aiGenerate.form.restrictionsTitle')}</Text>
           <View style={styles.chipContainer}>
             {restrictionOptions.map((option) => (
               <TouchableOpacity
-                key={option}
-                onPress={() => toggleRestriction(option)}
+                key={option.key}
+                onPress={() => toggleRestriction(option.key)}
                 style={[
                   styles.chip,
-                  dietaryRestrictions.includes(option) && styles.chipActive,
+                  dietaryRestrictions.includes(option.key) && styles.chipActive,
                 ]}
               >
                 <Text
                   style={[
                     styles.chipText,
-                    dietaryRestrictions.includes(option) && styles.chipTextActive,
+                    dietaryRestrictions.includes(option.key) && styles.chipTextActive,
                   ]}
                 >
-                  {option}
+                  {option.label}
                 </Text>
               </TouchableOpacity>
             ))}
@@ -304,12 +331,12 @@ export default function AIGenerateScreen() {
           {isLoading ? (
             <>
               <ActivityIndicator color="#fff" style={{ marginRight: 8 }} />
-              <Text style={styles.generateButtonText}>AI 正在为您创作菜谱...</Text>
+              <Text style={styles.generateButtonText}>{t('aiGenerate.buttons.generating')}</Text>
             </>
           ) : (
             <>
               <Ionicons name="sparkles" size={20} color="#fff" style={{ marginRight: 8 }} />
-              <Text style={styles.generateButtonText}>生成菜谱</Text>
+              <Text style={styles.generateButtonText}>{t('aiGenerate.buttons.generate')}</Text>
             </>
           )}
         </TouchableOpacity>
@@ -320,7 +347,7 @@ export default function AIGenerateScreen() {
           style={styles.historyButton}
         >
           <Ionicons name="time-outline" size={20} color={colors.tint} />
-          <Text style={styles.historyButtonText}>查看生成历史</Text>
+          <Text style={styles.historyButtonText}>{t('aiGenerate.buttons.history')}</Text>
         </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>

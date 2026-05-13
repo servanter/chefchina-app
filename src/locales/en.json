@@ -498,5 +498,81 @@
         "advice": "Deeper insights"
       }
     }
+  },
+  "aiGenerate": {
+    "title": "AI Recipe Generator",
+    "quota": {
+      "remaining": "{{remaining}} of {{total}} uses left this month",
+      "premiumUnlimited": "Premium Member - Unlimited Uses",
+      "upgradeLink": "Upgrade to Premium"
+    },
+    "form": {
+      "ingredientsTitle": "Ingredients (Required)",
+      "ingredientPlaceholder": "Ingredient {{number}}",
+      "addIngredient": "Add Ingredient",
+      "styleTitle": "Cuisine Style",
+      "styleOptions": {
+        "sichuan": "Sichuan",
+        "cantonese": "Cantonese",
+        "japanese": "Japanese",
+        "western": "Western",
+        "fusion": "Fusion",
+        "any": "Any"
+      },
+      "difficultyTitle": "Difficulty",
+      "difficultyOptions": {
+        "easy": "Easy",
+        "medium": "Medium",
+        "hard": "Hard"
+      },
+      "cookTimeTitle": "Cook Time (minutes)",
+      "cookTimePlaceholder": "30",
+      "servingsTitle": "Servings",
+      "servingsPlaceholder": "2",
+      "restrictionsTitle": "Dietary Restrictions",
+      "restrictionOptions": {
+        "lowSodium": "Low Sodium",
+        "sugarFree": "Sugar Free",
+        "vegetarian": "Vegetarian",
+        "lowFat": "Low Fat"
+      }
+    },
+    "buttons": {
+      "generate": "Generate Recipe",
+      "generating": "AI is creating your recipe...",
+      "history": "View History",
+      "edit": "Edit",
+      "publish": "Publish",
+      "regenerate": "Regenerate"
+    },
+    "errors": {
+      "noIngredients": "At least 1 ingredient is required",
+      "generateFailed": "Generation failed, please try again",
+      "quotaExceeded": "Quota exceeded",
+      "quotaExceededHint": "Upgrade to Premium for more uses",
+      "loadFailed": "Load failed",
+      "publishFailed": "Publish failed",
+      "expired": "Draft expired",
+      "expiredHint": "Please regenerate"
+    },
+    "result": {
+      "title": "Generated Result",
+      "expiredBanner": "This draft has expired and cannot be published",
+      "publishedBanner": "Published as official recipe",
+      "viewPublished": "View",
+      "publishSuccess": "Published successfully!",
+      "ingredientsTitle": "Ingredients",
+      "stepsTitle": "Cooking Steps",
+      "nutritionTitle": "Nutrition Facts",
+      "optional": "(Optional)",
+      "minutes": "minutes",
+      "servings": "servings",
+      "nutrition": {
+        "calories": "Calories (kcal)",
+        "protein": "Protein",
+        "fat": "Fat",
+        "carbs": "Carbs"
+      }
+    }
   }
 }
