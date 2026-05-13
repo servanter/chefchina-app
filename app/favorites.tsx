@@ -11,7 +11,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
-import { RecipeCard } from '../src/components/RecipeCard';
+import { RecipeCard } from '@/components/RecipeCard';
 import { EmptyState } from '../src/components/EmptyState';
 import { SkeletonList } from '../src/components/Skeleton';
 import { ListFooter } from '../src/components/ListFooter';
