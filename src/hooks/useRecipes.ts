@@ -148,27 +148,27 @@ export const useRecipeById = (id: string) => {
 };
 
 export const useHomeInit = (userId?: string | null, authLoading?: boolean) => {
-  // 统一处理：guest 视为未登录，不传 userId
   const normalizedUserId = userId && userId !== 'guest' ? userId : undefined;
-  const cacheMinutes = normalizedUserId ? 2 : 5;
-
+  
   return useQuery<HomeInitData>({
-    queryKey: ['home-init', normalizedUserId ?? 'anonymous'],
+    queryKey: ['home-init'], // ✅ 移除 userId 依赖
     queryFn: () => fetchHomeInit(normalizedUserId),
-    enabled: !authLoading, // 等待 auth 加载完成
-    staleTime: 1000 * 60 * cacheMinutes,
+    enabled: !authLoading,
+    staleTime: 1000 * 60 * 5, // 统一缓存 5 分钟
+    retry: false, // ✅ 禁用重试
+    refetchOnMount: false, // ✅ 禁用 mount 时 refetch
   });
 };
 
 export const useRecipeDetailFull = (id: string, userId?: string | null, authLoading?: boolean) => {
-  // 统一处理：guest 视为未登录，不传 userId
+  // 统一处理:guest 视为未登录,不传 userId
   const normalizedUserId = userId && userId !== 'guest' ? userId : undefined;
 
   return useQuery<RecipeDetailFullData>({
     queryKey: ['recipe-detail-full', id, normalizedUserId ?? 'anonymous'],
     queryFn: () => fetchRecipeDetailFull(id, normalizedUserId),
     enabled: !!id && !authLoading, // 等待 auth 加载完成
-    staleTime: 0, // 不缓存，每次都重新请求
+    staleTime: 0, // 不缓存,每次都重新请求
   });
 };
 
@@ -242,8 +242,8 @@ export const useToggleLike = () => {
     mutationFn: ({ recipeId, userId }: { recipeId: string; userId: string }) =>
       toggleLike(recipeId, userId),
     onSuccess: (data, variables) => {
-      // 立即重新请求详情页数据（匹配完整的 queryKey）
-      queryClient.invalidateQueries({ 
+      // 立即重新请求详情页数据(匹配完整的 queryKey)
+      queryClient.invalidateQueries({
         predicate: (query) => {
           const [key, id] = query.queryKey as [string, string, string?];
           return key === 'recipe-detail-full' && id === variables.recipeId;
@@ -293,14 +293,14 @@ export const useInfiniteFavorites = (userId: string) => {
 /**
  * useInfiniteFavoritesList · 基于需求 12 的 useInfiniteList 的薄包装。
  *
- * 对外暴露 cursor 契约：fetcher 接受 `{ cursor, limit }`（cursor 为下一页 page 字符串，
- * null 即第一页），内部仍调用 `fetchFavoritesPaged`（page/pageSize 分页），
+ * 对外暴露 cursor 契约:fetcher 接受 `{ cursor, limit }`(cursor 为下一页 page 字符串,
+ * null 即第一页),内部仍调用 `fetchFavoritesPaged`(page/pageSize 分页),
  * 由包装层把 page ↔ cursor 做字符串化转换。
  *
- * 同时返回 `total` 字段，方便页面显示"x 条收藏"。
+ * 同时返回 `total` 字段,方便页面显示"x 条收藏"。
  */
 export const useInfiniteFavoritesList = (userId: string) => {
-  // 手动追踪 total（useInfiniteList 本身不感知业务 total 字段）
+  // 手动追踪 total(useInfiniteList 本身不感知业务 total 字段)
   const queryClient = useQueryClient();
 
   const enabled = !!userId && userId !== 'guest';
@@ -316,7 +316,7 @@ export const useInfiniteFavoritesList = (userId: string) => {
       }
       const page = cursor ? Number(cursor) : 1;
       const res = await fetchFavoritesPaged(userId, page, limit);
-      // 把 total 顺带缓存，供 UI 显示
+      // 把 total 顺带缓存,供 UI 显示
       queryClient.setQueryData(
         ['favorites', 'infinite', 'cursor', userId, 'total'],
         res.pagination.total,
@@ -366,8 +366,8 @@ export const useToggleFavorite = () => {
       queryClient.invalidateQueries({
         queryKey: ['favorites', 'infinite', 'cursor', variables.userId],
       });
-      // 立即重新请求详情页数据（匹配完整的 queryKey）
-      queryClient.invalidateQueries({ 
+      // 立即重新请求详情页数据(匹配完整的 queryKey)
+      queryClient.invalidateQueries({
         predicate: (query) => {
           const [key, id] = query.queryKey as [string, string, string?];
           return key === 'recipe-detail-full' && id === variables.recipeId;

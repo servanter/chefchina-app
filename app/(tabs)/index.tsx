@@ -78,10 +78,8 @@ export default function HomeScreen() {
   const rankingData = homeData?.ranking ?? [];
 
   const handleLoadMoreQuick = useCallback(() => {
-    // 首页当前由 home-init 聚合返回首屏内容，先保留 onEndReached 入口以满足列表体验；
-    // 触底时刷新聚合数据，避免无动作反馈。
-    refetchHome();
-  }, [refetchHome]);
+    router.push('/(tabs)/explore'); // ✅ 跳转而非 refetch
+  }, [router]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -289,7 +287,7 @@ export default function HomeScreen() {
                 />
               ))}
             </View>
-            {/* 移除 ListFooter，不显示 "End of list" */}
+            {/* 移除 ListFooter,不显示 "End of list" */}
           </>
         )}
 

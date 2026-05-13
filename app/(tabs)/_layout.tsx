@@ -6,7 +6,7 @@ import { Platform } from 'react-native';
 import { useTheme } from '../../src/contexts/ThemeContext';
 import { useFontScale } from '../../src/hooks/useFontScale';
 import { getUserId } from '../../src/lib/storage';
-import { useUnreadCount } from '../../src/hooks/useUnreadCount';
+
 
 // Web 端没有 Home Indicator，跟 Android 一样处理
 const isIOS = Platform.OS === 'ios';
@@ -25,8 +25,7 @@ export default function TabLayout() {
     });
   }, []);
 
-  const { data: unreadCountMap } = useUnreadCount(userId);
-  const unreadCount = unreadCountMap?.all ?? 0;
+
 
   return (
     <Tabs
@@ -94,16 +93,7 @@ export default function TabLayout() {
           ),
         }}
       />
-      <Tabs.Screen
-        name="notifications"
-        options={{
-          title: t('notifications.title'),
-          tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={focused ? 'notifications' : 'notifications-outline'} size={24} color={color} />
-          ),
-          tabBarBadge: unreadCount > 0 ? (unreadCount > 99 ? '99+' : unreadCount) : undefined,
-        }}
-      />
+
       <Tabs.Screen
         name="profile"
         options={{
