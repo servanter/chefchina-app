@@ -24,6 +24,7 @@ import { useQuery } from '@tanstack/react-query';
 import * as ImagePicker from 'expo-image-picker';
 import { useRecipeDetailFull, useToggleLike, useToggleFavorite, usePostComment, useUpdateComment, useDeleteComment, useUnpublishRecipe, useDeleteRecipe } from '../../src/hooks/useRecipes';
 import { useToggleCommentLike } from '../../src/hooks/useSocial';
+import { useAddShoppingListItem, useShoppingList } from '../../src/hooks/useShoppingList';
 import { StepItem } from '../../src/components/StepItem';
 import { CommentItem } from '../../src/components/CommentItem';
 import { RatingStars } from '../../src/components/RatingStars';
@@ -131,6 +132,11 @@ export default function RecipeDetailScreen() {
   
   // AI 分析 mutation
   const analyzeRecipeMutation = useAnalyzeRecipe();
+
+  // 购物车相关
+  const { data: shoppingListData } = useShoppingList();
+  const addShoppingItemMutation = useAddShoppingListItem();
+  const [isAddingToCart, setIsAddingToCart] = useState(false);
 
   const openViewer = useCallback((images: string[], index: number) => {
     // 防重入：查看器已经打开 or 没有图，则忽略
@@ -293,6 +299,71 @@ export default function RecipeDetailScreen() {
       });
     }
   }, [recipe?.id, favorited, userId, user?.favorites_count, subscriptionStatus?.isPremium, t, toggleFavoriteMutation, router, favBounce]);
+
+  // 一键加入购物车
+  const handleAddToCart = useCallback(async () => {
+    if (!recipe || !recipe.ingredients || recipe.ingredients.length === 0) {
+      Toast.show({
+        type: 'info',
+        text1: isZh ? '暂无食材可添加' : 'No ingredients to add',
+        visibilityTime: 1500,
+      });
+      return;
+    }
+
+    setIsAddingToCart(true);
+    
+    try {
+      // 获取当前购物车的食材
+      const existingItems = shoppingListData?.items || [];
+      
+      // 批量添加食材
+      const addPromises = recipe.ingredients.map(async (ing) => {
+        const ingredientName = isZh ? ing.name_zh : ing.name;
+        
+        // 解析数量和单位（例如 "200g" -> amount: 200, unit: "g"）
+        const amountMatch = ing.amount.match(/^(\d+\.?\d*)\s*([^\d]+)?$/);
+        const amount = amountMatch ? parseFloat(amountMatch[1]) : 0;
+        const unit = amountMatch && amountMatch[2] ? amountMatch[2].trim() : ing.amount;
+        
+        // 检查是否已存在相同食材
+        const existingItem = existingItems.find(
+          (item) => item.name === ingredientName
+        );
+        
+        if (existingItem) {
+          // 如果已存在，跳过（或者可以选择累加数量）
+          return;
+        }
+        
+        // 添加新食材
+        return addShoppingItemMutation.mutateAsync({
+          name: ingredientName,
+          amount,
+          unit,
+        });
+      });
+      
+      await Promise.all(addPromises);
+      
+      triggerHaptic('success');
+      Toast.show({
+        type: 'success',
+        text1: isZh ? '已加入购物车' : 'Added to shopping list',
+        text2: isZh ? `${recipe.ingredients.length} 项食材` : `${recipe.ingredients.length} ingredients`,
+        visibilityTime: 2000,
+      });
+    } catch (error) {
+      triggerHaptic('error');
+      Toast.show({
+        type: 'error',
+        text1: t('common.error'),
+        visibilityTime: 2000,
+      });
+    } finally {
+      setIsAddingToCart(false);
+    }
+  }, [recipe, isZh, shoppingListData, addShoppingItemMutation, t]);
 
   const handlePostComment = useCallback(async () => {
     if (userId === 'guest') {
@@ -1004,6 +1075,25 @@ export default function RecipeDetailScreen() {
                 activeStyle={styles.actionBtnFav}
                 activeLabelStyle={styles.actionBtnTextActive}
               />
+
+              {/* 购物车按钮 */}
+              <TouchableOpacity
+                style={[styles.actionBtn, styles.cartBtn, { backgroundColor: COLORS.primary }]}
+                onPress={handleAddToCart}
+                disabled={isAddingToCart}
+                activeOpacity={0.7}
+              >
+                {isAddingToCart ? (
+                  <ActivityIndicator size="small" color="#FFF" />
+                ) : (
+                  <>
+                    <Ionicons name="cart-outline" size={18} color="#FFF" />
+                    <Text style={styles.cartBtnText}>
+                      {isZh ? '加入购物车' : 'Add to Cart'}
+                    </Text>
+                  </>
+                )}
+              </TouchableOpacity>
             </View>
 
             {/* ── Tabs ── */}
@@ -1693,6 +1783,16 @@ const styles = StyleSheet.create({
     color: COLORS.primary,
   },
   actionBtnTextActive: {
+    color: '#FFF',
+  },
+  cartBtn: {
+    backgroundColor: COLORS.primary,
+    borderColor: COLORS.primary,
+    flex: 1.2,
+  },
+  cartBtnText: {
+    fontSize: 13,
+    fontWeight: '600',
     color: '#FFF',
   },
   tabs: {
