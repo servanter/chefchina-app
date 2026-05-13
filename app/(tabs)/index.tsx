@@ -14,18 +14,18 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
-import { RecipeCard } from '../../src/components/RecipeCard';
-import { CategoryChip } from '../../src/components/CategoryChip';
-import { RecipeSkeleton, RecipeSkeletonList } from '../../src/components/RecipeSkeleton';
-import { WhatToEatButton } from '../../src/components/WhatToEat';
-import { LazyImage } from '../../src/components/LazyImage';
-import { EmptyState } from '../../src/components/EmptyState';
-import { SearchModal } from '../../src/components/SearchModal';
-import { useHomeInit } from '../../src/hooks/useRecipes';
-import { changeLanguage } from '../../src/lib/i18n';
-import { triggerHaptic } from '../../src/lib/haptics';
-import { useTheme } from '../../src/contexts/ThemeContext';
-import { useAuth } from '../../src/hooks/useAuth';
+import { RecipeCard } from '@/components/RecipeCard';
+import { CategoryChip } from '@/components/CategoryChip';
+import { RecipeSkeleton, RecipeSkeletonList } from '@/components/RecipeSkeleton';
+import { WhatToEatButton } from '@/components/WhatToEat';
+import { LazyImage } from '@/components/LazyImage';
+import { EmptyState } from '@/components/EmptyState';
+import { SearchModal } from '@/components/SearchModal';
+import { useHomeInit } from '@/hooks/useRecipes';
+import { changeLanguage } from '@/lib/i18n';
+import { triggerHaptic } from '@/lib/haptics';
+import { useTheme } from '@/contexts/ThemeContext';
+import { useAuth } from '@/hooks/useAuth';
 
 // Fallback values used in StyleSheet.create (static, can't use hooks)
 // Dynamic theming applied via inline styles in JSX

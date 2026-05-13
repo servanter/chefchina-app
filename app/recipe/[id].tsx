@@ -35,7 +35,7 @@ import { useBounce } from '../../src/hooks/useBounce';
 import { EmptyState } from '../../src/components/EmptyState';
 import { LazyImage } from '../../src/components/LazyImage';
 import { ImageViewer } from '../../src/components/ImageViewer';
-import { RecipeCard } from '../../src/components/RecipeCard';
+import { RecipeCard } from '@/components/RecipeCard';
 import {
   CommentSkeleton,
   RecipeDetailSkeleton,
