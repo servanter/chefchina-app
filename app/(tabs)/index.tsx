@@ -113,11 +113,11 @@ export default function HomeScreen() {
         showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.primary} />}
         onScroll={({ nativeEvent }) => {
-          // 滚到底 80% 时自动拉下一页(Quick 列表)
+          // 滚动到底部时自动加载更多（仅当距离底部 200px 以内）
           const { layoutMeasurement, contentOffset, contentSize } = nativeEvent;
           const reachedEnd =
             layoutMeasurement.height + contentOffset.y >=
-            contentSize.height - contentSize.height * 0.5;
+            contentSize.height - 200; // ✅ 修复：仅在距离底部 200px 时触发
           if (reachedEnd) handleLoadMoreQuick();
         }}
         scrollEventThrottle={250}
