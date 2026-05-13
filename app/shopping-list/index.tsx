@@ -15,7 +15,7 @@ import {
   RefreshControl,
   Share,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
 import { Stack, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { format } from 'date-fns';
@@ -32,7 +32,6 @@ import EmptyShoppingList from '../../components/EmptyShoppingList';
 
 export default function ShoppingListScreen() {
   const router = useRouter();
-  const insets = useSafeAreaInsets();
   const [showAddModal, setShowAddModal] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -218,11 +217,22 @@ export default function ShoppingListScreen() {
       />
 
       <View style={styles.container}>
-        {/* ── Back button always visible ── */}
-        <View style={[styles.absoluteBack, { top: insets.top + 8 }]}>
-          <TouchableOpacity style={styles.backBtnCircle} onPress={() => router.back()}>
-            <Ionicons name="arrow-back" size={20} color="#FFF" />
+        <View style={styles.header}>
+          <TouchableOpacity 
+            onPress={() => {
+              // ✅ FIX: 检查是否可以返回，如果不能则跳转到首页
+              if (router.canGoBack()) {
+                router.back();
+              } else {
+                router.replace('/(tabs)');
+              }
+            }} 
+            style={styles.backButton}
+          >
+            <Ionicons name="arrow-back" size={24} color="#333" />
           </TouchableOpacity>
+          <Text style={styles.title}>购物清单</Text>
+          <View style={{ width: 24 }} />
         </View>
 
         <ScrollView
@@ -324,6 +334,24 @@ const styles = StyleSheet.create({
   headerButton: {
     padding: 4,
   },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E0E0E0',
+    backgroundColor: '#FFF',
+  },
+  backButton: {
+    padding: 4,
+  },
+  title: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#333',
+  },
   statsContainer: {
     backgroundColor: '#FFF',
     borderRadius: 12,
@@ -405,18 +433,5 @@ const styles = StyleSheet.create({
     color: '#FFF',
     fontSize: 16,
     fontWeight: '600',
-  },
-  absoluteBack: {
-    position: 'absolute',
-    left: 16,
-    zIndex: 200,
-  },
-  backBtnCircle: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: 'rgba(0,0,0,0.35)',
-    alignItems: 'center',
-    justifyContent: 'center',
   },
 });
