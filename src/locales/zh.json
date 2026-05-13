@@ -498,5 +498,81 @@
         "advice": "更深度的建议"
       }
     }
+  },
+  "aiGenerate": {
+    "title": "AI 菜谱生成器",
+    "quota": {
+      "remaining": "本月剩余 {{remaining}} 次（共 {{total}} 次）",
+      "premiumUnlimited": "Premium 会员 - 无限次使用",
+      "upgradeLink": "升级 Premium"
+    },
+    "form": {
+      "ingredientsTitle": "食材（必填）",
+      "ingredientPlaceholder": "食材 {{number}}",
+      "addIngredient": "添加食材",
+      "styleTitle": "菜系风格",
+      "styleOptions": {
+        "sichuan": "川菜",
+        "cantonese": "粤菜",
+        "japanese": "日式",
+        "western": "西式",
+        "fusion": "Fusion",
+        "any": "不限"
+      },
+      "difficultyTitle": "难度",
+      "difficultyOptions": {
+        "easy": "简单",
+        "medium": "中等",
+        "hard": "困难"
+      },
+      "cookTimeTitle": "烹饪时间（分钟）",
+      "cookTimePlaceholder": "30",
+      "servingsTitle": "人份",
+      "servingsPlaceholder": "2",
+      "restrictionsTitle": "饮食限制",
+      "restrictionOptions": {
+        "lowSodium": "低钠",
+        "sugarFree": "无糖",
+        "vegetarian": "素食",
+        "lowFat": "低脂"
+      }
+    },
+    "buttons": {
+      "generate": "生成菜谱",
+      "generating": "AI 正在为您创作菜谱...",
+      "history": "查看生成历史",
+      "edit": "编辑",
+      "publish": "发布",
+      "regenerate": "重新生成"
+    },
+    "errors": {
+      "noIngredients": "至少需要 1 个食材",
+      "generateFailed": "生成失败，请重试",
+      "quotaExceeded": "配额已用尽",
+      "quotaExceededHint": "升级 Premium 获得更多次数",
+      "loadFailed": "加载失败",
+      "publishFailed": "发布失败",
+      "expired": "草稿已过期",
+      "expiredHint": "请重新生成"
+    },
+    "result": {
+      "title": "生成结果",
+      "expiredBanner": "此草稿已过期，无法发布",
+      "publishedBanner": "已发布为正式菜谱",
+      "viewPublished": "查看",
+      "publishSuccess": "发布成功！",
+      "ingredientsTitle": "食材清单",
+      "stepsTitle": "烹饪步骤",
+      "nutritionTitle": "营养成分",
+      "optional": "(可选)",
+      "minutes": "分钟",
+      "servings": "人份",
+      "nutrition": {
+        "calories": "热量 (kcal)",
+        "protein": "蛋白质",
+        "fat": "脂肪",
+        "carbs": "碳水"
+      }
+    }
   }
 }

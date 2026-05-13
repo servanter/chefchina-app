@@ -15,6 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import Toast from 'react-native-toast-message';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../../src/contexts/ThemeContext';
 import { apiClient as api } from '@/lib/api';
 
@@ -55,6 +56,7 @@ interface GeneratedRecipe {
 }
 
 export default function AIGenerateResultScreen() {
+  const { t, i18n } = useTranslation();
   const { colors } = useTheme();
   const router = useRouter();
   const params = useLocalSearchParams<{ id: string }>();
@@ -62,6 +64,8 @@ export default function AIGenerateResultScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const [isPublishing, setIsPublishing] = useState(false);
   const styles = getStyles(colors);
+
+  const isZh = i18n.language === 'zh';
 
   useEffect(() => {
     loadRecipe();
@@ -78,7 +82,7 @@ export default function AIGenerateResultScreen() {
       console.error('[AI Result] Load error:', error);
       Toast.show({
         type: 'error',
-        text1: '加载失败',
+        text1: t('aiGenerate.errors.loadFailed'),
       });
       router.back();
     } finally {
@@ -92,8 +96,8 @@ export default function AIGenerateResultScreen() {
     if (recipe.isExpired) {
       Toast.show({
         type: 'error',
-        text1: '草稿已过期',
-        text2: '请重新生成',
+        text1: t('aiGenerate.errors.expired'),
+        text2: t('aiGenerate.errors.expiredHint'),
       });
       return;
     }
@@ -104,7 +108,7 @@ export default function AIGenerateResultScreen() {
       if (response.data.success) {
         Toast.show({
           type: 'success',
-          text1: '发布成功！',
+          text1: t('aiGenerate.result.publishSuccess'),
         });
         // 跳转到正式菜谱页面
         router.replace(`/recipe/${response.data.data.recipeId}`);
@@ -113,7 +117,7 @@ export default function AIGenerateResultScreen() {
       console.error('[AI Publish] Error:', error);
       Toast.show({
         type: 'error',
-        text1: error?.response?.data?.error || '发布失败',
+        text1: error?.response?.data?.error || t('aiGenerate.errors.publishFailed'),
       });
     } finally {
       setIsPublishing(false);
@@ -133,7 +137,7 @@ export default function AIGenerateResultScreen() {
       <SafeAreaView style={styles.container} edges={['top']}>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.tint} />
-          <Text style={styles.loadingText}>加载中...</Text>
+          <Text style={styles.loadingText}>{t('common.loading')}</Text>
         </View>
       </SafeAreaView>
     );
@@ -144,9 +148,9 @@ export default function AIGenerateResultScreen() {
   }
 
   const difficultyMap: Record<string, string> = {
-    EASY: '简单',
-    MEDIUM: '中等',
-    HARD: '困难',
+    EASY: t('aiGenerate.form.difficultyOptions.easy'),
+    MEDIUM: t('aiGenerate.form.difficultyOptions.medium'),
+    HARD: t('aiGenerate.form.difficultyOptions.hard'),
   };
 
   return (
@@ -155,7 +159,7 @@ export default function AIGenerateResultScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
-        <Text style={styles.title}>生成结果</Text>
+        <Text style={styles.title}>{t('aiGenerate.result.title')}</Text>
         <View style={{ width: 24 }} />
       </View>
 
@@ -164,7 +168,7 @@ export default function AIGenerateResultScreen() {
         {recipe.isExpired && (
           <View style={styles.expiredBanner}>
             <Ionicons name="warning-outline" size={20} color="#ff6b6b" />
-            <Text style={styles.expiredText}>此草稿已过期，无法发布</Text>
+            <Text style={styles.expiredText}>{t('aiGenerate.result.expiredBanner')}</Text>
           </View>
         )}
 
@@ -173,14 +177,14 @@ export default function AIGenerateResultScreen() {
           <View style={styles.publishedBanner}>
             <Ionicons name="checkmark-circle" size={20} color="#51cf66" />
             <Text style={styles.publishedText}>
-              已发布为正式菜谱
+              {t('aiGenerate.result.publishedBanner')}
               {recipe.recipeId && (
                 <Text
                   style={styles.publishedLink}
                   onPress={() => router.push(`/recipe/${recipe.recipeId}`)}
                 >
                   {' '}
-                  查看
+                  {t('aiGenerate.result.viewPublished')}
                 </Text>
               )}
             </Text>
@@ -195,8 +199,10 @@ export default function AIGenerateResultScreen() {
           </View>
 
           <View style={styles.recipeHeader}>
-            <Text style={styles.recipeTitle}>{recipe.titleZh}</Text>
-            <Text style={styles.recipeDescription}>{recipe.descriptionZh}</Text>
+            <Text style={styles.recipeTitle}>{isZh ? recipe.titleZh : recipe.titleEn}</Text>
+            <Text style={styles.recipeDescription}>
+              {isZh ? recipe.descriptionZh : recipe.descriptionEn}
+            </Text>
           </View>
 
           {/* 元信息 */}
@@ -207,11 +213,15 @@ export default function AIGenerateResultScreen() {
             </View>
             <View style={styles.metaItem}>
               <Ionicons name="time-outline" size={16} color={colors.subText} />
-              <Text style={styles.metaText}>{recipe.cookTime} 分钟</Text>
+              <Text style={styles.metaText}>
+                {recipe.cookTime} {t('aiGenerate.result.minutes')}
+              </Text>
             </View>
             <View style={styles.metaItem}>
               <Ionicons name="people-outline" size={16} color={colors.subText} />
-              <Text style={styles.metaText}>{recipe.servings} 人份</Text>
+              <Text style={styles.metaText}>
+                {recipe.servings} {t('aiGenerate.result.servings')}
+              </Text>
             </View>
           </View>
         </View>
@@ -219,15 +229,18 @@ export default function AIGenerateResultScreen() {
         {/* 食材列表 */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>
-            <Ionicons name="list-outline" size={20} color={colors.text} /> 食材清单
+            <Ionicons name="list-outline" size={20} color={colors.text} />{' '}
+            {t('aiGenerate.result.ingredientsTitle')}
           </Text>
           {recipe.ingredients.map((ing, index) => (
             <View key={index} style={styles.ingredientItem}>
               <View style={styles.ingredientBullet} />
               <Text style={styles.ingredientText}>
-                {ing.nameZh} {ing.amount}
+                {isZh ? ing.nameZh : ing.nameEn} {ing.amount}
                 {ing.unit}
-                {ing.isOptional && <Text style={styles.optionalText}> (可选)</Text>}
+                {ing.isOptional && (
+                  <Text style={styles.optionalText}> {t('aiGenerate.result.optional')}</Text>
+                )}
               </Text>
             </View>
           ))}
@@ -236,7 +249,8 @@ export default function AIGenerateResultScreen() {
         {/* 步骤列表 */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>
-            <Ionicons name="clipboard-outline" size={20} color={colors.text} /> 烹饪步骤
+            <Ionicons name="clipboard-outline" size={20} color={colors.text} />{' '}
+            {t('aiGenerate.result.stepsTitle')}
           </Text>
           {recipe.steps.map((step, index) => (
             <View key={index} style={styles.stepItem}>
@@ -244,9 +258,13 @@ export default function AIGenerateResultScreen() {
                 <Text style={styles.stepNumberText}>{step.stepNumber}</Text>
               </View>
               <View style={styles.stepContent}>
-                <Text style={styles.stepText}>{step.contentZh}</Text>
+                <Text style={styles.stepText}>
+                  {isZh ? step.contentZh : step.contentEn}
+                </Text>
                 {step.durationMin && (
-                  <Text style={styles.stepDuration}>⏱ {step.durationMin} 分钟</Text>
+                  <Text style={styles.stepDuration}>
+                    ⏱ {step.durationMin} {t('aiGenerate.result.minutes')}
+                  </Text>
                 )}
               </View>
             </View>
@@ -256,35 +274,36 @@ export default function AIGenerateResultScreen() {
         {/* 营养信息 */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>
-            <Ionicons name="fitness-outline" size={20} color={colors.text} /> 营养成分
+            <Ionicons name="fitness-outline" size={20} color={colors.text} />{' '}
+            {t('aiGenerate.result.nutritionTitle')}
           </Text>
           <View style={styles.nutritionGrid}>
             <View style={styles.nutritionItem}>
               <Text style={styles.nutritionValue}>{recipe.nutrition.calories}</Text>
-              <Text style={styles.nutritionLabel}>热量 (kcal)</Text>
+              <Text style={styles.nutritionLabel}>{t('aiGenerate.result.nutrition.calories')}</Text>
             </View>
             <View style={styles.nutritionItem}>
               <Text style={styles.nutritionValue}>{recipe.nutrition.protein}g</Text>
-              <Text style={styles.nutritionLabel}>蛋白质</Text>
+              <Text style={styles.nutritionLabel}>{t('aiGenerate.result.nutrition.protein')}</Text>
             </View>
             <View style={styles.nutritionItem}>
               <Text style={styles.nutritionValue}>{recipe.nutrition.fat}g</Text>
-              <Text style={styles.nutritionLabel}>脂肪</Text>
+              <Text style={styles.nutritionLabel}>{t('aiGenerate.result.nutrition.fat')}</Text>
             </View>
             <View style={styles.nutritionItem}>
               <Text style={styles.nutritionValue}>{recipe.nutrition.carbs}g</Text>
-              <Text style={styles.nutritionLabel}>碳水</Text>
+              <Text style={styles.nutritionLabel}>{t('aiGenerate.result.nutrition.carbs')}</Text>
             </View>
           </View>
         </View>
       </ScrollView>
 
-      {/* 底部操作栏 */}
+      {/* 底部操作栏 - ✅ 修复 z-index */}
       {!recipe.isPublished && (
         <View style={styles.footer}>
           <TouchableOpacity onPress={handleEdit} style={styles.footerButtonSecondary}>
             <Ionicons name="create-outline" size={20} color={colors.tint} />
-            <Text style={styles.footerButtonSecondaryText}>编辑</Text>
+            <Text style={styles.footerButtonSecondaryText}>{t('aiGenerate.buttons.edit')}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -300,14 +319,14 @@ export default function AIGenerateResultScreen() {
             ) : (
               <>
                 <Ionicons name="checkmark-circle-outline" size={20} color="#fff" />
-                <Text style={styles.footerButtonPrimaryText}>发布</Text>
+                <Text style={styles.footerButtonPrimaryText}>{t('aiGenerate.buttons.publish')}</Text>
               </>
             )}
           </TouchableOpacity>
 
           <TouchableOpacity onPress={handleRegenerate} style={styles.footerButtonSecondary}>
             <Ionicons name="refresh-outline" size={20} color={colors.tint} />
-            <Text style={styles.footerButtonSecondaryText}>重新生成</Text>
+            <Text style={styles.footerButtonSecondaryText}>{t('aiGenerate.buttons.regenerate')}</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -526,6 +545,13 @@ function getStyles(colors: any) {
       borderTopWidth: 1,
       borderTopColor: colors.border,
       gap: 8,
+      // ✅ FIX 问题 1: 提高 z-index，确保按钮在最上层
+      zIndex: 100,
+      elevation: 8, // Android 阴影
+      shadowColor: '#000', // iOS 阴影
+      shadowOffset: { width: 0, height: -2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
     },
     footerButtonSecondary: {
       flex: 1,
@@ -537,6 +563,7 @@ function getStyles(colors: any) {
       borderWidth: 1,
       borderColor: colors.tint,
       gap: 6,
+      backgroundColor: colors.cardBg, // ✅ 确保按钮有背景色
     },
     footerButtonSecondaryText: {
       fontSize: 14,
