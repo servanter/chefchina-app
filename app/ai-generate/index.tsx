@@ -25,7 +25,7 @@ import { useSubscriptionStatus } from '../../src/hooks/useSubscription';
 const MAX_INGREDIENTS = 10;
 
 export default function AIGenerateScreen() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { colors } = useTheme();
   const router = useRouter();
   const { user } = useAuth();
@@ -115,6 +115,7 @@ export default function AIGenerateScreen() {
         cookTime: cookTime > 0 ? cookTime : undefined,
         servings,
         dietaryRestrictions: dietaryRestrictions.length > 0 ? dietaryRestrictions : undefined,
+        language: i18n.language === 'zh' ? 'zh' : 'en',
       });
 
       if (response.data.success) {
