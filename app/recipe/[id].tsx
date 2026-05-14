@@ -230,6 +230,8 @@ export default function RecipeDetailScreen() {
       return;
     }
     
+    const prevLiked = liked;
+    const prevCount = likesCount;
     const nextLiked = !liked;
     
     // 乐观更新
@@ -239,16 +241,22 @@ export default function RecipeDetailScreen() {
     likeBounce();
     
     try {
-      await toggleLikeMutation.mutateAsync({ recipeId: recipe.id, userId });
+      // ✅ 获取 API 返回值
+      const result = await toggleLikeMutation.mutateAsync({ recipeId: recipe.id, userId });
+      
+      // ✅ 使用后端返回的准确值
+      setLikesCount(result.count);
+      setLiked(result.liked);
+      
       Toast.show({
         type: 'success',
         text1: nextLiked ? t('recipe.likeSuccess') : t('recipe.unlikeSuccess'),
         visibilityTime: 1500,
       });
     } catch (error) {
-      // 失败回滚
-      setLiked(!nextLiked);
-      setLikesCount(prev => nextLiked ? prev - 1 : prev + 1);
+      // 失败回滚到之前的状态
+      setLiked(prevLiked);
+      setLikesCount(prevCount);
       triggerHaptic('error');
       Toast.show({
         type: 'error',
@@ -256,7 +264,7 @@ export default function RecipeDetailScreen() {
         visibilityTime: 2000,
       });
     }
-  }, [recipe, liked, userId, t, toggleLikeMutation, router, likeBounce]);
+  }, [recipe, liked, likesCount, userId, t, toggleLikeMutation, router, likeBounce]);
 
   const handleFavorite = useCallback(async () => {
     if (!recipe) return;
@@ -269,6 +277,7 @@ export default function RecipeDetailScreen() {
     }
     
     // 检查收藏上限（免费用户 20 条）
+    const prevFavorited = favorited;
     const nextFavorited = !favorited;
     if (nextFavorited && !subscriptionStatus?.isPremium) {
       const currentFavorites = user?.favorites_count ?? 0;
@@ -291,7 +300,12 @@ export default function RecipeDetailScreen() {
     favBounce();
     
     try {
-      await toggleFavoriteMutation.mutateAsync({ recipeId: recipe.id, userId });
+      // ✅ 获取 API 返回值
+      const result = await toggleFavoriteMutation.mutateAsync({ recipeId: recipe.id, userId });
+      
+      // ✅ 使用后端返回的准确值
+      setFavorited(result.favorited);
+      
       Toast.show({
         type: 'success',
         text1: nextFavorited ? t('recipe.favoriteSuccess') : t('recipe.unfavoriteSuccess'),
@@ -299,7 +313,7 @@ export default function RecipeDetailScreen() {
       });
     } catch (error) {
       // 失败回滚
-      setFavorited(!nextFavorited);
+      setFavorited(prevFavorited);
       triggerHaptic('error');
       Toast.show({
         type: 'error',
