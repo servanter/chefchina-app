@@ -333,7 +333,7 @@ export const fetchTopics = async (isHot?: boolean): Promise<Topic[]> => {
 // ─── 推荐 (REQ-12.7) ──────────────────────────────────────
 export const fetchRecommendedRecipes = async (userId: string, page = 1): Promise<PaginatedResponse<Recipe>> => {
   const res = await apiClient.get('/recommend', {
-    params: { userId, page, limit: PAGE_SIZE }
+    params: { page, limit: PAGE_SIZE }
   });
   const recipes = res.data.data.recipes.map(adaptRecipe);
   const pagination = res.data.data.pagination;
@@ -604,8 +604,7 @@ export const fetchRecipeById = async (id: string): Promise<Recipe> => {
 };
 
 export const fetchHomeInit = async (userId?: string): Promise<HomeInitData> => {
-  const params = userId ? { userId } : {};
-  const res = await apiClient.get('/home/init', { params });
+  const res = await apiClient.get('/home/init');
   const data = res.data.data as BackendHomeInitData;
 
   return {
@@ -625,8 +624,7 @@ export const fetchRecipeDetailFull = async (
   id: string,
   userId?: string,
 ): Promise<RecipeDetailFullData> => {
-  const params = userId ? { userId } : {};
-  const res = await apiClient.get(`/recipes/${id}/detail-full`, { params });
+  const res = await apiClient.get(`/recipes/${id}/detail-full`);
   const data = res.data.data as BackendRecipeDetailFullData;
 
   return {
@@ -800,7 +798,7 @@ export const toggleLike = async (
 };
 
 export const fetchFavorites = async (userId: string): Promise<Recipe[]> => {
-  const res = await apiClient.get('/favorites', { params: { userId } });
+  const res = await apiClient.get('/favorites');
   const { recipes } = res.data.data;
   return (recipes as BackendRecipe[]).map(adaptRecipe);
 };
@@ -816,7 +814,7 @@ export const fetchFavoritesPaged = async (
   pageSize = PAGE_SIZE,
 ): Promise<FavoritesPage> => {
   const res = await apiClient.get('/favorites', {
-    params: { userId, page, pageSize },
+    params: { page, pageSize },
   });
   const { recipes, pagination } = res.data.data;
   // 后端 /api/favorites 若不返回 pagination，则退回单页伪分页
@@ -1144,7 +1142,7 @@ export const fetchLikeStatus = async (
   recipeId: string,
   userId: string,
 ): Promise<{ liked: boolean; count: number }> => {
-  const res = await apiClient.get(`/likes/${recipeId}`, { params: { userId } });
+  const res = await apiClient.get(`/likes/${recipeId}`);
   return { liked: res.data.data.liked, count: res.data.data.count };
 };
 
@@ -1152,7 +1150,7 @@ export const fetchFavoriteStatus = async (
   recipeId: string,
   userId: string,
 ): Promise<{ favorited: boolean }> => {
-  const res = await apiClient.get(`/favorites/${recipeId}`, { params: { userId } });
+  const res = await apiClient.get(`/favorites/${recipeId}`);
   return { favorited: res.data.data.favorited };
 };
 
@@ -1213,7 +1211,7 @@ export const fetchNotifications = async (
   unreadOnly = false,
 ): Promise<NotificationsPage> => {
   const res = await apiClient.get('/notifications', {
-    params: { userId, page, pageSize: 20, unreadOnly: unreadOnly ? true : undefined },
+    params: { page, pageSize: 20, unreadOnly: unreadOnly ? true : undefined },
   });
   const { notifications, unreadCount, pagination } = res.data.data as {
     notifications: BackendNotification[];
@@ -1232,7 +1230,7 @@ export const fetchNotifications = async (
 
 export const fetchUnreadCount = async (userId: string): Promise<number> => {
   const res = await apiClient.get('/notifications', {
-    params: { userId, unreadOnly: true, page: 1, pageSize: 1 },
+    params: { unreadOnly: true, page: 1, pageSize: 1 },
   });
   return res.data.data.unreadCount ?? 0;
 };
@@ -1247,9 +1245,7 @@ export const deleteNotification = async (id: string): Promise<void> => {
 };
 
 export const markAllNotificationsRead = async (userId: string): Promise<number> => {
-  const res = await apiClient.post('/notifications/read-all', null, {
-    params: { userId },
-  });
+  const res = await apiClient.post('/notifications/read-all');
   return res.data.data.updated ?? 0;
 };
 
