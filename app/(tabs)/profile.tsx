@@ -154,7 +154,7 @@ export default function ProfileScreen() {
     syncLocale(newLang);
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     Alert.alert(
       t('profile.logout'),
       t('profile.logoutConfirm'),
@@ -164,8 +164,23 @@ export default function ProfileScreen() {
           text: t('profile.logout'),
           style: 'destructive',
           onPress: async () => {
-            await logout();
-            router.replace('/auth/login');
+            try {
+              console.log('[Logout] Starting logout...');
+              await logout();
+              console.log('[Logout] Cleared storage, navigating to login...');
+              
+              // 强制清除 React Query 缓存
+              queryClient.clear();
+              
+              // 使用 setTimeout 确保状态更新后再跳转
+              setTimeout(() => {
+                router.replace('/auth/login');
+              }, 100);
+            } catch (error) {
+              console.error('[Logout] Error:', error);
+              // 即使出错也跳转到登录页
+              router.replace('/auth/login');
+            }
           },
         },
       ],

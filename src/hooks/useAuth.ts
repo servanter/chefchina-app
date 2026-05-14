@@ -109,8 +109,17 @@ export const useAuth = () => {
   );
 
   const logout = useCallback(async () => {
-    await clearAll();
-    setState({ user: null, isLoading: false, isLoggedIn: false });
+    try {
+      console.log('[useAuth] Logout: clearing storage...');
+      await clearAll();
+      console.log('[useAuth] Logout: updating state...');
+      setState({ user: null, isLoading: false, isLoggedIn: false });
+      console.log('[useAuth] Logout: complete');
+    } catch (error) {
+      console.error('[useAuth] Logout error:', error);
+      // 即使清除失败也要更新状态
+      setState({ user: null, isLoading: false, isLoggedIn: false });
+    }
   }, []);
 
   const updateProfile = useCallback(
