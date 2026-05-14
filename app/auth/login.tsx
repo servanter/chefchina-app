@@ -135,8 +135,14 @@ export default function LoginScreen() {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          {/* Close button */}
-          <TouchableOpacity style={styles.closeBtn} onPress={() => router.back()}>
+          {/* Close button - 修复：跳转到 /profile 而不是 router.back() */}
+          <TouchableOpacity 
+            style={styles.closeBtn} 
+            onPress={() => {
+              console.log('[Login] Close button clicked');
+              router.replace('/profile');
+            }}
+          >
             <Ionicons name="close" size={22} color={COLORS.text} />
           </TouchableOpacity>
 

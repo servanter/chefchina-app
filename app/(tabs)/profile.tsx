@@ -192,8 +192,9 @@ export default function ProfileScreen() {
         queryClient.clear();
         
         // 使用 setTimeout 确保状态更新后再跳转
+        // 跳转到 /profile 而不是 /auth/login，保持在 Profile 页面
         setTimeout(() => {
-          router.replace('/auth/login');
+          router.replace('/profile');
         }, 100);
       } catch (error) {
         console.error('[Logout] Error:', error);
@@ -225,8 +226,8 @@ export default function ProfileScreen() {
                 }, 100);
               } catch (error) {
                 console.error('[Logout] Error:', error);
-                // 即使出错也跳转到登录页
-                router.replace('/auth/login');
+                // 即使出错也停留在 Profile 页面
+                router.replace('/profile');
               }
             },
           },
