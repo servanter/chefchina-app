@@ -244,8 +244,8 @@ export default function RecipeDetailScreen() {
       // ✅ 获取 API 返回值
       const result = await toggleLikeMutation.mutateAsync({ recipeId: recipe.id, userId });
       
-      // ✅ 使用后端返回的准确值
-      setLikesCount(result.count);
+      // ✅ 使用后端返回的准确值（API 返回的字段是 likes_count）
+      setLikesCount(result.likes_count);
       setLiked(result.liked);
       
       Toast.show({
