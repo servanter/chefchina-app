@@ -169,7 +169,18 @@ export default function RecipeDetailScreen() {
   const commentsError = error;
   const commentsTotal = comments.length;
   const relatedRecipes = detailData?.related ?? [];
-  const commentLikeStatusMap = detailData?.commentLikeStatus ?? {}; // 从 detail-full 获取
+  
+  // 本地维护评论点赞状态（从 detail-full 初始化）
+  const [localCommentLikeStatus, setLocalCommentLikeStatus] = useState<Record<string, boolean>>({});
+  
+  // 初始化或更新本地点赞状态
+  useEffect(() => {
+    if (detailData?.commentLikeStatus) {
+      setLocalCommentLikeStatus(detailData.commentLikeStatus);
+    }
+  }, [detailData?.commentLikeStatus]);
+  
+  const commentLikeStatusMap = localCommentLikeStatus;
 
   useEffect(() => {
     if (!recipe?.id) return;
@@ -630,20 +641,40 @@ export default function RecipeDetailScreen() {
 
   const { mutate: toggleCommentLike } = useToggleCommentLike();
 
-  const handleCommentLike = useCallback((commentId: string) => {
+  const handleCommentLike = useCallback(async (commentId: string) => {
     if (userId === 'guest') {
       Toast.show({ type: 'error', text1: t('social.loginRequired') || t('report.loginRequired') });
       return;
     }
-    toggleCommentLike({ commentId }, {
-      onSuccess: () => {
-        triggerHaptic('light');
-      },
-      onError: () => {
-        Toast.show({ type: 'error', text1: t('common.error') });
-      },
-    });
-  }, [userId, toggleCommentLike, t]);
+    
+    const prevStatus = localCommentLikeStatus[commentId] || false;
+    
+    // 乐观更新
+    setLocalCommentLikeStatus(prev => ({
+      ...prev,
+      [commentId]: !prevStatus
+    }));
+    
+    try {
+      const result = await toggleCommentLike.mutateAsync({ commentId });
+      
+      // 使用 API 返回的准确值
+      setLocalCommentLikeStatus(prev => ({
+        ...prev,
+        [commentId]: result.liked
+      }));
+      
+      triggerHaptic('light');
+    } catch (error) {
+      // 失败回滚
+      setLocalCommentLikeStatus(prev => ({
+        ...prev,
+        [commentId]: prevStatus
+      }));
+      
+      Toast.show({ type: 'error', text1: t('common.error') });
+    }
+  }, [userId, toggleCommentLike, t, localCommentLikeStatus]);
 
   // ─── Report handlers (需求 4) ─────────────────────────────────
   const handleReportRecipe = useCallback(() => {
