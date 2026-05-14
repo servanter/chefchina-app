@@ -128,14 +128,18 @@ export default function RecipeDetailScreen() {
   const [showQuotaPrompt, setShowQuotaPrompt] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false); // 独立的 loading 状态
   
-  // AI 配额查询
-  const { data: quotaData, refetch: refetchQuota } = useAIQuota();
+  // AI 配额查询（仅登录用户）
+  const { data: quotaData, refetch: refetchQuota } = useAIQuota({
+    enabled: userId !== 'guest'
+  });
   
   // AI 分析 mutation
   const analyzeRecipeMutation = useAnalyzeRecipe();
 
-  // 购物车相关
-  const { data: shoppingListData } = useShoppingList();
+  // 购物车相关（仅登录用户）
+  const { data: shoppingListData } = useShoppingList({
+    enabled: userId !== 'guest'
+  });
   const addShoppingItemMutation = useAddShoppingListItem();
   const [isAddingToCart, setIsAddingToCart] = useState(false);
 
