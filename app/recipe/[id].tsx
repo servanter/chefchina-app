@@ -91,6 +91,7 @@ export default function RecipeDetailScreen() {
   const userName = user?.name ?? null;
   
   const [liked, setLiked] = useState(false);
+  const [likesCount, setLikesCount] = useState(0);
   const { scale: likeScale, bounce: likeBounce } = useBounce();
   const { scale: favScale, bounce: favBounce } = useBounce();
   const [favorited, setFavorited] = useState(false);
@@ -204,20 +205,26 @@ export default function RecipeDetailScreen() {
       ]);
       return;
     }
+    
     const nextLiked = !liked;
+    
+    // 乐观更新
     setLiked(nextLiked);
+    setLikesCount(prev => nextLiked ? prev + 1 : prev - 1);
+    triggerHaptic(nextLiked ? 'success' : 'light');
+    likeBounce();
+    
     try {
       await toggleLikeMutation.mutateAsync({ recipeId: recipe.id, userId });
-      triggerHaptic(nextLiked ? 'success' : 'light');
-      likeBounce();
-      // 不需要手动 refetch，mutation 的 onSuccess 会自动 invalidate
       Toast.show({
         type: 'success',
         text1: nextLiked ? t('recipe.likeSuccess') : t('recipe.unlikeSuccess'),
         visibilityTime: 1500,
       });
-    } catch {
-      setLiked((prev) => !prev); // revert
+    } catch (error) {
+      // 失败回滚
+      setLiked(!nextLiked);
+      setLikesCount(prev => nextLiked ? prev - 1 : prev + 1);
       triggerHaptic('error');
       Toast.show({
         type: 'error',
@@ -225,7 +232,7 @@ export default function RecipeDetailScreen() {
         visibilityTime: 2000,
       });
     }
-  }, [recipe?.id, liked, userId, t, toggleLikeMutation, router, likeBounce]);
+  }, [recipe, liked, userId, t, toggleLikeMutation, router, likeBounce]);
 
   const handleFavorite = useCallback(async () => {
     if (!recipe) return;
@@ -236,20 +243,24 @@ export default function RecipeDetailScreen() {
       ]);
       return;
     }
+    
     const nextFavorited = !favorited;
+    
+    // 乐观更新
     setFavorited(nextFavorited);
+    triggerHaptic(nextFavorited ? 'success' : 'light');
+    favBounce();
+    
     try {
       await toggleFavoriteMutation.mutateAsync({ recipeId: recipe.id, userId });
-      triggerHaptic(nextFavorited ? 'success' : 'light');
-      favBounce();
-      // 不需要手动 refetch，mutation 的 onSuccess 会自动 invalidate
       Toast.show({
         type: 'success',
         text1: nextFavorited ? t('recipe.favoriteSuccess') : t('recipe.unfavoriteSuccess'),
         visibilityTime: 1500,
       });
-    } catch {
-      setFavorited((prev) => !prev);
+    } catch (error) {
+      // 失败回滚
+      setFavorited(!nextFavorited);
       triggerHaptic('error');
       Toast.show({
         type: 'error',
@@ -257,7 +268,7 @@ export default function RecipeDetailScreen() {
         visibilityTime: 2000,
       });
     }
-  }, [recipe?.id, favorited, userId, t, toggleFavoriteMutation, router, favBounce]);
+  }, [recipe, favorited, userId, t, toggleFavoriteMutation, router, favBounce]);
 
   const handlePostComment = useCallback(async () => {
     if (userId === 'guest') {
@@ -421,13 +432,14 @@ export default function RecipeDetailScreen() {
     setReportVisible(true);
   }, [userId, t]);
 
-  // 监听 detailData 变化，更新 liked 和 favorited 状态
+  // 监听 detailData 变化，初始化 liked、favorited、likesCount 状态
   // FIX: 使用具体的值作为依赖，避免对象引用变化导致无限循环
   useEffect(() => {
-    if (!detailData?.userStatus) return;
+    if (!detailData?.userStatus || !detailData?.recipe) return;
     setLiked(detailData.userStatus.liked);
     setFavorited(detailData.userStatus.favorited);
-  }, [detailData?.userStatus?.liked, detailData?.userStatus?.favorited]);
+    setLikesCount(detailData.recipe.likes_count);
+  }, [detailData?.userStatus?.liked, detailData?.userStatus?.favorited, detailData?.recipe?.likes_count]);
 
   const isAuthor = userId !== 'guest' && !!recipe && userId === (detailData as any)?.recipe?.author?.id;
 
@@ -828,7 +840,7 @@ export default function RecipeDetailScreen() {
             <View style={styles.actionRow}>
               <AnimatedLikeButton
                 liked={liked}
-                label={`${t('recipe.likes')} · ${recipe.likes_count}`}
+                label={`${t('recipe.likes')} · ${likesCount}`}
                 onPress={handleLike}
                 tintColor={COLORS.primary}
                 size={18}
