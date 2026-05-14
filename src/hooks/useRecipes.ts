@@ -346,17 +346,9 @@ export const useTagRecipes = (tagId: string) => {
 };
 
 export const useToggleFavorite = () => {
-  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ recipeId, userId }: { recipeId: string; userId: string }) =>
       toggleFavorite(recipeId, userId),
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['favorites', variables.userId] });
-      queryClient.invalidateQueries({ queryKey: ['favorites', 'infinite', variables.userId] });
-      queryClient.invalidateQueries({
-        queryKey: ['favorites', 'infinite', 'cursor', variables.userId],
-      });
-    },
   });
 };
 

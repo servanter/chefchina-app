@@ -240,6 +240,10 @@ export default function RecipeDetailScreen() {
     
     try {
       await toggleLikeMutation.mutateAsync({ recipeId: recipe.id, userId });
+      
+      // ✅ 手动刷新详情页数据（从后端 Redis 获取最新数据）
+      await refetchRecipeDetail();
+      
       Toast.show({
         type: 'success',
         text1: nextLiked ? t('recipe.likeSuccess') : t('recipe.unlikeSuccess'),
@@ -292,6 +296,10 @@ export default function RecipeDetailScreen() {
     
     try {
       await toggleFavoriteMutation.mutateAsync({ recipeId: recipe.id, userId });
+      
+      // ✅ 手动刷新详情页数据（从后端 Redis 获取最新数据）
+      await refetchRecipeDetail();
+      
       Toast.show({
         type: 'success',
         text1: nextFavorited ? t('recipe.favoriteSuccess') : t('recipe.unfavoriteSuccess'),
