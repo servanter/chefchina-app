@@ -9,13 +9,9 @@ import {
 
 // 评论点赞 toggle
 export const useToggleCommentLike = () => {
-  const queryClient = useQueryClient();
   return useMutation<{ liked: boolean; likesCount: number }, Error, { commentId: string }>({
     mutationFn: ({ commentId }) => toggleCommentLike(commentId),
-    onSuccess: (_, { commentId }) => {
-      queryClient.invalidateQueries({ queryKey: ['comments'] });
-      queryClient.invalidateQueries({ queryKey: ['comment-like-status', commentId] });
-    },
+    // ✅ 不使用 queryClient，由前端状态管理
   });
 };
 
