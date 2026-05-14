@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -115,6 +115,7 @@ export default function ProfileScreen() {
   const isZh = i18n.language === 'zh';
   const [langToggle, setLangToggle] = useState(isZh);
   const [refreshing, setRefreshing] = useState(false);
+  const scrollViewRef = useRef<ScrollView>(null);
 
   // Achievements data
   const { data: userBadges } = useUserBadges(user?.id);
@@ -195,6 +196,8 @@ export default function ProfileScreen() {
         // 跳转到 /profile 而不是 /auth/login，保持在 Profile 页面
         setTimeout(() => {
           router.replace('/profile');
+          // 滚动到顶部，让用户看到登录提示
+          scrollViewRef.current?.scrollTo({ y: 0, animated: true });
         }, 100);
       } catch (error) {
         console.error('[Logout] Error:', error);
@@ -223,6 +226,8 @@ export default function ProfileScreen() {
                 // 使用 setTimeout 确保状态更新后再跳转
                 setTimeout(() => {
                   router.replace('/auth/login');
+                  // 滚动到顶部
+                  scrollViewRef.current?.scrollTo({ y: 0, animated: true });
                 }, 100);
               } catch (error) {
                 console.error('[Logout] Error:', error);
@@ -246,6 +251,7 @@ export default function ProfileScreen() {
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.safeAreaBg }]} edges={['top']}>
       <ScrollView
+        ref={scrollViewRef}
         style={{ backgroundColor: colors.bg }}
         showsVerticalScrollIndicator={false}
         refreshControl={

@@ -7,10 +7,11 @@ import { fetchAIQuota, analyzeRecipeForUser, AIQuotaInfo, AIAnalysisResult } fro
 /**
  * 获取 AI 配额信息
  */
-export const useAIQuota = () => {
+export const useAIQuota = (options?: { enabled?: boolean }) => {
   return useQuery<AIQuotaInfo>({
     queryKey: ['ai', 'quota'],
     queryFn: fetchAIQuota,
+    enabled: options?.enabled !== false, // 默认启用，除非明确设置为 false
     staleTime: 1000 * 60 * 5, // 5 分钟内认为数据新鲜
     gcTime: 1000 * 60 * 10, // 10 分钟缓存
   });

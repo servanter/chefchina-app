@@ -17,10 +17,11 @@ import {
 /**
  * 获取购物清单
  */
-export function useShoppingList() {
+export function useShoppingList(options?: { enabled?: boolean }) {
   return useQuery<ShoppingListData>({
     queryKey: ['shopping-list'],
     queryFn: () => fetchShoppingList(),
+    enabled: options?.enabled !== false, // 默认启用，除非明确设置为 false
   });
 }
 
