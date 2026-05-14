@@ -1409,6 +1409,7 @@ export default function RecipeDetailScreen() {
                       onPress={handlePostComment}
                       disabled={!commentText.trim() || (!replyingTo && !editingComment && userRating === 0)}
                     >
+                      <Ionicons name="send" size={16} color="#FFF" />
                       <Text style={styles.postBtnText}>{editingComment ? (isZh ? '保存修改' : 'Save') : t('recipe.postComment')}</Text>
                     </TouchableOpacity>
                   </View>
@@ -1965,18 +1966,23 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   postBtn: {
-    backgroundColor: COLORS.primary,
-    borderRadius: 10,
-    paddingVertical: 10,
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    backgroundColor: COLORS.primary,
+    borderRadius: 20,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
   },
   postBtnDisabled: {
-    backgroundColor: '#E0DDD8',
+    backgroundColor: '#CCC',
+    opacity: 0.5,
   },
   postBtnText: {
     color: '#FFF',
-    fontSize: 14,
-    fontWeight: '700',
+    fontSize: 15,
+    fontWeight: '600',
   },
   replyingBox: {
     flexDirection: 'row',

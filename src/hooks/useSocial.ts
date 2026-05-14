@@ -13,8 +13,12 @@ export const useToggleCommentLike = () => {
   return useMutation<{ liked: boolean; likesCount: number }, Error, { commentId: string }>({
     mutationFn: ({ commentId }) => toggleCommentLike(commentId),
     onSuccess: (_, { commentId }) => {
+      // 刷新评论列表
       queryClient.invalidateQueries({ queryKey: ['comments'] });
+      // 刷新评论点赞状态
       queryClient.invalidateQueries({ queryKey: ['comment-like-status', commentId] });
+      // ✅ 刷新菜谱详情页（包含评论点赞状态）
+      queryClient.invalidateQueries({ queryKey: ['recipe-detail-full'] });
     },
   });
 };
