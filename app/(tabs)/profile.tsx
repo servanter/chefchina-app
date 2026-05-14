@@ -65,10 +65,21 @@ interface MenuRowProps {
 const MenuRow = ({ icon, label, onPress, trailing, destructive }: MenuRowProps) => {
   const { colors } = useTheme();
   const { scaled } = useFontScale();
+  
+  const handlePress = () => {
+    console.log(`[MenuRow] Clicked: ${label}`);
+    if (onPress) {
+      console.log(`[MenuRow] Calling onPress for: ${label}`);
+      onPress();
+    } else {
+      console.log(`[MenuRow] No onPress handler for: ${label}`);
+    }
+  };
+  
   return (
     <TouchableOpacity
       style={[styles.menuRow, { borderBottomColor: colors.border }]}
-      onPress={onPress}
+      onPress={handlePress}
       activeOpacity={0.7}
     >
       <View style={styles.menuLeft}>
@@ -155,6 +166,7 @@ export default function ProfileScreen() {
   };
 
   const handleLogout = async () => {
+    console.log('[handleLogout] Function called!');
     Alert.alert(
       t('profile.logout'),
       t('profile.logoutConfirm'),
