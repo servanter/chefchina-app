@@ -61,8 +61,10 @@ apiClient.interceptors.request.use(
       url.startsWith('/health') ||
       url.startsWith('/ai') ||  // AI 功能需要认证
       url.startsWith('/shopping-list') ||  // 智能购物清单需要认证
-      url.includes('/push-token') ||
-      url.includes('/recipes/mine');
+      url.startsWith('/recipes/') ||  // 菜谱详情、创建、编辑等需要认证
+      url.startsWith('/home/') ||  // 首页初始化需要认证
+      url.startsWith('/recommend') ||  // 推荐需要认证
+      url.includes('/push-token');
     if (needsAuth) {
       try {
         const token = await getAuthToken();
