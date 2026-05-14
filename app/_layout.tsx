@@ -18,9 +18,15 @@ const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       // 网络错误不在 React Query 层重试（axios 拦截器已负责 2 次重试）；
+      // 401 未认证错误不重试（需要用户登录）；
       // 其他错误最多重试 2 次。
       retry: (failureCount, error) => {
+        // 网络错误不重试
         if (isNetworkError(error)) return false;
+        // 401 未认证错误不重试
+        const axiosError = error as any;
+        if (axiosError?.response?.status === 401) return false;
+        // 其他错误最多重试 2 次
         return failureCount < 2;
       },
       staleTime: 1000 * 60 * 5,
