@@ -167,36 +167,72 @@ export default function ProfileScreen() {
 
   const handleLogout = async () => {
     console.log('[handleLogout] Function called!');
-    Alert.alert(
-      t('profile.logout'),
-      t('profile.logoutConfirm'),
-      [
-        { text: t('common.cancel'), style: 'cancel' },
-        {
-          text: t('profile.logout'),
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              console.log('[Logout] Starting logout...');
-              await logout();
-              console.log('[Logout] Cleared storage, navigating to login...');
-              
-              // 强制清除 React Query 缓存
-              queryClient.clear();
-              
-              // 使用 setTimeout 确保状态更新后再跳转
-              setTimeout(() => {
+    
+    // Web 端使用 window.confirm，移动端使用 Alert.alert
+    const isWeb = typeof window !== 'undefined' && window.confirm;
+    
+    if (isWeb) {
+      // Web 端：使用原生 confirm 对话框
+      const confirmed = window.confirm(
+        `${t('profile.logout')}\n\n${t('profile.logoutConfirm')}`
+      );
+      
+      if (!confirmed) {
+        console.log('[Logout] Cancelled by user');
+        return;
+      }
+      
+      // 确认后执行退出
+      try {
+        console.log('[Logout] Starting logout...');
+        await logout();
+        console.log('[Logout] Cleared storage, navigating to login...');
+        
+        // 强制清除 React Query 缓存
+        queryClient.clear();
+        
+        // 使用 setTimeout 确保状态更新后再跳转
+        setTimeout(() => {
+          router.replace('/auth/login');
+        }, 100);
+      } catch (error) {
+        console.error('[Logout] Error:', error);
+        // 即使出错也跳转到登录页
+        router.replace('/auth/login');
+      }
+    } else {
+      // 移动端：使用 Alert.alert
+      Alert.alert(
+        t('profile.logout'),
+        t('profile.logoutConfirm'),
+        [
+          { text: t('common.cancel'), style: 'cancel' },
+          {
+            text: t('profile.logout'),
+            style: 'destructive',
+            onPress: async () => {
+              try {
+                console.log('[Logout] Starting logout...');
+                await logout();
+                console.log('[Logout] Cleared storage, navigating to login...');
+                
+                // 强制清除 React Query 缓存
+                queryClient.clear();
+                
+                // 使用 setTimeout 确保状态更新后再跳转
+                setTimeout(() => {
+                  router.replace('/auth/login');
+                }, 100);
+              } catch (error) {
+                console.error('[Logout] Error:', error);
+                // 即使出错也跳转到登录页
                 router.replace('/auth/login');
-              }, 100);
-            } catch (error) {
-              console.error('[Logout] Error:', error);
-              // 即使出错也跳转到登录页
-              router.replace('/auth/login');
-            }
+              }
+            },
           },
-        },
-      ],
-    );
+        ],
+      );
+    }
   };
 
   const avatarUri =
