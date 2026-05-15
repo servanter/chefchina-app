@@ -16,12 +16,15 @@ import {
 
 /**
  * 获取购物清单
+ * - retry: false  —— 401 未登录时不重试，直接失败
+ * - enabled 需要 isLoggedIn=true，未登录不发请求
  */
 export function useShoppingList(options?: { enabled?: boolean }) {
   return useQuery<ShoppingListData>({
     queryKey: ['shopping-list'],
     queryFn: () => fetchShoppingList(),
-    enabled: options?.enabled !== false, // 默认启用，除非明确设置为 false
+    enabled: options?.enabled !== false,
+    retry: false, // 401/网络错误不重试，避免未登录时重复请求
   });
 }
 

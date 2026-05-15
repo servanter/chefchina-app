@@ -874,7 +874,7 @@ export default function RecipeDetailScreen() {
                 color={sharing ? '#AAA' : COLORS.text}
               />
             </TouchableOpacity>
-            <TouchableOpacity style={[styles.backBtn, { backgroundColor: themeColors.inputBg }]} onPress={handleFavorite}>
+            <TouchableOpacity style={[styles.backBtn, { backgroundColor: themeColors.inputBg }]} onPress={handleFavorite} disabled={authLoading}>
               <Animated.View style={{ transform: [{ scale: favScale }] }}>
               <Ionicons
                 name={favorited ? 'bookmark' : 'bookmark-outline'}
@@ -1115,6 +1115,7 @@ export default function RecipeDetailScreen() {
                 liked={liked}
                 label={`${t('recipe.likes')} · ${likesCount}`}
                 onPress={handleLike}
+                disabled={authLoading}
                 tintColor={COLORS.primary}
                 size={18}
                 style={[styles.actionBtn, { backgroundColor: COLORS.cardBg }]}
@@ -1127,6 +1128,7 @@ export default function RecipeDetailScreen() {
                 favorited={favorited}
                 label={favorited ? t('recipe.favoritedLabel') : t('recipe.favoriteLabel')}
                 onPress={handleFavorite}
+                disabled={authLoading}
                 tintColor={COLORS.primary}
                 size={18}
                 style={[styles.actionBtn, { backgroundColor: COLORS.cardBg }]}
