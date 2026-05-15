@@ -87,10 +87,14 @@ apiClient.interceptors.response.use(
     const config = error.config as RetriableConfig | undefined;
 
     // 仅对幂等 GET 请求做自动重试；写操作绝不重试（防重复提交）
+    // 401/403 认证错误不重试——未登录就直接返回，不要浪费请求
     const method = (config?.method ?? 'get').toLowerCase();
+    const status = error?.response?.status;
+    const isAuthError = status === 401 || status === 403;
     const shouldRetry =
       config &&
       method === 'get' &&
+      !isAuthError &&
       (isNetworkError(error) || isServerError(error));
 
     if (shouldRetry) {
