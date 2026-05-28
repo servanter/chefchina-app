@@ -48,7 +48,7 @@ export const SearchPanel: React.FC<SearchPanelProps> = ({ onSelectKeyword, onCle
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <View style={[styles.container, { backgroundColor: colors.bg }]}>
       {/* 热门搜索 */}
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
@@ -58,13 +58,13 @@ export const SearchPanel: React.FC<SearchPanelProps> = ({ onSelectKeyword, onCle
         </View>
 
         {isLoading ? (
-          <ActivityIndicator size="small" color={colors.primary} style={styles.loader} />
+          <ActivityIndicator size="small" color={colors.tint} style={styles.loader} />
         ) : (
           <View style={styles.chipContainer}>
             {trendingData?.trending.map((item, index) => (
               <TouchableOpacity
                 key={index}
-                style={[styles.chip, { backgroundColor: colors.cardBg, borderColor: colors.border }]}
+                style={[styles.chip, { backgroundColor: colors.inputBg, borderColor: colors.border }]}
                 onPress={() => onSelectKeyword(item.keyword)}
               >
                 <Text style={[styles.chipText, { color: colors.text }]}>

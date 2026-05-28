@@ -20,10 +20,15 @@ interface MealLoggerProps {
 }
 
 interface Recipe {
-  id: number
+  id: number | string
   title: string
+  titleEn?: string
+  titleZh?: string
   calories?: number
   protein?: number
+  fat?: number
+  carbs?: number
+  coverImage?: string
 }
 
 type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack'
@@ -93,7 +98,7 @@ export default function MealLogger({ visible, onClose, onSuccess }: MealLoggerPr
       setSubmitting(true)
 
       await healthAPI.logIntake({
-        recipeId: selectedRecipe.id,
+        recipeId: Number(selectedRecipe.id),
         mealType,
         servings,
       })

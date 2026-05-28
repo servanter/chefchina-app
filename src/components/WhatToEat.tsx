@@ -10,7 +10,6 @@ import {
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { fetchRandomRecipe, Recipe } from '../lib/api';
 import { LazyImage } from './LazyImage';
 import { useShakeDetection } from '../hooks/useShakeDetection';
@@ -26,7 +25,6 @@ export const WhatToEatButton: React.FC<WhatToEatProps> = ({
 }) => {
   const { t, i18n } = useTranslation();
   const router = useRouter();
-  const queryClient = useQueryClient();
   const isZh = i18n.language === 'zh';
   const { colors } = useTheme();
 

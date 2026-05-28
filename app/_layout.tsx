@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { View, ActivityIndicator, Platform, StyleSheet } from 'react-native';
 import { Stack } from 'expo-router';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { I18nextProvider } from 'react-i18next';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -10,29 +9,8 @@ import Toast, { BaseToast, BaseToastProps } from 'react-native-toast-message';
 import { initI18n } from '../src/lib/i18n';
 import i18n from '../src/lib/i18n';
 import { getOnboardingDone } from '../src/lib/storage';
-import { isNetworkError } from '../src/lib/api';
 import { OfflineBanner } from '../src/components/OfflineBanner';
 import { ThemeProvider, useTheme } from '../src/contexts/ThemeContext';
-
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      // 网络错误不在 React Query 层重试（axios 拦截器已负责 2 次重试）；
-      // 401 未认证错误不重试（需要用户登录）；
-      // 其他错误最多重试 2 次。
-      retry: (failureCount, error) => {
-        // 网络错误不重试
-        if (isNetworkError(error)) return false;
-        // 401 未认证错误不重试
-        const axiosError = error as any;
-        if (axiosError?.response?.status === 401) return false;
-        // 其他错误最多重试 2 次
-        return failureCount < 2;
-      },
-      staleTime: 1000 * 60 * 5,
-    },
-  },
-});
 
 function AppNavigator() {
   const [checked, setChecked] = useState(false);
@@ -189,11 +167,9 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: Platform.OS === 'web' ? '#E8E0D8' : '#FFFDF9' }}>
       <SafeAreaProvider>
         <ThemeProvider>
-          <QueryClientProvider client={queryClient}>
             <I18nextProvider i18n={i18n}>
               <ThemedShell />
             </I18nextProvider>
-          </QueryClientProvider>
         </ThemeProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>

@@ -25,7 +25,6 @@ import { useSearchTrending } from '@/hooks/useSearchTrending';
 import { useRecipeSearch } from '@/hooks/useRecipeSearch';
 import { DIFFICULTIES } from '../../src/lib/mockData';
 import { logSearch, fetchRecipeTrending, TrendingItem } from '../../src/lib/api';
-import { useQuery } from '@tanstack/react-query';
 import {
   getSearchHistory,
   saveSearchHistory,
@@ -91,13 +90,11 @@ export default function ExploreScreen() {
   const [history, setHistory] = useState<string[]>([]);
   const [trendingWindow, setTrendingWindow] = useState<'24h' | '7d'>('24h');
   const { data: trending = [] } = useSearchTrending(trendingWindow);
-  // 空态兜底 chips 改用新接口 /api/search/trending（SQL + Redis 5min），
-  // 与搜索面板的 Redis 实时榜并存做对比。
-  const { data: trendingV2 = [] } = useQuery<TrendingItem[]>({
-    queryKey: ['recipe-trending-v2'],
-    queryFn: fetchRecipeTrending,
-    staleTime: 1000 * 60 * 5,
-  });
+  // 空态兜底 chips 改用新接口 /api/search/trending（SQL + Redis 5min）
+  const [trendingV2, setTrendingV2] = useState<TrendingItem[]>([]);
+  useEffect(() => {
+    fetchRecipeTrending().then(setTrendingV2).catch(() => {});
+  }, []);
   const inputRef = useRef<TextInput>(null);
 
   // 挂载时读取本地历史
@@ -143,8 +140,10 @@ export default function ExploreScreen() {
   } = activeQuery;
   const data = activeQuery.data;
 
-  const { data: categories = [] } = useCategories();
-  const { data: tags = [] } = useTags();
+  const { data: categoriesData } = useCategories();
+  const { data: tagsData } = useTags();
+  const categories = categoriesData ?? [];
+  const tags = tagsData ?? [];
 
   useEffect(() => {
     if (params.category) setSelectedCategory(params.category);

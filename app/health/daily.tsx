@@ -12,33 +12,13 @@ import { router } from 'expo-router'
 import { useTranslation } from 'react-i18next'
 import { Ionicons } from '@expo/vector-icons'
 import Svg, { Circle, Text as SvgText } from 'react-native-svg'
-import { healthAPI } from '@/lib/api'
+import { healthAPI, type IntakeRecord } from '@/lib/api'
 import MealLogger from '@/components/MealLogger'
 
 interface NutritionProgress {
   calories: { current: number; target: number }
   protein: { current: number; target: number }
   sodium: { current: number; target: number }
-}
-
-interface IntakeRecord {
-  id: number
-  mealType: string
-  servings: number
-  calories: number
-  protein: number
-  fat: number
-  carbs: number
-  fiber?: number | null
-  sodium?: number | null
-  sugar?: number | null
-  recipe: {
-    id: string
-    titleEn: string
-    titleZh: string
-    coverImage?: string | null
-  }
-  createdAt: string
 }
 
 export default function DailyNutritionScreen() {
@@ -63,24 +43,11 @@ export default function DailyNutritionScreen() {
     try {
       const data = await healthAPI.getDailyNutrition()
       
-      // 适配后端返回的数据结构
-      if (data.goal && data.current) {
-        setNutrition({
-          calories: { 
-            current: data.current.calories, 
-            target: data.goal.calories 
-          },
-          protein: { 
-            current: data.current.protein, 
-            target: data.goal.protein 
-          },
-          sodium: { 
-            current: data.current.sodium || 0, 
-            target: data.goal.sodium || 2300 
-          },
-        })
-        setIntakes(data.meals || [])  // ✅ 使用 meals 字段
+      // 直接使用 API 返回的 nutrition 结构
+      if (data.nutrition) {
+        setNutrition(data.nutrition)
       }
+      setIntakes(data.intakes || [])
     } catch (error) {
       console.error('Failed to load nutrition data:', error)
     } finally {
@@ -173,7 +140,7 @@ export default function DailyNutritionScreen() {
               <View key={intake.id} style={styles.intakeItem}>
                 <View style={styles.intakeHeader}>
                   <Text style={styles.recipeName}>
-                    {intake.recipe.titleZh || intake.recipe.titleEn}
+                    {intake.recipeName}
                   </Text>
                   <Text style={styles.mealType}>{getMealTypeLabel(intake.mealType)}</Text>
                 </View>

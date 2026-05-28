@@ -57,8 +57,8 @@ export default function TagDetailPage() {
         onEndReachedThreshold={0.5}
         ListFooterComponent={
           <ListFooter
-            hasMore={!!query.hasNextPage}
-            isLoadingMore={query.isFetchingNextPage}
+            hasNextPage={!!query.hasNextPage}
+            isFetchingNextPage={query.isFetchingNextPage}
             error={query.error}
             onRetry={() => query.fetchNextPage()}
           />

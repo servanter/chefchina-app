@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from '@tanstack/react-query';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import {
   fetchRecipes,
   fetchRecipeById,
@@ -46,32 +46,48 @@ export const useRecipes = (params?: {
   sort?: 'recommended' | 'latest' | 'popular';
   tagId?: string;
 }) => {
-  return useQuery({
-    queryKey: ['recipes', params],
-    queryFn: async () => {
+  const [data, setData] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+
+  const load = useCallback(async () => {
+    setIsLoading(true);
+    try {
       if (USE_MOCK) {
-        let data = [...MOCK_RECIPES];
+        let d = [...MOCK_RECIPES];
         if (params?.category && params.category !== 'all') {
-          data = data.filter((r) => r.category === params.category);
+          d = d.filter((r) => r.category === params.category);
         }
         if (params?.difficulty && params.difficulty !== 'all') {
-          data = data.filter((r) => r.difficulty === params.difficulty);
+          d = d.filter((r) => r.difficulty === params.difficulty);
         }
         if (params?.search) {
           const q = params.search.toLowerCase();
-          data = data.filter(
+          d = d.filter(
             (r) =>
               r.title.toLowerCase().includes(q) ||
               r.title_zh.includes(q) ||
               r.description.toLowerCase().includes(q),
           );
         }
-        return { data, page: 1, limit: 20, total: data.length, hasMore: false };
+        setData({ data: d, page: 1, limit: 20, total: d.length, hasMore: false });
+      } else {
+        const result = await fetchRecipes(params);
+        setData(result);
       }
-      return fetchRecipes(params);
-    },
-    staleTime: 1000 * 60 * 5,
-  });
+      setError(null);
+    } catch (e) {
+      setError(e as Error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [JSON.stringify(params)]);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  return { data, isLoading, error, refetch: load };
 };
 
 export const useInfiniteRecipes = (params?: {
@@ -81,350 +97,576 @@ export const useInfiniteRecipes = (params?: {
   sort?: 'recommended' | 'latest' | 'popular';
   tagId?: string;
 }) => {
-  return useInfiniteQuery({
-    queryKey: ['recipes', 'infinite', params],
-    queryFn: async ({ pageParam = 1 }) => {
-      if (USE_MOCK) {
-        let data = [...MOCK_RECIPES];
-        if (params?.category && params.category !== 'all') {
-          data = data.filter((r) => r.category === params.category);
-        }
-        if (params?.difficulty && params.difficulty !== 'all') {
-          data = data.filter((r) => r.difficulty === params.difficulty);
-        }
-        if (params?.search) {
-          const q = params.search.toLowerCase();
-          data = data.filter(
-            (r) =>
-              r.title.toLowerCase().includes(q) ||
-              r.title_zh.includes(q),
-          );
-        }
-        return {
-          data,
-          pagination: { page: pageParam as number, pageSize: PAGE_SIZE, total: data.length, totalPages: 1 },
-          page: pageParam as number,
-          limit: PAGE_SIZE,
-          total: data.length,
-          hasMore: false,
-        };
+  const [pages, setPages] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isFetchingNextPage, setIsFetchingNextPage] = useState(false);
+  const [hasNextPage, setHasNextPage] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+  const pageRef = useRef(0);
+  const paramsKey = JSON.stringify(params);
+
+  const load = useCallback(
+    async (reset: boolean) => {
+      const nextPage = reset ? 1 : pageRef.current + 1;
+      if (reset) {
+        setIsLoading(true);
+        setPages([]);
+        pageRef.current = 0;
+      } else {
+        if (!hasNextPage || isFetchingNextPage) return;
+        setIsFetchingNextPage(true);
       }
-      return fetchRecipes({ ...params, page: pageParam as number, pageSize: PAGE_SIZE });
+      try {
+        let page: any;
+        if (USE_MOCK) {
+          let d = [...MOCK_RECIPES];
+          if (params?.category && params.category !== 'all')
+            d = d.filter((r) => r.category === params.category);
+          if (params?.difficulty && params.difficulty !== 'all')
+            d = d.filter((r) => r.difficulty === params.difficulty);
+          if (params?.search) {
+            const q = params.search.toLowerCase();
+            d = d.filter((r) => r.title.toLowerCase().includes(q) || r.title_zh.includes(q));
+          }
+          page = {
+            data: d,
+            pagination: { page: nextPage, pageSize: PAGE_SIZE, total: d.length, totalPages: 1 },
+          };
+        } else {
+          page = await fetchRecipes({ ...params, page: nextPage, pageSize: PAGE_SIZE });
+        }
+        pageRef.current = nextPage;
+        setPages((prev) => (reset ? [page] : [...prev, page]));
+        setHasNextPage(page.pagination.page < page.pagination.totalPages);
+        setError(null);
+      } catch (e) {
+        setError(e as Error);
+      } finally {
+        setIsLoading(false);
+        setIsFetchingNextPage(false);
+      }
     },
-    initialPageParam: 1,
-    getNextPageParam: (lastPage) =>
-      lastPage.pagination.page < lastPage.pagination.totalPages
-        ? lastPage.pagination.page + 1
-        : undefined,
-    staleTime: 1000 * 60 * 5,
-  });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [paramsKey],
+  );
+
+  useEffect(() => {
+    load(true);
+  }, [paramsKey]);
+
+  const refetch = useCallback(() => load(true), [load]);
+  const fetchNextPage = useCallback(() => load(false), [load]);
+  const data = pages.length > 0 ? { pages } : undefined;
+
+  return { data, isLoading, isFetchingNextPage, hasNextPage, error, refetch, fetchNextPage };
 };
 
 export const useFeaturedRecipes = () => {
-  return useQuery({
-    queryKey: ['recipes', 'featured'],
-    queryFn: async () => {
-      if (USE_MOCK) return MOCK_RECIPES.slice(0, 3);
-      return fetchFeaturedRecipes();
-    },
-    staleTime: 1000 * 60 * 10,
-  });
+  const [data, setData] = useState<Recipe[] | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+
+  const load = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      if (USE_MOCK) setData(MOCK_RECIPES.slice(0, 3));
+      else setData(await fetchFeaturedRecipes());
+      setError(null);
+    } catch (e) {
+      setError(e as Error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  return { data, isLoading, error, refetch: load };
 };
 
 export const useRecipeById = (id: string) => {
-  return useQuery({
-    queryKey: ['recipe', id],
-    queryFn: async () => {
+  const [data, setData] = useState<Recipe | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+
+  const load = useCallback(async () => {
+    if (!id) return;
+    setIsLoading(true);
+    try {
       if (USE_MOCK) {
         const found = MOCK_RECIPES.find((r) => r.id === id);
         if (!found) throw new Error('Recipe not found');
-        return found;
+        setData(found);
+      } else {
+        setData(await fetchRecipeById(id));
       }
-      return fetchRecipeById(id);
-    },
-    enabled: !!id,
-    staleTime: 1000 * 60 * 5,
-  });
+      setError(null);
+    } catch (e) {
+      setError(e as Error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [id]);
+
+  useEffect(() => { if (id) load(); }, [id, load]);
+
+  return { data, isLoading, error, refetch: load };
 };
 
 export const useHomeInit = (userId?: string | null, authLoading?: boolean) => {
   const normalizedUserId = userId && userId !== 'guest' ? userId : undefined;
-  
-  return useQuery<HomeInitData>({
-    queryKey: ['home-init'], // ✅ 移除 userId 依赖
-    queryFn: () => fetchHomeInit(normalizedUserId),
-    enabled: !authLoading,
-    staleTime: 1000 * 60 * 5, // 统一缓存 5 分钟
-    retry: false, // ✅ 禁用重试
-    refetchOnMount: false, // ✅ 禁用 mount 时 refetch
-  });
+  const [data, setData] = useState<HomeInitData | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+
+  const load = useCallback(async () => {
+    if (authLoading) return;
+    setIsLoading(true);
+    try {
+      setData(await fetchHomeInit(normalizedUserId));
+      setError(null);
+    } catch (e) {
+      setError(e as Error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [normalizedUserId, authLoading]);
+
+  useEffect(() => { load(); }, [load]);
+
+  return { data, isLoading, error, refetch: load };
 };
 
 export const useRecipeDetailFull = (id: string, userId?: string | null, authLoading?: boolean) => {
-  // 统一处理:guest 视为未登录,不传 userId
   const normalizedUserId = userId && userId !== 'guest' ? userId : undefined;
+  const [data, setData] = useState<RecipeDetailFullData | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
 
-  return useQuery<RecipeDetailFullData>({
-    queryKey: ['recipe-detail-full', id, normalizedUserId ?? 'anonymous'],
-    queryFn: () => fetchRecipeDetailFull(id, normalizedUserId),
-    enabled: !!id && !authLoading, // 等待 auth 加载完成
-    staleTime: 0, // 不缓存,每次都重新请求
-  });
+  const load = useCallback(async () => {
+    if (!id || authLoading) return;
+    setIsLoading(true);
+    try {
+      setData(await fetchRecipeDetailFull(id, normalizedUserId));
+      setError(null);
+    } catch (e) {
+      setError(e as Error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [id, normalizedUserId, authLoading]);
+
+  useEffect(() => { if (id && !authLoading) load(); }, [id, authLoading, load]);
+
+  return { data, isLoading, error, refetch: load };
 };
 
 export const useMyRecipes = (status: 'all' | 'draft' | 'published' = 'all') => {
-  return useInfiniteQuery({
-    queryKey: ['my-recipes', status],
-    queryFn: async ({ pageParam = 1 }) => fetchMyRecipes(pageParam as number, PAGE_SIZE, status),
-    initialPageParam: 1,
-    getNextPageParam: (lastPage) =>
-      lastPage.pagination.page < lastPage.pagination.totalPages
-        ? lastPage.pagination.page + 1
-        : undefined,
-    staleTime: 1000 * 60,
-  });
+  const [pages, setPages] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isFetchingNextPage, setIsFetchingNextPage] = useState(false);
+  const [hasNextPage, setHasNextPage] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+  const pageRef = useRef(0);
+
+  const load = useCallback(
+    async (reset: boolean) => {
+      const nextPage = reset ? 1 : pageRef.current + 1;
+      if (reset) {
+        setIsLoading(true);
+        setPages([]);
+        pageRef.current = 0;
+        setHasNextPage(true);
+      } else {
+        if (!hasNextPage || isFetchingNextPage) return;
+        setIsFetchingNextPage(true);
+      }
+      try {
+        const page = await fetchMyRecipes(nextPage, PAGE_SIZE, status);
+        pageRef.current = nextPage;
+        setPages((prev) => (reset ? [page] : [...prev, page]));
+        setHasNextPage(page.pagination.page < page.pagination.totalPages);
+        setError(null);
+      } catch (e) {
+        setError(e as Error);
+      } finally {
+        setIsLoading(false);
+        setIsFetchingNextPage(false);
+      }
+    },
+    [status],
+  );
+
+  useEffect(() => { load(true); }, [status]);
+
+  const fetchNextPage = useCallback(() => load(false), [load]);
+  const refetch = useCallback(() => load(true), [load]);
+  const data = pages.length > 0 ? { pages } : undefined;
+
+  return { data, isLoading, isFetchingNextPage, hasNextPage, error, refetch, fetchNextPage };
 };
 
 export const useUpdateRecipe = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ recipeId, payload }: { recipeId: string; payload: any }) =>
-      updateRecipe(recipeId, payload),
-    onSuccess: (recipe) => {
-      queryClient.invalidateQueries({ queryKey: ['my-recipes'] });
-      queryClient.invalidateQueries({ queryKey: ['recipe', recipe.id] });
-      queryClient.invalidateQueries({ queryKey: ['recipes'] });
-    },
-  });
+  const [isPending, setIsPending] = useState(false);
+
+  const mutate = useCallback(async ({ recipeId, payload }: { recipeId: string; payload: any }) => {
+    setIsPending(true);
+    try {
+      return await updateRecipe(recipeId, payload);
+    } finally {
+      setIsPending(false);
+    }
+  }, []);
+
+  return { mutate, isPending };
 };
 
 export const useDeleteRecipe = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (recipeId: string) => deleteRecipe(recipeId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['my-recipes'] });
-      queryClient.invalidateQueries({ queryKey: ['recipes'] });
-    },
-  });
+  const [isPending, setIsPending] = useState(false);
+
+  const mutate = useCallback(async (recipeId: string) => {
+    setIsPending(true);
+    try {
+      return await deleteRecipe(recipeId);
+    } finally {
+      setIsPending(false);
+    }
+  }, []);
+
+  return { mutate, isPending };
 };
 
 export const useRepublishRecipe = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (recipeId: string) => republishRecipe(recipeId),
-    onSuccess: (recipe) => {
-      queryClient.invalidateQueries({ queryKey: ['my-recipes'] });
-      queryClient.invalidateQueries({ queryKey: ['recipe', recipe.id] });
-      queryClient.invalidateQueries({ queryKey: ['recipes'] });
-    },
-  });
+  const [isPending, setIsPending] = useState(false);
+
+  const mutate = useCallback(async (recipeId: string) => {
+    setIsPending(true);
+    try {
+      return await republishRecipe(recipeId);
+    } finally {
+      setIsPending(false);
+    }
+  }, []);
+
+  return { mutate, isPending };
 };
 
 export const useUnpublishRecipe = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (recipeId: string) => unpublishRecipe(recipeId),
-    onSuccess: (recipe) => {
-      queryClient.invalidateQueries({ queryKey: ['my-recipes'] });
-      queryClient.invalidateQueries({ queryKey: ['recipe', recipe.id] });
-      queryClient.invalidateQueries({ queryKey: ['recipe-detail-full', recipe.id] });
-      queryClient.invalidateQueries({ queryKey: ['recipes'] });
-    },
-  });
+  const [isPending, setIsPending] = useState(false);
+
+  const mutate = useCallback(async (recipeId: string) => {
+    setIsPending(true);
+    try {
+      return await unpublishRecipe(recipeId);
+    } finally {
+      setIsPending(false);
+    }
+  }, []);
+
+  return { mutate, isPending };
 };
 
 // ─── Likes ────────────────────────────────────────────────────────────────────
 
 export const useToggleLike = () => {
-  return useMutation({
-    mutationFn: ({ recipeId, userId }: { recipeId: string; userId: string }) =>
-      toggleLike(recipeId, userId),
-  });
+  const [isPending, setIsPending] = useState(false);
+
+  const mutateAsync = useCallback(async ({ recipeId, userId }: { recipeId: string; userId: string }) => {
+    setIsPending(true);
+    try {
+      return await toggleLike(recipeId, userId);
+    } finally {
+      setIsPending(false);
+    }
+  }, []);
+
+  return { mutateAsync, isPending };
 };
 
 // ─── Favorites ────────────────────────────────────────────────────────────────
 
 export const useFavorites = (userId: string) => {
-  return useQuery({
-    queryKey: ['favorites', userId],
-    queryFn: async () => {
-      if (USE_MOCK) return MOCK_RECIPES.slice(0, 2);
-      return fetchFavorites(userId);
-    },
-    enabled: !!userId,
-    staleTime: 1000 * 60 * 2,
-  });
+  const [data, setData] = useState<Recipe[] | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+
+  const load = useCallback(async () => {
+    if (!userId) return;
+    setIsLoading(true);
+    try {
+      if (USE_MOCK) setData(MOCK_RECIPES.slice(0, 2));
+      else setData(await fetchFavorites(userId));
+      setError(null);
+    } catch (e) {
+      setError(e as Error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [userId]);
+
+  useEffect(() => { if (userId) load(); }, [userId, load]);
+
+  return { data, isLoading, error, refetch: load };
 };
 
 export const useInfiniteFavorites = (userId: string) => {
-  return useInfiniteQuery({
-    queryKey: ['favorites', 'infinite', userId],
-    queryFn: async ({ pageParam = 1 }) => {
-      if (USE_MOCK) {
-        const data = MOCK_RECIPES.slice(0, 2);
-        return {
-          data,
-          pagination: { page: pageParam as number, pageSize: PAGE_SIZE, total: data.length, totalPages: 1 },
-        };
+  const [pages, setPages] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isFetchingNextPage, setIsFetchingNextPage] = useState(false);
+  const [hasNextPage, setHasNextPage] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+  const pageRef = useRef(0);
+  const enabled = !!userId && userId !== 'guest';
+
+  const load = useCallback(
+    async (reset: boolean) => {
+      if (!enabled) return;
+      const nextPage = reset ? 1 : pageRef.current + 1;
+      if (reset) {
+        setIsLoading(true);
+        setPages([]);
+        pageRef.current = 0;
+        setHasNextPage(true);
+      } else {
+        if (!hasNextPage || isFetchingNextPage) return;
+        setIsFetchingNextPage(true);
       }
-      return fetchFavoritesPaged(userId, pageParam as number, PAGE_SIZE);
+      try {
+        let page: any;
+        if (USE_MOCK) {
+          const d = MOCK_RECIPES.slice(0, 2);
+          page = { data: d, pagination: { page: nextPage, pageSize: PAGE_SIZE, total: d.length, totalPages: 1 } };
+        } else {
+          page = await fetchFavoritesPaged(userId, nextPage, PAGE_SIZE);
+        }
+        pageRef.current = nextPage;
+        setPages((prev) => (reset ? [page] : [...prev, page]));
+        setHasNextPage(page.pagination.page < page.pagination.totalPages);
+        setError(null);
+      } catch (e) {
+        setError(e as Error);
+      } finally {
+        setIsLoading(false);
+        setIsFetchingNextPage(false);
+      }
     },
-    initialPageParam: 1,
-    getNextPageParam: (lastPage) =>
-      lastPage.pagination.page < lastPage.pagination.totalPages
-        ? lastPage.pagination.page + 1
-        : undefined,
-    enabled: !!userId && userId !== 'guest',
-    staleTime: 1000 * 60 * 2,
-  });
+    [userId, enabled],
+  );
+
+  useEffect(() => { if (enabled) load(true); }, [userId]);
+
+  const fetchNextPage = useCallback(() => load(false), [load]);
+  const refetch = useCallback(() => load(true), [load]);
+  const data = pages.length > 0 ? { pages } : undefined;
+
+  return { data, isLoading, isFetchingNextPage, hasNextPage, error, refetch, fetchNextPage };
 };
 
 /**
- * useInfiniteFavoritesList · 基于需求 12 的 useInfiniteList 的薄包装。
- *
- * 对外暴露 cursor 契约:fetcher 接受 `{ cursor, limit }`(cursor 为下一页 page 字符串,
- * null 即第一页),内部仍调用 `fetchFavoritesPaged`(page/pageSize 分页),
- * 由包装层把 page ↔ cursor 做字符串化转换。
- *
- * 同时返回 `total` 字段,方便页面显示"x 条收藏"。
+ * useInfiniteFavoritesList — cursor-style list using useInfiniteList
  */
 export const useInfiniteFavoritesList = (userId: string) => {
-  // 手动追踪 total(useInfiniteList 本身不感知业务 total 字段)
-  const queryClient = useQueryClient();
-
   const enabled = !!userId && userId !== 'guest';
+  const [total, setTotal] = useState(0);
 
   const list = useInfiniteList<Recipe>({
-    queryKey: ['favorites', 'infinite', 'cursor', userId],
     enabled,
-    limit: PAGE_SIZE,
-    fetcher: async ({ cursor, limit }) => {
+    queryFn: async (page: number) => {
       if (USE_MOCK) {
         const data = MOCK_RECIPES.slice(0, 2);
-        return { items: data, nextCursor: null };
+        return { data, pagination: { page, pageSize: PAGE_SIZE, total: data.length, totalPages: 1 } };
       }
-      const page = cursor ? Number(cursor) : 1;
-      const res = await fetchFavoritesPaged(userId, page, limit);
-      // 把 total 顺带缓存,供 UI 显示
-      queryClient.setQueryData(
-        ['favorites', 'infinite', 'cursor', userId, 'total'],
-        res.pagination.total,
-      );
-      const hasMore = res.pagination.page < res.pagination.totalPages;
-      return {
-        items: res.data,
-        nextCursor: hasMore ? String(res.pagination.page + 1) : null,
-      };
+      const res = await fetchFavoritesPaged(userId, page, PAGE_SIZE);
+      setTotal(res.pagination.total);
+      return res;
     },
   });
 
-  const total =
-    queryClient.getQueryData<number>([
-      'favorites',
-      'infinite',
-      'cursor',
-      userId,
-      'total',
-    ]) ?? list.items.length;
-
-  return { ...list, total };
+  return { ...list, total: total || list.items.length };
 };
 
 export const useTagRecipes = (tagId: string) => {
-  return useInfiniteQuery({
-    queryKey: ['tag-recipes', tagId],
-    queryFn: async ({ pageParam = 1 }) => fetchTagRecipes(tagId, pageParam as number, PAGE_SIZE),
-    initialPageParam: 1,
-    getNextPageParam: (lastPage) =>
-      lastPage.pagination.page < lastPage.pagination.totalPages
-        ? lastPage.pagination.page + 1
-        : undefined,
-    enabled: !!tagId,
-    staleTime: 1000 * 60 * 5,
-  });
+  const [pages, setPages] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isFetchingNextPage, setIsFetchingNextPage] = useState(false);
+  const [hasNextPage, setHasNextPage] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+  const pageRef = useRef(0);
+
+  const load = useCallback(
+    async (reset: boolean) => {
+      if (!tagId) return;
+      const nextPage = reset ? 1 : pageRef.current + 1;
+      if (reset) {
+        setIsLoading(true);
+        setPages([]);
+        pageRef.current = 0;
+        setHasNextPage(true);
+      } else {
+        if (!hasNextPage || isFetchingNextPage) return;
+        setIsFetchingNextPage(true);
+      }
+      try {
+        const page = await fetchTagRecipes(tagId, nextPage, PAGE_SIZE);
+        pageRef.current = nextPage;
+        setPages((prev) => (reset ? [page] : [...prev, page]));
+        setHasNextPage(page.pagination.page < page.pagination.totalPages);
+        setError(null);
+      } catch (e) {
+        setError(e as Error);
+      } finally {
+        setIsLoading(false);
+        setIsFetchingNextPage(false);
+      }
+    },
+    [tagId],
+  );
+
+  useEffect(() => { if (tagId) load(true); }, [tagId]);
+
+  const fetchNextPage = useCallback(() => load(false), [load]);
+  const refetch = useCallback(() => load(true), [load]);
+  const data = pages.length > 0 ? { pages } : undefined;
+
+  return { data, isLoading, isFetchingNextPage, hasNextPage, error, refetch, fetchNextPage };
 };
 
 export const useToggleFavorite = () => {
-  return useMutation({
-    mutationFn: ({ recipeId, userId }: { recipeId: string; userId: string }) =>
-      toggleFavorite(recipeId, userId),
-  });
+  const [isPending, setIsPending] = useState(false);
+
+  const mutateAsync = useCallback(async ({ recipeId, userId }: { recipeId: string; userId: string }) => {
+    setIsPending(true);
+    try {
+      return await toggleFavorite(recipeId, userId);
+    } finally {
+      setIsPending(false);
+    }
+  }, []);
+
+  return { mutateAsync, isPending };
 };
 
 // ─── Comments ─────────────────────────────────────────────────────────────────
 
 export const useComments = (recipeId: string) => {
-  return useQuery<Comment[]>({
-    queryKey: ['comments', recipeId],
-    queryFn: async (): Promise<Comment[]> => {
-      if (USE_MOCK) {
-        return MOCK_COMMENTS.filter((c) => c.recipe_id === recipeId) as Comment[];
-      }
-      return fetchComments(recipeId);
-    },
-    enabled: !!recipeId,
-  });
+  const [data, setData] = useState<Comment[] | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+
+  const load = useCallback(async () => {
+    if (!recipeId) return;
+    setIsLoading(true);
+    try {
+      if (USE_MOCK) setData(MOCK_COMMENTS.filter((c) => c.recipe_id === recipeId) as Comment[]);
+      else setData(await fetchComments(recipeId));
+      setError(null);
+    } catch (e) {
+      setError(e as Error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [recipeId]);
+
+  useEffect(() => { if (recipeId) load(); }, [recipeId, load]);
+
+  return { data, isLoading, error, refetch: load };
 };
 
 export const useInfiniteComments = (recipeId: string) => {
-  return useInfiniteQuery({
-    queryKey: ['comments', 'infinite', recipeId],
-    queryFn: async ({ pageParam = 1 }) => {
-      if (USE_MOCK) {
-        const data = MOCK_COMMENTS.filter((c) => c.recipe_id === recipeId) as Comment[];
-        return {
-          data,
-          pagination: { page: pageParam as number, pageSize: PAGE_SIZE, total: data.length, totalPages: 1 },
-        };
+  const [pages, setPages] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isFetchingNextPage, setIsFetchingNextPage] = useState(false);
+  const [hasNextPage, setHasNextPage] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+  const pageRef = useRef(0);
+
+  const load = useCallback(
+    async (reset: boolean) => {
+      if (!recipeId) return;
+      const nextPage = reset ? 1 : pageRef.current + 1;
+      if (reset) {
+        setIsLoading(true);
+        setPages([]);
+        pageRef.current = 0;
+        setHasNextPage(true);
+      } else {
+        if (!hasNextPage || isFetchingNextPage) return;
+        setIsFetchingNextPage(true);
       }
-      return fetchCommentsPaged(recipeId, pageParam as number, PAGE_SIZE);
+      try {
+        let page: any;
+        if (USE_MOCK) {
+          const d = MOCK_COMMENTS.filter((c) => c.recipe_id === recipeId) as Comment[];
+          page = { data: d, pagination: { page: nextPage, pageSize: PAGE_SIZE, total: d.length, totalPages: 1 } };
+        } else {
+          page = await fetchCommentsPaged(recipeId, nextPage, PAGE_SIZE);
+        }
+        pageRef.current = nextPage;
+        setPages((prev) => (reset ? [page] : [...prev, page]));
+        setHasNextPage(page.pagination.page < page.pagination.totalPages);
+        setError(null);
+      } catch (e) {
+        setError(e as Error);
+      } finally {
+        setIsLoading(false);
+        setIsFetchingNextPage(false);
+      }
     },
-    initialPageParam: 1,
-    getNextPageParam: (lastPage) =>
-      lastPage.pagination.page < lastPage.pagination.totalPages
-        ? lastPage.pagination.page + 1
-        : undefined,
-    enabled: !!recipeId,
-  });
+    [recipeId],
+  );
+
+  useEffect(() => { if (recipeId) load(true); }, [recipeId]);
+
+  const fetchNextPage = useCallback(() => load(false), [load]);
+  const refetch = useCallback(() => load(true), [load]);
+  const data = pages.length > 0 ? { pages } : undefined;
+
+  return { data, isLoading, isFetchingNextPage, hasNextPage, error, refetch, fetchNextPage };
 };
 
 export const usePostComment = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: postComment,
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['comments', variables.recipe_id] });
-      queryClient.invalidateQueries({ queryKey: ['comments', 'infinite', variables.recipe_id] });
-      queryClient.invalidateQueries({ queryKey: ['recipe-detail-full', variables.recipe_id] });
-    },
-  });
+  const [isPending, setIsPending] = useState(false);
+
+  const mutateAsync = useCallback(async (variables: Parameters<typeof postComment>[0]) => {
+    setIsPending(true);
+    try {
+      return await postComment(variables);
+    } finally {
+      setIsPending(false);
+    }
+  }, []);
+
+  return { mutateAsync, isPending };
 };
 
 export const useUpdateComment = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ commentId, content }: { commentId: string; content: string }) =>
-      updateComment(commentId, { content }),
-    onSuccess: (comment) => {
-      queryClient.invalidateQueries({ queryKey: ['comments', comment.recipe_id] });
-      queryClient.invalidateQueries({ queryKey: ['comments', 'infinite', comment.recipe_id] });
-      queryClient.invalidateQueries({ queryKey: ['recipe-detail-full', comment.recipe_id] });
-    },
-  });
+  const [isPending, setIsPending] = useState(false);
+
+  const mutateAsync = useCallback(async ({ commentId, content }: { commentId: string; content: string }) => {
+    setIsPending(true);
+    try {
+      return await updateComment(commentId, { content });
+    } finally {
+      setIsPending(false);
+    }
+  }, []);
+
+  return { mutateAsync, isPending };
 };
 
 export const useDeleteComment = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ commentId, recipeId }: { commentId: string; recipeId: string }) =>
-      deleteComment(commentId),
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['comments', variables.recipeId] });
-      queryClient.invalidateQueries({ queryKey: ['comments', 'infinite', variables.recipeId] });
-      queryClient.invalidateQueries({ queryKey: ['recipe-detail-full', variables.recipeId] });
-    },
-  });
+  const [isPending, setIsPending] = useState(false);
+
+  const mutateAsync = useCallback(async ({ commentId }: { commentId: string; recipeId: string }) => {
+    setIsPending(true);
+    try {
+      return await deleteComment(commentId);
+    } finally {
+      setIsPending(false);
+    }
+  }, []);
+
+  return { mutateAsync, isPending };
 };
 
 // ─── Categories ───────────────────────────────────────────────────────────────
@@ -432,40 +674,97 @@ export const useDeleteComment = () => {
 const ALL_CATEGORY: Category = { id: 'all', label: 'All', label_zh: '全部', slug: 'all', recipesCount: 0 };
 
 export const useCategories = () => {
-  return useQuery<Category[]>({
-    queryKey: ['categories'],
-    queryFn: async () => {
+  const [data, setData] = useState<Category[] | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+
+  const load = useCallback(async () => {
+    setIsLoading(true);
+    try {
       const cats = await fetchCategories();
-      return [ALL_CATEGORY, ...cats];
-    },
-    staleTime: 1000 * 60 * 10, // 10分钟缓存
-  });
+      setData([ALL_CATEGORY, ...cats]);
+      setError(null);
+    } catch (e) {
+      setError(e as Error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  return { data, isLoading, error, refetch: load };
 };
 
 // ─── Tags ─────────────────────────────────────────────────────────────────────
 
 export const useTags = () => {
-  return useQuery<Tag[]>({
-    queryKey: ['tags'],
-    queryFn: fetchTags,
-    staleTime: 1000 * 60 * 10,
-  });
+  const [data, setData] = useState<Tag[] | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+
+  const load = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      setData(await fetchTags());
+      setError(null);
+    } catch (e) {
+      setError(e as Error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  return { data, isLoading, error, refetch: load };
 };
 
 export const useCategoryRecipes = (
   categoryId: string,
   sort: 'newest' | 'popular' | 'favorites' = 'popular'
 ) => {
-  return useInfiniteQuery({
-    queryKey: ['category-recipes', categoryId, sort],
-    queryFn: async ({ pageParam = 1 }) =>
-      fetchCategoryRecipes(categoryId, pageParam as number, PAGE_SIZE, sort),
-    initialPageParam: 1,
-    getNextPageParam: (lastPage) =>
-      lastPage.pagination.page < lastPage.pagination.totalPages
-        ? lastPage.pagination.page + 1
-        : undefined,
-    enabled: !!categoryId,
-    staleTime: 1000 * 60 * 5,
-  });
+  const [pages, setPages] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isFetchingNextPage, setIsFetchingNextPage] = useState(false);
+  const [hasNextPage, setHasNextPage] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+  const pageRef = useRef(0);
+
+  const load = useCallback(
+    async (reset: boolean) => {
+      if (!categoryId) return;
+      const nextPage = reset ? 1 : pageRef.current + 1;
+      if (reset) {
+        setIsLoading(true);
+        setPages([]);
+        pageRef.current = 0;
+        setHasNextPage(true);
+      } else {
+        if (!hasNextPage || isFetchingNextPage) return;
+        setIsFetchingNextPage(true);
+      }
+      try {
+        const page = await fetchCategoryRecipes(categoryId, nextPage, PAGE_SIZE, sort);
+        pageRef.current = nextPage;
+        setPages((prev) => (reset ? [page] : [...prev, page]));
+        setHasNextPage(page.pagination.page < page.pagination.totalPages);
+        setError(null);
+      } catch (e) {
+        setError(e as Error);
+      } finally {
+        setIsLoading(false);
+        setIsFetchingNextPage(false);
+      }
+    },
+    [categoryId, sort],
+  );
+
+  useEffect(() => { if (categoryId) load(true); }, [categoryId, sort]);
+
+  const fetchNextPage = useCallback(() => load(false), [load]);
+  const refetch = useCallback(() => load(true), [load]);
+  const data = pages.length > 0 ? { pages } : undefined;
+
+  return { data, isLoading, isFetchingNextPage, hasNextPage, error, refetch, fetchNextPage };
 };

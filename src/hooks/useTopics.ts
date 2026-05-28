@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useState, useEffect, useCallback } from 'react';
 import {
   fetchTopicDetail,
   fetchTopicRecipes,
@@ -14,11 +14,29 @@ import {
 
 // 话题详情
 export const useTopicDetail = (topicId: string) => {
-  return useQuery<TopicDetail>({
-    queryKey: ['topic', topicId],
-    queryFn: () => fetchTopicDetail(topicId),
-    enabled: !!topicId
-  });
+  const [data, setData] = useState<TopicDetail | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+
+  const load = useCallback(async () => {
+    if (!topicId) return;
+    setIsLoading(true);
+    try {
+      const result = await fetchTopicDetail(topicId);
+      setData(result);
+      setError(null);
+    } catch (e) {
+      setError(e as Error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [topicId]);
+
+  useEffect(() => {
+    if (topicId) load();
+  }, [topicId, load]);
+
+  return { data, isLoading, error, refetch: load };
 };
 
 // 话题菜谱列表
@@ -27,50 +45,116 @@ export const useTopicRecipes = (
   sort: 'latest' | 'hot' = 'latest',
   page = 1
 ) => {
-  return useQuery<TopicRecipesResponse>({
-    queryKey: ['topic-recipes', topicId, sort, page],
-    queryFn: () => fetchTopicRecipes(topicId, sort, page),
-    enabled: !!topicId
-  });
+  const [data, setData] = useState<TopicRecipesResponse | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+
+  const load = useCallback(async () => {
+    if (!topicId) return;
+    setIsLoading(true);
+    try {
+      const result = await fetchTopicRecipes(topicId, sort, page);
+      setData(result);
+      setError(null);
+    } catch (e) {
+      setError(e as Error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [topicId, sort, page]);
+
+  useEffect(() => {
+    if (topicId) load();
+  }, [topicId, load]);
+
+  return { data, isLoading, error, refetch: load };
 };
 
 // 关注/取消关注话题
 export const useToggleTopicFollow = () => {
-  const queryClient = useQueryClient();
+  const [isPending, setIsPending] = useState(false);
 
-  return useMutation({
-    mutationFn: ({ topicId, action }: { topicId: string; action: 'follow' | 'unfollow' }) =>
-      toggleTopicFollow(topicId, action),
-    onSuccess: (_, variables) => {
-      // 刷新话题详情
-      queryClient.invalidateQueries({ queryKey: ['topic', variables.topicId] });
-      // 刷新我关注的话题列表
-      queryClient.invalidateQueries({ queryKey: ['followed-topics'] });
+  const mutate = useCallback(async (
+    { topicId, action }: { topicId: string; action: 'follow' | 'unfollow' },
+    callbacks?: { onSuccess?: () => void }
+  ) => {
+    setIsPending(true);
+    try {
+      const result = await toggleTopicFollow(topicId, action);
+      callbacks?.onSuccess?.();
+      return result;
+    } finally {
+      setIsPending(false);
     }
-  });
+  }, []);
+
+  return { mutate, isPending };
 };
 
 // 我关注的话题列表
 export const useFollowedTopics = (page = 1) => {
-  return useQuery<FollowedTopicsResponse>({
-    queryKey: ['followed-topics', page],
-    queryFn: () => fetchFollowedTopics(page)
-  });
+  const [data, setData] = useState<FollowedTopicsResponse | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+
+  const load = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const result = await fetchFollowedTopics(page);
+      setData(result);
+      setError(null);
+    } catch (e) {
+      setError(e as Error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [page]);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  return { data, isLoading, error, refetch: load };
 };
 
 // 热门搜索词
 export const useTrendingKeywords = (limit = 10) => {
-  return useQuery<TrendingResponse>({
-    queryKey: ['trending-keywords', limit],
-    queryFn: () => fetchTrendingKeywords(limit),
-    staleTime: 5 * 60 * 1000 // 5分钟缓存
-  });
+  const [data, setData] = useState<TrendingResponse | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+
+  const load = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const result = await fetchTrendingKeywords(limit);
+      setData(result);
+      setError(null);
+    } catch (e) {
+      setError(e as Error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [limit]);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  return { data, isLoading, error, refetch: load };
 };
 
 // 记录搜索行为
 export const useRecordSearch = () => {
-  return useMutation({
-    mutationFn: ({ query, resultCount, clicked }: { query: string; resultCount: number; clicked: boolean }) =>
-      recordSearch(query, resultCount, clicked)
-  });
+  const [isPending, setIsPending] = useState(false);
+
+  const mutate = useCallback(async ({ query, resultCount, clicked }: { query: string; resultCount: number; clicked: boolean }) => {
+    setIsPending(true);
+    try {
+      return await recordSearch(query, resultCount, clicked);
+    } finally {
+      setIsPending(false);
+    }
+  }, []);
+
+  return { mutate, isPending };
 };

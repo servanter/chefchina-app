@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import {
   Alert,
   FlatList,
@@ -33,7 +33,7 @@ export default function RecentHistoryScreen() {
   const { isLoggedIn } = useAuth();
 
   const {
-    data,
+    items,
     isLoading,
     refetch,
     fetchNextPage,
@@ -44,10 +44,10 @@ export default function RecentHistoryScreen() {
   const deleteMutation = useDeleteViewHistory();
   const clearMutation = useClearViewHistory();
 
-  const items = useMemo(() => flattenHistoryPages(data?.pages), [data]);
+  // items 直接来自 useViewHistory hook，无需再 memoize
 
   const handleRemove = async (historyId: string, recipeId: string) => {
-    await deleteMutation.mutateAsync({ historyId, recipeId });
+    await deleteMutation.mutate({ historyId, recipeId });
   };
 
   const handleClear = () => {
@@ -57,7 +57,7 @@ export default function RecentHistoryScreen() {
         text: t('recentHistory.clearAction'),
         style: 'destructive',
         onPress: async () => {
-          await clearMutation.mutateAsync();
+          await clearMutation.mutate();
         },
       },
     ]);

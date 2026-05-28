@@ -12,7 +12,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { getSearchHistory, saveSearchHistory, clearSearchHistory } from '@/lib/storage';
-import { useQuery } from '@tanstack/react-query';
 
 type SearchSuggestResponse = {
   data?: {
@@ -37,31 +36,29 @@ export const SearchModal: React.FC<SearchModalProps> = ({ visible, onClose, tint
   const router = useRouter();
   const [query, setQuery] = useState('');
   const [history, setHistory] = useState<string[]>([]);
+  const [trendingData, setTrendingData] = useState<string[]>([]);
+  const [suggestions, setSuggestions] = useState<string[]>([]);
 
   // 获取热门搜索
-  const { data: trendingData = [] } = useQuery<string[]>({
-    queryKey: ['search', 'trending'],
-    queryFn: async () => {
-      const res = await fetch('https://chefchina-admin.vercel.app/api/search/trending');
-      const data: SearchTrendingResponse = await res.json();
-      return data.data?.keywords || [];
-    },
-    enabled: visible,
-  });
+  useEffect(() => {
+    if (!visible) return;
+    fetch('https://chefchina-admin.vercel.app/api/search/trending')
+      .then((r) => r.json())
+      .then((data: SearchTrendingResponse) => setTrendingData(data.data?.keywords || []))
+      .catch(() => {});
+  }, [visible]);
 
   // 获取搜索建议
-  const { data: suggestions = [] } = useQuery<string[]>({
-    queryKey: ['search', 'suggest', query],
-    queryFn: async () => {
-      if (query.length < 2) return [];
-      const res = await fetch(
-        `https://chefchina-admin.vercel.app/api/search/suggest?q=${encodeURIComponent(query)}`
-      );
-      const data: SearchSuggestResponse = await res.json();
-      return data.data?.suggestions?.map((s) => s.text) || [];
-    },
-    enabled: query.length >= 2,
-  });
+  useEffect(() => {
+    if (query.length < 2) { setSuggestions([]); return; }
+    const timer = setTimeout(() => {
+      fetch(`https://chefchina-admin.vercel.app/api/search/suggest?q=${encodeURIComponent(query)}`)
+        .then((r) => r.json())
+        .then((data: SearchSuggestResponse) => setSuggestions(data.data?.suggestions?.map((s) => s.text) || []))
+        .catch(() => {});
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [query]);
 
   // 加载搜索历史
   useEffect(() => {

@@ -6,7 +6,8 @@ import { triggerHaptic } from '../lib/haptics';
 interface AnimatedFavoriteButtonProps {
   favorited: boolean;
   label?: string;
-  onPress: () => void;
+  onPress: () => void | Promise<void>;
+  disabled?: boolean;
   tintColor?: string;
   size?: number;
   style?: any;

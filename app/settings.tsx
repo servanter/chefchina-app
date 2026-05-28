@@ -13,7 +13,8 @@ import { Stack, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import Toast from 'react-native-toast-message';
-import Constants from 'expo-constants';
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const Constants = require('expo-constants').default ?? require('expo-constants');
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Paths, Directory } from 'expo-file-system';
 import { useTheme } from '../src/contexts/ThemeContext';

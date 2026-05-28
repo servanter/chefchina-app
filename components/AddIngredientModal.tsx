@@ -40,22 +40,17 @@ export default function AddIngredientModal({ visible, onClose }: Props) {
       return;
     }
 
+    const resetForm = () => {
+      setName('');
+      setAmount('');
+      setUnit('g');
+    };
+
     // 适量/少许 不需要数量
     if (unit === '适量' || unit === '少许') {
-      addMutation.mutate(
-        { name: name.trim(), amount: 0, unit },
-        {
-          onSuccess: () => {
-            setName('');
-            setAmount('');
-            setUnit('g');
-            onClose();
-          },
-          onError: (error: any) => {
-            Alert.alert('添加失败', error.message || '请稍后重试');
-          },
-        }
-      );
+      addMutation.mutate({ name: name.trim(), amount: 0, unit })
+        .then(() => { resetForm(); onClose(); })
+        .catch((error: any) => Alert.alert('添加失败', error.message || '请稍后重试'));
       return;
     }
 
@@ -66,20 +61,9 @@ export default function AddIngredientModal({ visible, onClose }: Props) {
       return;
     }
 
-    addMutation.mutate(
-      { name: name.trim(), amount: amountNum, unit },
-      {
-        onSuccess: () => {
-          setName('');
-          setAmount('');
-          setUnit('g');
-          onClose();
-        },
-        onError: (error: any) => {
-          Alert.alert('添加失败', error.message || '请稍后重试');
-        },
-      }
-    );
+    addMutation.mutate({ name: name.trim(), amount: amountNum, unit })
+      .then(() => { resetForm(); onClose(); })
+      .catch((error: any) => Alert.alert('添加失败', error.message || '请稍后重试'));
   };
 
   const handleClose = () => {

@@ -1,6 +1,5 @@
-import { useMutation, useQueryClient, useInfiniteQuery } from '@tanstack/react-query'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import { apiClient } from '../lib/api'
-import { useUnreadCount } from './useUnreadCount'
 
 export type NotificationType = 'COMMENT_REPLY' | 'RECIPE_LIKED' | 'RECIPE_FAVORITED' | 'SUBMISSION_APPROVED' | 'SYSTEM'
 
@@ -22,69 +21,109 @@ export interface Notification {
 
 export type TabType = 'all' | 'like' | 'comment' | 'system'
 
-// REQ-16.2: 获取通知列表（支持分类）
+interface NotificationPage {
+  data: Notification[]
+  unreadCount: number
+  pagination: { page: number; pageSize: number; total: number; totalPages: number }
+}
+
+// REQ-16.2: 获取通知列表（支持分类，无限滚动）
 export function useInfiniteNotifications(userId: string | null, tab: TabType = 'all') {
-  return useInfiniteQuery({
-    queryKey: ['notifications', userId, tab],
-    queryFn: async ({ pageParam = 1 }) => {
-      if (!userId) throw new Error('userId is required')
-      const res = await apiClient.get('/notifications', {
-        params: {
-          userId,
-          tab,
-          page: pageParam,
-          pageSize: 20,
-        },
-      })
-      return {
-        data: res.data.data?.notifications ?? [],
-        unreadCount: res.data.data?.unreadCount ?? 0,
-        pagination: res.data.data?.pagination ?? { page: 1, pageSize: 20, total: 0, totalPages: 0 },
+  const [pages, setPages] = useState<NotificationPage[]>([])
+  const [isLoading, setIsLoading] = useState(false)
+  const [isFetchingNextPage, setIsFetchingNextPage] = useState(false)
+  const [isFetching, setIsFetching] = useState(false)
+  const [hasNextPage, setHasNextPage] = useState(true)
+  const [error, setError] = useState<Error | null>(null)
+  const pageRef = useRef(0)
+
+  const fetchPage = useCallback(
+    async (reset: boolean) => {
+      if (!userId) return
+      const nextPage = reset ? 1 : pageRef.current + 1
+      if (reset) {
+        setIsLoading(true)
+        setIsFetching(true)
+        setPages([])
+        setHasNextPage(true)
+        pageRef.current = 0
+      } else {
+        if (!hasNextPage || isFetchingNextPage) return
+        setIsFetchingNextPage(true)
+        setIsFetching(true)
+      }
+      try {
+        const res = await apiClient.get('/notifications', {
+          params: { userId, tab, page: nextPage, pageSize: 20 },
+        })
+        const page: NotificationPage = {
+          data: res.data.data?.notifications ?? [],
+          unreadCount: res.data.data?.unreadCount ?? 0,
+          pagination: res.data.data?.pagination ?? { page: nextPage, pageSize: 20, total: 0, totalPages: 0 },
+        }
+        pageRef.current = nextPage
+        setPages((prev) => (reset ? [page] : [...prev, page]))
+        setHasNextPage(page.pagination.page < page.pagination.totalPages)
+        setError(null)
+      } catch (e) {
+        setError(e as Error)
+      } finally {
+        setIsLoading(false)
+        setIsFetchingNextPage(false)
+        setIsFetching(false)
       }
     },
-    initialPageParam: 1,
-    getNextPageParam: (lastPage) => {
-      const { pagination } = lastPage
-      return pagination.page < pagination.totalPages ? pagination.page + 1 : undefined
-    },
-    enabled: !!userId,
-    staleTime: 180 * 1000, // 3 分钟
-  })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [userId, tab],
+  )
+
+  useEffect(() => {
+    if (userId) fetchPage(true)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId, tab])
+
+  const refetch = useCallback(() => fetchPage(true), [fetchPage])
+  const fetchNextPage = useCallback(() => fetchPage(false), [fetchPage])
+
+  // Expose pages for backward compat
+  const data = pages.length > 0 ? { pages } : undefined
+
+  return { data, isLoading, isFetching, isFetchingNextPage, hasNextPage, error, refetch, fetchNextPage }
 }
 
 // 标记单条通知为已读
-export function useMarkRead(userId: string | null) {
-  const queryClient = useQueryClient()
+export function useMarkRead(_userId: string | null) {
+  const [isPending, setIsPending] = useState(false)
 
-  return useMutation({
-    mutationFn: async (notificationId: string) => {
+  const mutateAsync = useCallback(async (notificationId: string) => {
+    setIsPending(true)
+    try {
       const res = await apiClient.patch(`/notifications/${notificationId}/read`)
       return res.data
-    },
-    onSuccess: () => {
-      // 刷新通知列表和未读数量
-      queryClient.invalidateQueries({ queryKey: ['notifications', userId] })
-      queryClient.invalidateQueries({ queryKey: ['notifications', 'unread-count', userId] })
-    },
-  })
+    } finally {
+      setIsPending(false)
+    }
+  }, [])
+
+  return { mutateAsync, isPending }
 }
 
 // REQ-16.2: 批量标记已读
 export function useMarkAllRead(userId: string | null, tab: TabType = 'all') {
-  const queryClient = useQueryClient()
+  const [isPending, setIsPending] = useState(false)
 
-  return useMutation({
-    mutationFn: async () => {
-      if (!userId) throw new Error('userId is required')
+  const mutateAsync = useCallback(async () => {
+    if (!userId) throw new Error('userId is required')
+    setIsPending(true)
+    try {
       const res = await apiClient.post('/notifications/mark-all-read', null, {
         params: { userId, type: tab },
       })
       return res.data
-    },
-    onSuccess: () => {
-      // 刷新所有通知相关查询
-      queryClient.invalidateQueries({ queryKey: ['notifications', userId] })
-      queryClient.invalidateQueries({ queryKey: ['notifications', 'unread-count', userId] })
-    },
-  })
+    } finally {
+      setIsPending(false)
+    }
+  }, [userId, tab])
+
+  return { mutateAsync, isPending }
 }

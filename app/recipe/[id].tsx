@@ -20,7 +20,6 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import Toast from 'react-native-toast-message';
-import { useQuery } from '@tanstack/react-query';
 import * as ImagePicker from 'expo-image-picker';
 import { useRecipeDetailFull, useToggleLike, useToggleFavorite, usePostComment, useUpdateComment, useDeleteComment, useUnpublishRecipe, useDeleteRecipe } from '../../src/hooks/useRecipes';
 import { useToggleCommentLike } from '../../src/hooks/useSocial';
@@ -571,22 +570,20 @@ export default function RecipeDetailScreen() {
       
       // 串行请求：先查配额，再调用分析
       await refetchQuota();
-      const analysisResult = await analyzeRecipeMutation.mutateAsync({ 
+      const analysisResult = await analyzeRecipeMutation.mutate({ 
         recipeId: recipe.id, 
         language 
       });
 
-      // 分析成功
-      if (analysisResult.success) {
-        setAiAnalysisResult(analysisResult.data);
+      // 分析成功（mutate 失败时会 throw，走 catch）
+      if (analysisResult) {
+        setAiAnalysisResult(analysisResult);
         setShowQuotaPrompt(false);
         triggerHaptic('success');
         Toast.show({
           type: 'success',
           text1: isZh ? 'AI 营养分析完成' : 'AI Nutrition Analysis Complete',
-          text2: analysisResult.cached
-            ? isZh ? '已为您生成个性化建议' : 'Personalized recommendations ready'
-            : isZh ? '已为您生成个性化建议' : 'Personalized recommendations ready',
+          text2: isZh ? '已为您生成个性化建议' : 'Personalized recommendations ready',
           visibilityTime: 2000,
         });
       }
@@ -643,7 +640,7 @@ export default function RecipeDetailScreen() {
     i18n.language,
   ]);
 
-  const { mutate: toggleCommentLike } = useToggleCommentLike();
+  const { mutateAsync: toggleCommentLike } = useToggleCommentLike();
 
   const handleCommentLike = useCallback(async (commentId: string) => {
     if (userId === 'guest') {
@@ -660,7 +657,7 @@ export default function RecipeDetailScreen() {
     }));
     
     try {
-      const result = await toggleCommentLike.mutateAsync({ commentId });
+      const result = await toggleCommentLike({ commentId });
       
       // 使用 API 返回的准确值
       setLocalCommentLikeStatus(prev => ({
@@ -818,7 +815,7 @@ export default function RecipeDetailScreen() {
                           text: isZh ? '下架' : 'Unpublish',
                           onPress: async () => {
                             try {
-                              await unpublishRecipeMutation.mutateAsync(recipe.id);
+                              await unpublishRecipeMutation.mutate(recipe.id);
                               Toast.show({ type: 'success', text1: isZh ? '菜谱已下架' : 'Recipe unpublished' });
                               await refetchRecipeDetail();
                             } catch {
@@ -846,7 +843,7 @@ export default function RecipeDetailScreen() {
                           style: 'destructive',
                           onPress: async () => {
                             try {
-                              await deleteRecipeMutation.mutateAsync(recipe.id);
+                              await deleteRecipeMutation.mutate(recipe.id);
                               Toast.show({ type: 'success', text1: isZh ? '菜谱已删除' : 'Recipe deleted' });
                               router.replace('/my-recipes');
                             } catch {

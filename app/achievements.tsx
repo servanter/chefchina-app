@@ -66,16 +66,15 @@ export default function AchievementsScreen() {
       const currentLevel = levelInfo?.level ?? 1;
       setPrevLevel(currentLevel);
 
-      checkMutation.mutate(userId, {
-        onSuccess: async (newBadges) => {
-          // BUG-006 fix: 多弹窗排队
-          if (newBadges.length > 0) {
-            setUnlockQueue(newBadges);
-          }
-          // BUG-004 fix: 检查升级
-          await refetchLevel();
-        },
-      });
+      checkMutation.mutate(userId).then(async (newBadges) => {
+        if (!newBadges) return;
+        // BUG-006 fix: 多弹窗排队
+        if (newBadges.length > 0) {
+          setUnlockQueue(newBadges);
+        }
+        // BUG-004 fix: 检查升级
+        await refetchLevel();
+      }).catch(() => {/* silent */});
     }
   }, [userId, levelInfo, checkMutation, refetchLevel]);
 

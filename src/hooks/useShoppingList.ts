@@ -1,8 +1,8 @@
 /**
- * 智能购物清单 - React Query Hooks
+ * 智能购物清单 - Hooks（无 React Query）
  */
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useState, useCallback, useEffect } from 'react';
 import {
   fetchShoppingList,
   generateShoppingList,
@@ -11,97 +11,146 @@ import {
   deleteShoppingListItem,
   clearShoppingList,
   ShoppingListData,
-  ShoppingListItem,
 } from '../lib/api';
 
 /**
  * 获取购物清单
- * - retry: false  —— 401 未登录时不重试，直接失败
  * - enabled 需要 isLoggedIn=true，未登录不发请求
  */
 export function useShoppingList(options?: { enabled?: boolean }) {
-  return useQuery<ShoppingListData>({
-    queryKey: ['shopping-list'],
-    queryFn: () => fetchShoppingList(),
-    enabled: options?.enabled !== false,
-    retry: false, // 401/网络错误不重试，避免未登录时重复请求
-  });
+  const [data, setData] = useState<ShoppingListData | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+  const enabled = options?.enabled !== false;
+
+  const load = useCallback(async () => {
+    if (!enabled) return;
+    setIsLoading(true);
+    try {
+      const result = await fetchShoppingList();
+      setData(result);
+      setError(null);
+    } catch (e) {
+      setError(e as Error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [enabled]);
+
+  useEffect(() => {
+    if (enabled) load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [enabled]);
+
+  return { data, isLoading, error, refetch: load };
 }
 
 /**
  * 重新生成购物清单
  */
-export function useGenerateShoppingList() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (data?: { recipeIds?: string[]; keepManual?: boolean }) =>
-      generateShoppingList(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['shopping-list'] });
-    },
-  });
+export function useGenerateShoppingList(refetch?: () => void) {
+  const [isPending, setIsPending] = useState(false);
+
+  const mutate = useCallback(async (data?: { recipeIds?: string[]; keepManual?: boolean }) => {
+    setIsPending(true);
+    try {
+      const result = await generateShoppingList(data);
+      refetch?.();
+      return result;
+    } finally {
+      setIsPending(false);
+    }
+  }, [refetch]);
+
+  return { mutate, isPending };
 }
 
 /**
  * 添加食材
  */
-export function useAddShoppingListItem() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (data: { name: string; amount: number; unit: string }) =>
-      addShoppingListItem(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['shopping-list'] });
-    },
-  });
+export function useAddShoppingListItem(refetch?: () => void) {
+  const [isPending, setIsPending] = useState(false);
+
+  const mutateAsync = useCallback(async (data: { name: string; amount: number; unit: string }) => {
+    setIsPending(true);
+    try {
+      const result = await addShoppingListItem(data);
+      refetch?.();
+      return result;
+    } finally {
+      setIsPending(false);
+    }
+  }, [refetch]);
+
+  return { mutate: mutateAsync, mutateAsync, isPending };
 }
 
 /**
  * 更新食材（勾选/修改数量）
  */
-export function useUpdateShoppingListItem() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({
-      id,
-      checked,
-      amount,
-      unit,
-    }: {
-      id: string;
-      checked?: boolean;
-      amount?: number;
-      unit?: string;
-    }) => updateShoppingListItem(id, { checked, amount, unit }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['shopping-list'] });
-    },
-  });
+export function useUpdateShoppingListItem(refetch?: () => void) {
+  const [isPending, setIsPending] = useState(false);
+
+  const mutate = useCallback(async ({
+    id,
+    checked,
+    amount,
+    unit,
+  }: {
+    id: string;
+    checked?: boolean;
+    amount?: number;
+    unit?: string;
+  }) => {
+    setIsPending(true);
+    try {
+      const result = await updateShoppingListItem(id, { checked, amount, unit });
+      refetch?.();
+      return result;
+    } finally {
+      setIsPending(false);
+    }
+  }, [refetch]);
+
+  return { mutate, isPending };
 }
 
 /**
  * 删除单个食材
  */
-export function useDeleteShoppingListItem() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (id: string) => deleteShoppingListItem(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['shopping-list'] });
-    },
-  });
+export function useDeleteShoppingListItem(refetch?: () => void) {
+  const [isPending, setIsPending] = useState(false);
+
+  const mutate = useCallback(async (id: string) => {
+    setIsPending(true);
+    try {
+      const result = await deleteShoppingListItem(id);
+      refetch?.();
+      return result;
+    } finally {
+      setIsPending(false);
+    }
+  }, [refetch]);
+
+  return { mutate, isPending };
 }
 
 /**
  * 批量清空购物清单
  */
-export function useClearShoppingList() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (data?: { clearAll?: boolean; keepManual?: boolean }) =>
-      clearShoppingList(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['shopping-list'] });
-    },
-  });
+export function useClearShoppingList(refetch?: () => void) {
+  const [isPending, setIsPending] = useState(false);
+
+  const mutate = useCallback(async (data?: { clearAll?: boolean; keepManual?: boolean }) => {
+    setIsPending(true);
+    try {
+      const result = await clearShoppingList(data);
+      refetch?.();
+      return result;
+    } finally {
+      setIsPending(false);
+    }
+  }, [refetch]);
+
+  return { mutate, isPending };
 }

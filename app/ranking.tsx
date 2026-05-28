@@ -11,7 +11,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
-import { useQuery } from '@tanstack/react-query';
+import { useState, useEffect } from 'react';
 import { fetchRankingRecipes, RankedRecipe } from '../src/lib/api';
 import { LazyImage } from '../src/components/LazyImage';
 import { EmptyState } from '../src/components/EmptyState';
@@ -25,11 +25,12 @@ export default function RankingScreen() {
   const isZh = i18n.language === 'zh';
   const { colors } = useTheme();
 
-  const { data: ranking = [], isLoading } = useQuery<RankedRecipe[]>({
-    queryKey: ['ranking', 'week'],
-    queryFn: () => fetchRankingRecipes('week'),
-    staleTime: 1000 * 60 * 15,
-  });
+  const [ranking, setRanking] = useState<RankedRecipe[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  useEffect(() => {
+    setIsLoading(true);
+    fetchRankingRecipes('week').then(setRanking).catch(() => {}).finally(() => setIsLoading(false));
+  }, []);
 
   const renderItem = ({ item, index }: { item: RankedRecipe; index: number }) => {
     const title = isZh ? item.title_zh : item.title;
