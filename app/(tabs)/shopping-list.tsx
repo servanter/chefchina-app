@@ -31,6 +31,7 @@ import {
 import ShoppingListItem from '../../components/ShoppingListItem';
 import AddIngredientModal from '../../components/AddIngredientModal';
 import EmptyShoppingList from '../../components/EmptyShoppingList';
+import { useAuth } from '../../src/hooks/useAuth';
 
 export default function ShoppingListTab() {
   const router = useRouter();
@@ -38,7 +39,11 @@ export default function ShoppingListTab() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
-  const { data, isLoading, error, refetch } = useShoppingList();
+  const { user, isLoading: authLoading } = useAuth();
+  const isLoggedIn = !authLoading && !!user;
+
+  // 未登录时不发请求（enabled: isLoggedIn）
+  const { data, isLoading, error, refetch } = useShoppingList({ enabled: isLoggedIn });
   const generateMutation = useGenerateShoppingList();
   const clearMutation = useClearShoppingList();
 
@@ -126,6 +131,36 @@ export default function ShoppingListTab() {
     }
     return '🥄';
   };
+
+  // auth 加载中
+  if (authLoading) {
+    return (
+      <SafeAreaView style={styles.centerContainer} edges={['top']}>
+        <ActivityIndicator size="large" color={colors.tint} />
+      </SafeAreaView>
+    );
+  }
+
+  // 未登录：直接展示引导，不发请求
+  if (!isLoggedIn) {
+    return (
+      <SafeAreaView style={styles.centerContainer} edges={['top']}>
+        <Ionicons name="list-outline" size={64} color={colors.tabIconDefault} />
+        <Text style={[styles.errorText, { marginTop: 16, fontSize: 18, fontWeight: '600' }]}>
+          登录后查看购物清单
+        </Text>
+        <Text style={[styles.errorText, { marginTop: 8, fontSize: 14, opacity: 0.6 }]}>
+          登录即可管理您的购物清单，随时随地轻松备料
+        </Text>
+        <TouchableOpacity
+          style={[styles.retryButton, { marginTop: 24, paddingHorizontal: 32, backgroundColor: colors.tint }]}
+          onPress={() => router.push('/auth/login')}
+        >
+          <Text style={[styles.retryText, { color: '#fff' }]}>立即登录</Text>
+        </TouchableOpacity>
+      </SafeAreaView>
+    );
+  }
 
   // 加载状态
   if (isLoading) {
