@@ -8,6 +8,7 @@ import {
   ScrollView,
   TextInput,
   ActivityIndicator,
+  Keyboard,
 } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import Toast from 'react-native-toast-message'
@@ -20,7 +21,7 @@ interface MealLoggerProps {
 }
 
 interface Recipe {
-  id: string  // recipe id 是 string（rec_xxx），不要转 Number
+  id: string  // recipe id 是 string (rec_xxx)，不要 Number() 转换
   title: string
   titleEn?: string
   titleZh?: string
@@ -43,6 +44,9 @@ const MEAL_TYPES: { value: MealType; label: string; emoji: string }[] = [
 
 const SERVINGS_OPTIONS: Servings[] = [0.5, 1, 2]
 
+// 搜索框在模态窗里距离顶部的像素偏移（header高度约55 + padding16 + label高度约40）
+const SEARCH_INPUT_TOP_OFFSET = 55 + 16 + 40 + 12 // ≈ 123
+
 export default function MealLogger({ visible, onClose, onSuccess }: MealLoggerProps) {
   const { t } = useTranslation()
   const [loading, setLoading] = useState(false)
@@ -53,7 +57,6 @@ export default function MealLogger({ visible, onClose, onSuccess }: MealLoggerPr
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null)
   const [mealType, setMealType] = useState<MealType>('lunch')
   const [servings, setServings] = useState<Servings>(1)
-  // 控制下拉浮层是否显示
   const [showDropdown, setShowDropdown] = useState(false)
 
   useEffect(() => {
@@ -63,7 +66,6 @@ export default function MealLogger({ visible, onClose, onSuccess }: MealLoggerPr
       else if (hour < 14) setMealType('lunch')
       else if (hour < 19) setMealType('dinner')
       else setMealType('snack')
-      // 打开时重置
       setSearchQuery('')
       setRecipes([])
       setSelectedRecipe(null)
@@ -84,8 +86,9 @@ export default function MealLogger({ visible, onClose, onSuccess }: MealLoggerPr
     try {
       setLoading(true)
       const data = await recipeAPI.searchRecipes({ keyword: searchQuery, limit: 10 })
-      setRecipes(data.recipes as Recipe[] || [])
-      setShowDropdown(true)
+      const list = (data.recipes as Recipe[]) || []
+      setRecipes(list)
+      setShowDropdown(list.length > 0)
     } catch (error) {
       console.error('Failed to search recipes:', error)
     } finally {
@@ -98,17 +101,14 @@ export default function MealLogger({ visible, onClose, onSuccess }: MealLoggerPr
       Toast.show({ type: 'error', text1: t('health.pleaseSelectRecipe', { defaultValue: '请选择菜谱' }) })
       return
     }
-
     try {
       setSubmitting(true)
-
-      // ✅ 直接传 string id，不做 Number() 转换（后端接受 string）
+      // ✅ string id 直接传，不做 Number() 转换
       await healthAPI.logIntake({
-        recipeId: selectedRecipe.id as unknown as number, // api.ts 类型是 number 但后端转 toString()
+        recipeId: selectedRecipe.id as unknown as number,
         mealType,
         servings,
       })
-
       Toast.show({ type: 'success', text1: t('health.logSuccess', { defaultValue: '记录成功' }) })
       onSuccess()
     } catch (error: any) {
@@ -127,6 +127,7 @@ export default function MealLogger({ visible, onClose, onSuccess }: MealLoggerPr
     setSearchQuery('')
     setRecipes([])
     setShowDropdown(false)
+    Keyboard.dismiss()
   }
 
   return (
@@ -137,6 +138,15 @@ export default function MealLogger({ visible, onClose, onSuccess }: MealLoggerPr
       onRequestClose={onClose}
     >
       <View style={styles.overlay}>
+        {/* ✅ 点击遮罩关闭下拉 */}
+        {showDropdown && (
+          <TouchableOpacity
+            style={StyleSheet.absoluteFillObject}
+            activeOpacity={1}
+            onPress={() => setShowDropdown(false)}
+          />
+        )}
+
         <View style={styles.modal}>
           {/* 标题栏 */}
           <View style={styles.header}>
@@ -153,6 +163,33 @@ export default function MealLogger({ visible, onClose, onSuccess }: MealLoggerPr
             </TouchableOpacity>
           </View>
 
+          {/* ✅ 下拉浮层挂在 modal 根层，不在 ScrollView 里 */}
+          {showDropdown && recipes.length > 0 && (
+            <View style={styles.dropdown}>
+              <ScrollView
+                style={styles.dropdownScroll}
+                keyboardShouldPersistTaps="handled"
+                nestedScrollEnabled
+              >
+                {loading && (
+                  <View style={styles.dropdownLoading}>
+                    <ActivityIndicator size="small" color="#FF6B35" />
+                  </View>
+                )}
+                {recipes.map((recipe) => (
+                  <TouchableOpacity
+                    key={recipe.id}
+                    style={styles.dropdownItem}
+                    onPress={() => handleSelectRecipe(recipe)}
+                  >
+                    <Text style={styles.dropdownItemName} numberOfLines={1}>{recipe.title}</Text>
+                    <Text style={styles.dropdownItemCal}>{recipe.calories || 0} kcal</Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </View>
+          )}
+
           <ScrollView
             style={styles.content}
             keyboardShouldPersistTaps="handled"
@@ -162,50 +199,23 @@ export default function MealLogger({ visible, onClose, onSuccess }: MealLoggerPr
             <View style={styles.section}>
               <Text style={styles.label}>{t('health.selectRecipe', { defaultValue: '选择菜谱' })}</Text>
 
-              {/* 搜索输入框 + 下拉浮层 */}
-              <View style={styles.searchWrapper}>
+              <View style={styles.searchRow}>
                 <TextInput
                   style={styles.searchInput}
                   placeholder={t('health.searchRecipePlaceholder', { defaultValue: '搜索菜谱名称...' })}
                   value={searchQuery}
                   onChangeText={setSearchQuery}
-                  onFocus={() => {
-                    if (recipes.length > 0) setShowDropdown(true)
-                  }}
+                  onFocus={() => { if (recipes.length > 0) setShowDropdown(true) }}
                 />
-
                 {loading && (
-                  <View style={styles.loadingInline}>
-                    <ActivityIndicator size="small" color="#FF6B35" />
-                  </View>
-                )}
-
-                {/* ✅ 绝对定位浮层，覆盖在下方内容之上 */}
-                {showDropdown && recipes.length > 0 && (
-                  <View style={styles.dropdown}>
-                    <ScrollView
-                      style={styles.dropdownScroll}
-                      keyboardShouldPersistTaps="handled"
-                      nestedScrollEnabled
-                    >
-                      {recipes.map((recipe) => (
-                        <TouchableOpacity
-                          key={recipe.id}
-                          style={styles.dropdownItem}
-                          onPress={() => handleSelectRecipe(recipe)}
-                        >
-                          <Text style={styles.dropdownItemName}>{recipe.title}</Text>
-                          <Text style={styles.dropdownItemCal}>
-                            {recipe.calories || 0} kcal
-                          </Text>
-                        </TouchableOpacity>
-                      ))}
-                    </ScrollView>
-                  </View>
+                  <ActivityIndicator
+                    size="small"
+                    color="#FF6B35"
+                    style={styles.searchSpinner}
+                  />
                 )}
               </View>
 
-              {/* 已选中的菜谱 */}
               {selectedRecipe && (
                 <View style={styles.selectedRecipe}>
                   <View style={styles.recipeInfo}>
@@ -235,12 +245,7 @@ export default function MealLogger({ visible, onClose, onSuccess }: MealLoggerPr
                     onPress={() => setMealType(type.value)}
                   >
                     <Text style={styles.mealTypeEmoji}>{type.emoji}</Text>
-                    <Text
-                      style={[
-                        styles.mealTypeLabel,
-                        mealType === type.value && styles.mealTypeLabelActive,
-                      ]}
-                    >
+                    <Text style={[styles.mealTypeLabel, mealType === type.value && styles.mealTypeLabelActive]}>
                       {type.label}
                     </Text>
                   </TouchableOpacity>
@@ -261,12 +266,7 @@ export default function MealLogger({ visible, onClose, onSuccess }: MealLoggerPr
                     ]}
                     onPress={() => setServings(option)}
                   >
-                    <Text
-                      style={[
-                        styles.servingsText,
-                        servings === option && styles.servingsTextActive,
-                      ]}
-                    >
+                    <Text style={[styles.servingsText, servings === option && styles.servingsTextActive]}>
                       {option}{t('common.servings', { defaultValue: '份' })}
                     </Text>
                   </TouchableOpacity>
@@ -312,6 +312,8 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     height: '80%',
+    // overflow visible 让绝对定位子元素可以超出
+    overflow: 'visible',
   },
   header: {
     flexDirection: 'row',
@@ -320,93 +322,59 @@ const styles = StyleSheet.create({
     padding: 16,
     borderBottomWidth: 1,
     borderBottomColor: '#E0E0E0',
+    zIndex: 1,
   },
-  cancelButton: {
-    fontSize: 16,
-    color: '#666',
+  cancelButton: { fontSize: 16, color: '#666' },
+  title: { fontSize: 18, fontWeight: '600', color: '#333' },
+  doneButton: { fontSize: 16, color: '#FF6B35', fontWeight: '600' },
+  doneButtonDisabled: { opacity: 0.5 },
+
+  // ✅ 下拉浮层：挂在 modal 根节点，绝对定位在搜索框下方
+  dropdown: {
+    position: 'absolute',
+    // header(55) + content padding(16) + label(28+12) + input(48) = 约 159
+    top: 159,
+    left: 16,
+    right: 16,
+    backgroundColor: '#FFF',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
+    elevation: 20,
+    zIndex: 9999,
   },
-  title: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#333',
+  dropdownScroll: { maxHeight: 240 },
+  dropdownLoading: { padding: 16, alignItems: 'center' },
+  dropdownItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 13,
+    paddingHorizontal: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F5F5F5',
   },
-  doneButton: {
-    fontSize: 16,
-    color: '#FF6B35',
-    fontWeight: '600',
-  },
-  doneButtonDisabled: {
-    opacity: 0.5,
-  },
-  content: {
-    flex: 1,
-    padding: 16,
-  },
-  section: {
-    marginBottom: 24,
-  },
-  label: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 12,
-  },
-  // ✅ 搜索框容器，relative 定位，让下拉浮层相对于它定位
-  searchWrapper: {
-    position: 'relative',
-    zIndex: 100,
-  },
+  dropdownItemName: { fontSize: 15, color: '#333', flex: 1, marginRight: 8 },
+  dropdownItemCal: { fontSize: 13, color: '#FF6B35', fontWeight: '500' },
+
+  content: { flex: 1, padding: 16 },
+  section: { marginBottom: 24 },
+  label: { fontSize: 16, fontWeight: '600', color: '#333', marginBottom: 12 },
+
+  searchRow: { flexDirection: 'row', alignItems: 'center' },
   searchInput: {
+    flex: 1,
     backgroundColor: '#F5F5F5',
     borderRadius: 8,
     padding: 12,
     fontSize: 16,
   },
-  loadingInline: {
-    position: 'absolute',
-    right: 12,
-    top: 12,
-  },
-  // ✅ 绝对定位下拉浮层
-  dropdown: {
-    position: 'absolute',
-    top: 52, // searchInput height ≈ 48 + gap
-    left: 0,
-    right: 0,
-    backgroundColor: '#FFF',
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.12,
-    shadowRadius: 8,
-    elevation: 10,
-    zIndex: 999,
-  },
-  dropdownScroll: {
-    maxHeight: 220,
-  },
-  dropdownItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F5F5F5',
-  },
-  dropdownItemName: {
-    fontSize: 15,
-    color: '#333',
-    flex: 1,
-    marginRight: 8,
-  },
-  dropdownItemCal: {
-    fontSize: 13,
-    color: '#FF6B35',
-    fontWeight: '500',
-  },
+  searchSpinner: { marginLeft: 10 },
+
   selectedRecipe: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -418,28 +386,12 @@ const styles = StyleSheet.create({
     borderColor: '#FF6B35',
     marginTop: 12,
   },
-  recipeInfo: {
-    flex: 1,
-  },
-  recipeName: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#333',
-    marginBottom: 4,
-  },
-  recipeNutrition: {
-    fontSize: 14,
-    color: '#666',
-  },
-  clearButton: {
-    fontSize: 20,
-    color: '#999',
-    padding: 4,
-  },
-  mealTypeContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
+  recipeInfo: { flex: 1 },
+  recipeName: { fontSize: 16, fontWeight: '500', color: '#333', marginBottom: 4 },
+  recipeNutrition: { fontSize: 14, color: '#666' },
+  clearButton: { fontSize: 20, color: '#999', padding: 4 },
+
+  mealTypeContainer: { flexDirection: 'row', justifyContent: 'space-between' },
   mealTypeButton: {
     flex: 1,
     alignItems: 'center',
@@ -450,26 +402,12 @@ const styles = StyleSheet.create({
     borderColor: '#E0E0E0',
     backgroundColor: '#FFF',
   },
-  mealTypeButtonActive: {
-    borderColor: '#FF6B35',
-    backgroundColor: '#FFF5F2',
-  },
-  mealTypeEmoji: {
-    fontSize: 24,
-    marginBottom: 4,
-  },
-  mealTypeLabel: {
-    fontSize: 14,
-    color: '#666',
-  },
-  mealTypeLabelActive: {
-    color: '#FF6B35',
-    fontWeight: '600',
-  },
-  servingsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-  },
+  mealTypeButtonActive: { borderColor: '#FF6B35', backgroundColor: '#FFF5F2' },
+  mealTypeEmoji: { fontSize: 24, marginBottom: 4 },
+  mealTypeLabel: { fontSize: 14, color: '#666' },
+  mealTypeLabelActive: { color: '#FF6B35', fontWeight: '600' },
+
+  servingsContainer: { flexDirection: 'row', justifyContent: 'space-around' },
   servingsButton: {
     flex: 1,
     padding: 12,
@@ -479,45 +417,14 @@ const styles = StyleSheet.create({
     borderColor: '#E0E0E0',
     alignItems: 'center',
   },
-  servingsButtonActive: {
-    borderColor: '#FF6B35',
-    backgroundColor: '#FFF5F2',
-  },
-  servingsText: {
-    fontSize: 16,
-    color: '#666',
-  },
-  servingsTextActive: {
-    color: '#FF6B35',
-    fontWeight: '600',
-  },
-  preview: {
-    backgroundColor: '#F5F5F5',
-    borderRadius: 12,
-    padding: 16,
-    marginTop: 8,
-  },
-  previewTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 12,
-  },
-  previewStats: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-  },
-  previewStat: {
-    alignItems: 'center',
-  },
-  previewLabel: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 4,
-  },
-  previewValue: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#FF6B35',
-  },
+  servingsButtonActive: { borderColor: '#FF6B35', backgroundColor: '#FFF5F2' },
+  servingsText: { fontSize: 16, color: '#666' },
+  servingsTextActive: { color: '#FF6B35', fontWeight: '600' },
+
+  preview: { backgroundColor: '#F5F5F5', borderRadius: 12, padding: 16, marginTop: 8 },
+  previewTitle: { fontSize: 16, fontWeight: '600', color: '#333', marginBottom: 12 },
+  previewStats: { flexDirection: 'row', justifyContent: 'space-around' },
+  previewStat: { alignItems: 'center' },
+  previewLabel: { fontSize: 14, color: '#666', marginBottom: 4 },
+  previewValue: { fontSize: 20, fontWeight: '700', color: '#FF6B35' },
 })
