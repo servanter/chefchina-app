@@ -4,31 +4,26 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import NetInfo, { NetInfoState } from '@react-native-community/netinfo';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
-import { useQueryClient } from '@tanstack/react-query';
 
 type Status = 'online' | 'offline' | 'restored';
 
 const OFFLINE_COLOR = '#F4C430'; // 黄色警示
 const RESTORED_COLOR = '#4CAF50';
 const RESTORED_VISIBLE_MS = 2000;
-const INVALIDATE_DEBOUNCE_MS = 5000;
 
 /**
  * 订阅 NetInfo：
  * - 离线时顶部显示黄色横条（内容走 i18n）
  * - 恢复后显示绿色"已恢复"条 2 秒
- * - 恢复时触发 queryClient.invalidateQueries()（5 秒去抖）
  * 挂载位置：`app/_layout.tsx` 根布局顶层（遮住 StatusBar 下方留白）
  */
 export const OfflineBanner: React.FC = () => {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
-  const queryClient = useQueryClient();
 
   const [status, setStatus] = useState<Status>('online');
   const translateY = useRef(new Animated.Value(-60)).current;
   const restoreTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const lastInvalidateAt = useRef<number>(0);
   const prevConnectedRef = useRef<boolean | null>(null);
 
   useEffect(() => {
@@ -57,15 +52,6 @@ export const OfflineBanner: React.FC = () => {
       // 从离线转到在线
       if (prev === false && connected) {
         setStatus('restored');
-        const now = Date.now();
-        if (now - lastInvalidateAt.current > INVALIDATE_DEBOUNCE_MS) {
-          lastInvalidateAt.current = now;
-          try {
-            queryClient.invalidateQueries();
-          } catch {
-            // ignore
-          }
-        }
         if (restoreTimer.current) clearTimeout(restoreTimer.current);
         restoreTimer.current = setTimeout(() => {
           setStatus('online');
@@ -81,7 +67,7 @@ export const OfflineBanner: React.FC = () => {
       unsub();
       if (restoreTimer.current) clearTimeout(restoreTimer.current);
     };
-  }, [queryClient]);
+  }, []);
 
   useEffect(() => {
     Animated.timing(translateY, {

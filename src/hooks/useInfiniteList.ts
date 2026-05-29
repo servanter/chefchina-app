@@ -1,81 +1,62 @@
-import { useCallback, useMemo, useState } from 'react';
-import { useInfiniteQuery, QueryKey } from '@tanstack/react-query';
+// src/hooks/useInfiniteList.ts
+// 通用分页 hook — 不依赖 React Query
+import { useState, useCallback, useRef } from 'react';
 
-export interface CursorPage<T> {
-  items: T[];
-  nextCursor: string | null;
+interface PageData<T> {
+  data: T[];
+  pagination: { page: number; pageSize: number; total: number; totalPages: number };
 }
 
 export interface UseInfiniteListOptions<T> {
-  queryKey: QueryKey;
-  /**
-   * Cursor-based fetcher. Receives `{ cursor, limit }` and must return
-   * `{ items, nextCursor }`.
-   */
-  fetcher: (params: { cursor: string | null; limit: number }) => Promise<CursorPage<T>>;
-  /** Page size sent as `limit` to the fetcher. */
-  limit?: number;
-  /** When false, the query is disabled (same semantics as React Query). */
+  queryFn: (page: number) => Promise<PageData<T>>;
   enabled?: boolean;
-  /** staleTime in ms. Defaults to 2 minutes. */
-  staleTime?: number;
 }
 
-/**
- * useInfiniteList · 需求 12
- *
- * 统一包装 React Query 的 `useInfiniteQuery`，提供一套和页面层更贴近的返回：
- *   { items, isLoading, isRefreshing, isFetchingNextPage, refetch,
- *     fetchNextPage, hasNextPage, error }
- *
- * fetcher 契约：接受 `{ cursor?, limit }`，返回 `{ items, nextCursor }`。
- *   - 第一页 cursor 为 null
- *   - 若 nextCursor 为 null，表示没有更多
- */
-export function useInfiniteList<T>({
-  queryKey,
-  fetcher,
-  limit = 20,
-  enabled = true,
-  staleTime = 1000 * 60 * 2,
-}: UseInfiniteListOptions<T>) {
-  // 手动追踪 pull-to-refresh 状态 —— refetch 并不会改 isRefetching（足够但语义不清）
+export function useInfiniteList<T>({ queryFn, enabled = true }: UseInfiniteListOptions<T>) {
+  const [items, setItems] = useState<T[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isFetchingNextPage, setIsFetchingNextPage] = useState(false);
+  const [hasNextPage, setHasNextPage] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+  const pageRef = useRef(0);
 
-  const query = useInfiniteQuery({
-    queryKey,
-    queryFn: ({ pageParam }) =>
-      fetcher({ cursor: (pageParam as string | null) ?? null, limit }),
-    initialPageParam: null as string | null,
-    getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
-    enabled,
-    staleTime,
-  });
-
-  const items = useMemo(
-    () => (query.data?.pages ?? []).flatMap((p) => p.items),
-    [query.data],
+  const load = useCallback(
+    async (reset = false) => {
+      if (!enabled) return;
+      if (reset) {
+        pageRef.current = 0;
+        setItems([]);
+        setHasNextPage(true);
+        setIsRefreshing(true);
+        setIsLoading(true);
+      } else {
+        if (!hasNextPage || isFetchingNextPage) return;
+        setIsFetchingNextPage(true);
+      }
+      const nextPage = pageRef.current + 1;
+      try {
+        const res = await queryFn(nextPage);
+        pageRef.current = nextPage;
+        setItems((prev) => (reset ? res.data : [...prev, ...res.data]));
+        setHasNextPage(nextPage < res.pagination.totalPages);
+        setError(null);
+      } catch (e) {
+        setError(e as Error);
+      } finally {
+        setIsLoading(false);
+        setIsRefreshing(false);
+        setIsFetchingNextPage(false);
+      }
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [queryFn, enabled],
   );
 
-  const refetch = useCallback(async () => {
-    setIsRefreshing(true);
-    try {
-      await query.refetch();
-    } finally {
-      setIsRefreshing(false);
-    }
-  }, [query]);
+  const refetch = useCallback(() => load(true), [load]);
+  const fetchNextPage = useCallback(() => load(false), [load]);
 
-  return {
-    items,
-    isLoading: query.isLoading,
-    isRefreshing,
-    isFetchingNextPage: query.isFetchingNextPage,
-    refetch,
-    fetchNextPage: query.fetchNextPage,
-    hasNextPage: !!query.hasNextPage,
-    error: query.error,
-  };
+  return { items, isLoading, isRefreshing, isFetchingNextPage, hasNextPage, error, refetch, fetchNextPage };
 }
 
 export default useInfiniteList;

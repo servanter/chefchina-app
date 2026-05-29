@@ -1,97 +1,155 @@
-import { useInfiniteQuery, useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import { apiClient, PAGE_SIZE } from '../lib/api'
 
 // REQ-16.1: 获取用户统计数据
 export function useUserStats(userId?: string | null) {
-  return useQuery({
-    queryKey: ['userStats', userId],
-    queryFn: async () => {
-      if (!userId) throw new Error('userId is required')
+  const [data, setData] = useState<{
+    recipeCount: number
+    totalLikes: number
+    followingCount: number
+    followerCount: number
+  } | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<Error | null>(null)
+
+  const load = useCallback(async () => {
+    if (!userId) return
+    setIsLoading(true)
+    try {
       const res = await apiClient.get(`/users/${userId}/stats`)
-      return res.data as {
-        recipeCount: number
-        totalLikes: number
-        followingCount: number
-        followerCount: number
-      }
-    },
-    enabled: !!userId,
-    staleTime: 5 * 60 * 1000, // 5 分钟缓存
-  })
+      setData(res.data)
+      setError(null)
+    } catch (e) {
+      setError(e as Error)
+    } finally {
+      setIsLoading(false)
+    }
+  }, [userId])
+
+  useEffect(() => {
+    if (userId) load()
+  }, [userId, load])
+
+  return { data, isLoading, error, refetch: load }
 }
 
-function createUserListQueryKey(key: string, userId?: string | null, extra?: string) {
-  return extra ? [key, userId, extra] : [key, userId]
-}
+function makeUserListHook(endpoint: (userId: string) => string) {
+  return function useUserList(userId?: string | null) {
+    const [pages, setPages] = useState<any[]>([])
+    const [isLoading, setIsLoading] = useState(false)
+    const [isFetchingNextPage, setIsFetchingNextPage] = useState(false)
+    const [hasNextPage, setHasNextPage] = useState(false)
+    const [error, setError] = useState<Error | null>(null)
+    const pageRef = useRef(0)
 
-function getNextPage(lastPage: any) {
-  return lastPage?.pagination?.hasMore ? lastPage.pagination.page + 1 : undefined
+    const fetchPage = useCallback(
+      async (reset: boolean) => {
+        if (!userId) return
+        const nextPage = reset ? 1 : pageRef.current + 1
+        if (reset) {
+          setIsLoading(true)
+          setPages([])
+          pageRef.current = 0
+          setHasNextPage(false)
+        } else {
+          if (!hasNextPage || isFetchingNextPage) return
+          setIsFetchingNextPage(true)
+        }
+        try {
+          const res = await apiClient.get(endpoint(userId), {
+            params: { page: nextPage, limit: PAGE_SIZE },
+          })
+          const pageData = res.data.data
+          pageRef.current = nextPage
+          setPages((prev) => (reset ? [pageData] : [...prev, pageData]))
+          setHasNextPage(!!pageData?.pagination?.hasMore)
+          setError(null)
+        } catch (e) {
+          setError(e as Error)
+        } finally {
+          setIsLoading(false)
+          setIsFetchingNextPage(false)
+        }
+      },
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      [userId],
+    )
+
+    useEffect(() => {
+      if (userId) fetchPage(true)
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [userId])
+
+    const refetch = useCallback(() => fetchPage(true), [fetchPage])
+    const fetchNextPage = useCallback(() => fetchPage(false), [fetchPage])
+
+    // Flat data for convenience
+    const data = pages.length > 0
+      ? { pages: pages.map((p) => p) }
+      : undefined
+
+    return { data, isLoading, isFetchingNextPage, hasNextPage, error, refetch, fetchNextPage }
+  }
 }
 
 // REQ-16.1: 获取用户菜谱列表
 export function useUserRecipes(userId?: string | null, tab: 'published' | 'liked' = 'published') {
-  return useInfiniteQuery({
-    queryKey: createUserListQueryKey('userRecipes', userId, tab),
-    queryFn: async ({ pageParam = 1 }) => {
-      if (!userId) throw new Error('userId is required')
-      const res = await apiClient.get(`/users/${userId}/recipes`, {
-        params: { tab, page: pageParam, limit: PAGE_SIZE },
-      })
-      return res.data.data
+  const [pages, setPages] = useState<any[]>([])
+  const [isLoading, setIsLoading] = useState(false)
+  const [isFetchingNextPage, setIsFetchingNextPage] = useState(false)
+  const [hasNextPage, setHasNextPage] = useState(false)
+  const [error, setError] = useState<Error | null>(null)
+  const pageRef = useRef(0)
+
+  const fetchPage = useCallback(
+    async (reset: boolean) => {
+      if (!userId) return
+      const nextPage = reset ? 1 : pageRef.current + 1
+      if (reset) {
+        setIsLoading(true)
+        setPages([])
+        pageRef.current = 0
+        setHasNextPage(false)
+      } else {
+        if (!hasNextPage || isFetchingNextPage) return
+        setIsFetchingNextPage(true)
+      }
+      try {
+        const res = await apiClient.get(`/users/${userId}/recipes`, {
+          params: { tab, page: nextPage, limit: PAGE_SIZE },
+        })
+        const pageData = res.data.data
+        pageRef.current = nextPage
+        setPages((prev) => (reset ? [pageData] : [...prev, pageData]))
+        setHasNextPage(!!pageData?.pagination?.hasMore)
+        setError(null)
+      } catch (e) {
+        setError(e as Error)
+      } finally {
+        setIsLoading(false)
+        setIsFetchingNextPage(false)
+      }
     },
-    initialPageParam: 1,
-    getNextPageParam: getNextPage,
-    enabled: !!userId,
-  })
+    [userId, tab],
+  )
+
+  useEffect(() => {
+    if (userId) fetchPage(true)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId, tab])
+
+  const refetch = useCallback(() => fetchPage(true), [fetchPage])
+  const fetchNextPage = useCallback(() => fetchPage(false), [fetchPage])
+  const data = pages.length > 0 ? { pages } : undefined
+
+  return { data, isLoading, isFetchingNextPage, hasNextPage, error, refetch, fetchNextPage }
 }
 
 // REQ-16.1: 获取用户收藏列表
-export function useUserFavorites(userId?: string | null) {
-  return useInfiniteQuery({
-    queryKey: createUserListQueryKey('userFavorites', userId),
-    queryFn: async ({ pageParam = 1 }) => {
-      if (!userId) throw new Error('userId is required')
-      const res = await apiClient.get(`/users/${userId}/favorites`, {
-        params: { page: pageParam, limit: PAGE_SIZE },
-      })
-      return res.data.data
-    },
-    initialPageParam: 1,
-    getNextPageParam: getNextPage,
-    enabled: !!userId,
-  })
-}
+export const useUserFavorites = makeUserListHook((id) => `/users/${id}/favorites`)
 
 // REQ-BF-010: 获取用户关注列表
-export function useUserFollowing(userId?: string | null) {
-  return useInfiniteQuery({
-    queryKey: createUserListQueryKey('userFollowing', userId),
-    queryFn: async ({ pageParam = 1 }) => {
-      if (!userId) throw new Error('userId is required')
-      const res = await apiClient.get(`/users/${userId}/following`, {
-        params: { page: pageParam, limit: PAGE_SIZE },
-      })
-      return res.data.data
-    },
-    initialPageParam: 1,
-    getNextPageParam: getNextPage,
-    enabled: !!userId,
-  })
-}
+export const useUserFollowing = makeUserListHook((id) => `/users/${id}/following`)
 
 // REQ-BF-010: 获取用户粉丝列表
-export function useUserFollowers(userId?: string | null) {
-  return useInfiniteQuery({
-    queryKey: createUserListQueryKey('userFollowers', userId),
-    queryFn: async ({ pageParam = 1 }) => {
-      if (!userId) throw new Error('userId is required')
-      const res = await apiClient.get(`/users/${userId}/followers`, {
-        params: { page: pageParam, limit: PAGE_SIZE },
-      })
-      return res.data.data
-    },
-    initialPageParam: 1,
-    getNextPageParam: getNextPage,
-    enabled: !!userId,
-  })
-}
+export const useUserFollowers = makeUserListHook((id) => `/users/${id}/followers`)

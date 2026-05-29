@@ -145,7 +145,7 @@ export default function ShoppingListTab() {
   if (!isLoggedIn) {
     return (
       <SafeAreaView style={styles.centerContainer} edges={['top']}>
-        <Ionicons name="list-outline" size={64} color={colors.tabIconDefault} />
+        <Ionicons name="list-outline" size={64} color={colors.tabInactive} />
         <Text style={[styles.errorText, { marginTop: 16, fontSize: 18, fontWeight: '600' }]}>
           登录后查看购物清单
         </Text>

@@ -1,41 +1,64 @@
 // src/hooks/useAIAnalysis.ts
-// AI 分析相关的 React Query hooks
+// AI 分析相关 hooks — 不依赖 React Query
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useState, useCallback, useEffect } from 'react';
 import { fetchAIQuota, analyzeRecipeForUser, AIQuotaInfo, AIAnalysisResult } from '../lib/api';
 
 /**
  * 获取 AI 配额信息
  */
 export const useAIQuota = (options?: { enabled?: boolean }) => {
-  return useQuery<AIQuotaInfo>({
-    queryKey: ['ai', 'quota'],
-    queryFn: fetchAIQuota,
-    enabled: options?.enabled !== false, // 默认启用，除非明确设置为 false
-    staleTime: 1000 * 60 * 5, // 5 分钟内认为数据新鲜
-    gcTime: 1000 * 60 * 10, // 10 分钟缓存
-  });
+  const enabled = options?.enabled !== false;
+  const [data, setData] = useState<AIQuotaInfo | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+
+  const load = useCallback(async () => {
+    if (!enabled) return;
+    setIsLoading(true);
+    try {
+      const result = await fetchAIQuota();
+      setData(result);
+      setError(null);
+    } catch (e) {
+      setError(e as Error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [enabled]);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  return { data, isLoading, error, refetch: load };
 };
 
 /**
  * 请求 AI 分析菜谱
  */
 export const useAnalyzeRecipe = () => {
-  const queryClient = useQueryClient();
+  const [isPending, setIsPending] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
 
-  return useMutation({
-    mutationFn: async (params: { recipeId: string; language: 'zh' | 'en' }) => {
+  const mutate = useCallback(async (params: { recipeId: string; language: 'zh' | 'en' }): Promise<AIAnalysisResult | undefined> => {
+    setIsPending(true);
+    setError(null);
+    try {
       const result = await analyzeRecipeForUser(params.recipeId, params.language);
       if (!result.success) {
-        // 抛出错误，包含 error code
-        const error = new Error(result.error);
-        throw error;
+        const err = new Error(result.error);
+        setError(err);
+        throw err;
       }
-      return result;
-    },
-    onSuccess: () => {
-      // 刷新配额信息
-      queryClient.invalidateQueries({ queryKey: ['ai', 'quota'] });
-    },
-  });
+      return result.data;
+    } catch (e) {
+      setError(e as Error);
+      throw e;
+    } finally {
+      setIsPending(false);
+    }
+  }, []);
+
+  return { mutate, isPending, error };
 };

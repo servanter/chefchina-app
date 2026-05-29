@@ -30,10 +30,7 @@ interface WeeklyReport {
     protein: number
     onTrack: boolean
   }>
-  aiSuggestions: Array<{
-    content: string
-    source: 'ai' | 'rule'
-  }>
+  aiSuggestions: string[]
 }
 
 export default function WeeklyReportScreen() {
@@ -167,10 +164,8 @@ export default function WeeklyReportScreen() {
             <>
               {aiSuggestions.map((suggestion, index) => (
                 <View key={index} style={styles.suggestionItem}>
-                  <Text style={styles.suggestionIcon}>
-                    {suggestion.source === 'ai' ? '🤖' : '📊'}
-                  </Text>
-                  <Text style={styles.suggestionText}>{suggestion.content}</Text>
+                  <Text style={styles.suggestionIcon}>📊</Text>
+                  <Text style={styles.suggestionText}>{suggestion}</Text>
                 </View>
               ))}
               

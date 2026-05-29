@@ -28,7 +28,7 @@ export default function FollowedTopicsPage() {
 
   const handleUnfollow = async (topicId: string) => {
     try {
-      await toggleFollow.mutateAsync({ topicId, action: 'unfollow' });
+      await toggleFollow.mutate({ topicId, action: 'unfollow' });
       Toast.show({
         type: 'success',
         text1: isZh ? '已取消关注' : 'Unfollowed'

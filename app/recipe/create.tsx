@@ -143,7 +143,7 @@ export default function CreateRecipePage() {
               titleZh: '',
               contentEn: s.description,
               contentZh: s.description_zh,
-              image: s.image,
+              image: Array.isArray(s.image) ? s.image[0] : s.image,
               durationMin: s.duration_min,
             }))
           )

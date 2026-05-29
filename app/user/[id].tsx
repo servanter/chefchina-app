@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -12,13 +12,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
-import { useQuery } from '@tanstack/react-query';
 import { AppImage } from '../../src/components/AppImage';
 import { LoadingSpinner } from '../../src/components/LoadingSpinner';
 import { EmptyState } from '../../src/components/EmptyState';
 import { RecipeSkeletonList } from '../../src/components/RecipeSkeleton';
 import { useAuth } from '../../src/hooks/useAuth';
 import { useUserStats, useUserRecipes, useUserFavorites, useUserFollowing, useUserFollowers } from '../../src/hooks/useUserProfile';
+import { useToggleFollow } from '../../src/hooks/useSocial';
 import { useTheme } from '../../src/contexts/ThemeContext';
 import { useFontScale } from '../../src/hooks/useFontScale';
 import { apiClient } from '../../src/lib/api';
@@ -40,18 +40,59 @@ export default function UserProfileScreen() {
 
   const [activeTab, setActiveTab] = useState<TabType>('recipes');
   const [refreshing, setRefreshing] = useState(false);
-
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [followLoading, setFollowLoading] = useState(false);
   const isOwnProfile = currentUser?.id === id;
-
   // 获取用户基本信息
-  const { data: user, isLoading: userLoading, refetch: refetchUser } = useQuery({
-    queryKey: ['user', id],
-    queryFn: async () => {
+  const [user, setUser] = useState<any>(null);
+  const [userLoading, setUserLoading] = useState(false);
+
+  const refetchUser = useCallback(async () => {
+    if (!id) return;
+    setUserLoading(true);
+    try {
       const res = await apiClient.get(`/users/${id}`);
-      return res.data;
-    },
-    enabled: !!id,
-  });
+      setUser(res.data);
+    } catch {
+      // ignore
+    } finally {
+      setUserLoading(false);
+    }
+  }, [id]);
+
+  useEffect(() => {
+    if (id) refetchUser();
+  }, [id, refetchUser]);
+
+  // 检查关注状态
+  useEffect(() => {
+    if (!currentUser || !id || isOwnProfile) return;
+    apiClient
+      .get(`/users/${id}/followers`, { params: { page: 1, limit: 100 } })
+      .then((res) => {
+        const followers: any[] = res.data?.data?.followers ?? res.data?.data ?? [];
+        setIsFollowing(followers.some((f: any) => f.id === currentUser.id));
+      })
+      .catch(() => {});
+  }, [id, currentUser, isOwnProfile]);
+
+  const { mutate: toggleFollowMutate, isPending: followPending } = useToggleFollow();
+
+  const handleToggleFollow = useCallback(async () => {
+    if (!currentUser || !id) return;
+    const action = isFollowing ? 'unfollow' : 'follow';
+    setFollowLoading(true);
+    try {
+      await toggleFollowMutate({ followingId: id, action });
+      setIsFollowing(!isFollowing);
+      // Refresh stats after follow/unfollow
+      refetchStats();
+    } catch {
+      // ignore
+    } finally {
+      setFollowLoading(false);
+    }
+  }, [currentUser, id, isFollowing, toggleFollowMutate]);
 
   // REQ-16.1: 获取用户统计数据
   const { data: stats, refetch: refetchStats } = useUserStats(id);
@@ -262,11 +303,27 @@ export default function UserProfileScreen() {
               ) : (
                 <View style={styles.actionRow}>
                   <TouchableOpacity
-                    style={[styles.actionBtn, { backgroundColor: colors.tint, flex: 1 }]}
+                    style={[styles.actionBtn, {
+                      backgroundColor: isFollowing ? colors.chipBg : colors.tint,
+                      borderColor: isFollowing ? colors.chipBorder : undefined,
+                      flex: 1,
+                      opacity: (followLoading || followPending) ? 0.6 : 1,
+                    }]}
+                    onPress={handleToggleFollow}
+                    disabled={followLoading || followPending}
                   >
-                    <Ionicons name="person-add-outline" size={16} color="#FFF" />
-                    <Text style={[styles.actionBtnText, { color: '#FFF', fontSize: scaled(14) }]}>
-                      {isZh ? '关注' : 'Follow'}
+                    <Ionicons
+                      name={isFollowing ? 'checkmark-circle-outline' : 'person-add-outline'}
+                      size={16}
+                      color={isFollowing ? colors.tint : '#FFF'}
+                    />
+                    <Text style={[styles.actionBtnText, {
+                      color: isFollowing ? colors.tint : '#FFF',
+                      fontSize: scaled(14),
+                    }]}>
+                      {isFollowing
+                        ? (isZh ? '已关注' : 'Following')
+                        : (isZh ? '关注' : 'Follow')}
                     </Text>
                   </TouchableOpacity>
                   <TouchableOpacity

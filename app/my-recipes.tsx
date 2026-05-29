@@ -56,7 +56,7 @@ export default function MyRecipesScreen() {
           style: 'destructive',
           onPress: async () => {
             try {
-              await deleteMutation.mutateAsync(item.id);
+              await deleteMutation.mutate(item.id);
             } catch (error: any) {
               Alert.alert(t('common.error'), error?.message || t('common.operationFailed'));
             }
@@ -68,7 +68,7 @@ export default function MyRecipesScreen() {
 
   const handleRepublish = async (item: Recipe) => {
     try {
-      await republishMutation.mutateAsync(item.id);
+      await republishMutation.mutate(item.id);
     } catch (error: any) {
       Alert.alert(t('common.error'), error?.message || t('common.operationFailed'));
     }
@@ -84,7 +84,7 @@ export default function MyRecipesScreen() {
           text: t('myRecipes.actions.unpublish'),
           onPress: async () => {
             try {
-              await unpublishMutation.mutateAsync(item.id);
+              await unpublishMutation.mutate(item.id);
             } catch (error: any) {
               Alert.alert(t('common.error'), error?.message || t('common.operationFailed'));
             }

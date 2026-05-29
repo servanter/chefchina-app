@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useState, useCallback, useEffect } from 'react';
 import {
   fetchBadges,
   fetchUserBadges,
@@ -11,40 +11,96 @@ import {
 
 // 全部徽章
 export const useBadges = () => {
-  return useQuery<Badge[]>({
-    queryKey: ['badges'],
-    queryFn: fetchBadges,
-    staleTime: 5 * 60 * 1000, // 5 分钟缓存
-  });
+  const [data, setData] = useState<Badge[] | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+
+  const load = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const result = await fetchBadges();
+      setData(result);
+      setError(null);
+    } catch (e) {
+      setError(e as Error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  return { data, isLoading, error, refetch: load };
 };
 
 // 用户已解锁徽章
 export const useUserBadges = (userId: string | null | undefined) => {
-  return useQuery<UserBadge[]>({
-    queryKey: ['userBadges', userId],
-    queryFn: () => fetchUserBadges(userId!),
-    enabled: !!userId,
-  });
+  const [data, setData] = useState<UserBadge[] | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+
+  const load = useCallback(async () => {
+    if (!userId) return;
+    setIsLoading(true);
+    try {
+      const result = await fetchUserBadges(userId);
+      setData(result);
+      setError(null);
+    } catch (e) {
+      setError(e as Error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [userId]);
+
+  useEffect(() => {
+    if (userId) load();
+  }, [userId, load]);
+
+  return { data, isLoading, error, refetch: load };
 };
 
-// 检查解锁（mutation）
+// 检查解锁
 export const useCheckAchievements = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (userId: string) => checkAchievements(userId),
-    onSuccess: (_data, userId) => {
-      queryClient.invalidateQueries({ queryKey: ['userBadges', userId] });
-      queryClient.invalidateQueries({ queryKey: ['userLevel', userId] });
-    },
-  });
+  const [isPending, setIsPending] = useState(false);
+
+  const mutate = useCallback(async (userId: string) => {
+    setIsPending(true);
+    try {
+      return await checkAchievements(userId);
+    } finally {
+      setIsPending(false);
+    }
+  }, []);
+
+  return { mutate, isPending };
 };
 
 // 等级信息
 export const useUserLevel = (userId: string | null | undefined) => {
-  return useQuery<LevelInfo>({
-    queryKey: ['userLevel', userId],
-    queryFn: () => fetchUserLevel(userId!),
-    enabled: !!userId,
-    staleTime: 5 * 60 * 1000, // 5 分钟缓存，level 不常变
-  });
+  const [data, setData] = useState<LevelInfo | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+
+  const load = useCallback(async () => {
+    if (!userId) return;
+    setIsLoading(true);
+    try {
+      const result = await fetchUserLevel(userId);
+      setData(result);
+      setError(null);
+    } catch (e) {
+      setError(e as Error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [userId]);
+
+  useEffect(() => {
+    if (userId) load();
+  }, [userId, load]);
+
+  return { data, isLoading, error, refetch: load };
 };

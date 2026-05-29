@@ -12,7 +12,8 @@ export default function CategoriesPage() {
   const { i18n, t } = useTranslation()
   const { colors } = useTheme()
   const isZh = i18n.language === 'zh'
-  const { data: categories = [], isLoading } = useCategories()
+  const { data: categoriesRaw, isLoading } = useCategories()
+  const categories = categoriesRaw ?? []
 
   const sorted = useMemo(
     () => categories.filter((item) => item.id !== 'all'),

@@ -63,8 +63,8 @@ export const CommentItem: React.FC<CommentItemProps> = ({ comment, canManage = f
         </View>
         {comment.rating && <StarRating rating={comment.rating} />}
         <Text style={styles.content}>
-          {comment.reply_to_user?.name ? (
-            <Text style={styles.replyToText}>{`回复 @${comment.reply_to_user.name} `}</Text>
+          {comment.parent_id ? (
+            <Text style={styles.replyToText}>回复 </Text>
           ) : null}
           {comment.content}
         </Text>

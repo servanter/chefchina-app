@@ -1,5 +1,5 @@
-import { useQuery } from '@tanstack/react-query';
-import { apiClient } from '@/lib/api';
+import { useState, useEffect, useCallback } from 'react';
+import { apiClient } from '../lib/api';
 
 export type SearchType = 'recipe' | 'user' | 'topic';
 
@@ -74,18 +74,19 @@ export function useSearch(
   filters: SearchFilters = {},
   enabled: boolean = true
 ) {
-  return useQuery({
-    queryKey: ['search', query, type, filters],
-    queryFn: async () => {
-      if (!query.trim()) {
-        return {
-          recipes: [],
-          users: [],
-          topics: [],
-          total: { recipes: 0, users: 0, topics: 0 },
-        };
-      }
+  const [data, setData] = useState<SearchResponse | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
 
+  const filtersKey = JSON.stringify(filters);
+
+  const load = useCallback(async () => {
+    if (!enabled || !query.trim()) {
+      setData(null);
+      return;
+    }
+    setIsLoading(true);
+    try {
       const response = await apiClient.get<SearchResponse>('/search', {
         params: {
           q: query.trim(),
@@ -93,9 +94,19 @@ export function useSearch(
           ...filters,
         },
       });
-      return response.data;
-    },
-    enabled: enabled && !!query.trim(),
-    staleTime: 30000, // 30 seconds
-  });
+      setData(response.data);
+      setError(null);
+    } catch (e) {
+      setError(e as Error);
+    } finally {
+      setIsLoading(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [query, type, filtersKey, enabled]);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  return { data, isLoading, error, refetch: load };
 }

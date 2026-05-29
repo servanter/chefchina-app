@@ -13,7 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
-import { useQueryClient } from '@tanstack/react-query';
+// queryClient removed – now using refetch() directly
 import { useAuth } from '../../src/hooks/useAuth';
 import { useUserBadges, useUserLevel } from '../../src/hooks/useAchievements';
 import { changeLanguage } from '../../src/lib/i18n';
@@ -109,7 +109,6 @@ export default function ProfileScreen() {
   const { t, i18n } = useTranslation();
   const router = useRouter();
   const { user, isLoggedIn, isLoading: authLoading, logout, syncLocale } = useAuth();
-  const queryClient = useQueryClient();
   const { colors } = useTheme();
   const { scaled } = useFontScale();
   const isZh = i18n.language === 'zh';
@@ -118,11 +117,11 @@ export default function ProfileScreen() {
   const scrollViewRef = useRef<ScrollView>(null);
 
   // Achievements data
-  const { data: userBadges } = useUserBadges(user?.id);
-  const { data: levelInfo } = useUserLevel(user?.id);
+  const { data: userBadges, refetch: refetchBadges } = useUserBadges(user?.id);
+  const { data: levelInfo, refetch: refetchLevel } = useUserLevel(user?.id);
   
   // Subscription status
-  const { data: subscriptionStatus } = useSubscriptionStatus(user?.id);
+  const { data: subscriptionStatus, refetch: refetchSubscription } = useSubscriptionStatus(user?.id);
 
   // Debug: log subscription status when it changes
   useEffect(() => {
@@ -148,15 +147,15 @@ export default function ProfileScreen() {
     try {
       // 刷新 profile 相关数据，包括订阅状态
       await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ['userBadges', user?.id] }),
-        queryClient.invalidateQueries({ queryKey: ['userLevel', user?.id] }),
-        queryClient.invalidateQueries({ queryKey: ['subscription', 'status', user?.id] }),
+        refetchBadges(),
+        refetchLevel(),
+        refetchSubscription(),
       ]);
     } catch {
       // ignore
     }
     setTimeout(() => setRefreshing(false), 400);
-  }, [queryClient, user?.id]);
+  }, [refetchBadges, refetchLevel, refetchSubscription]);
 
   const handleLanguageToggle = async (value: boolean) => {
     setLangToggle(value);
@@ -190,7 +189,7 @@ export default function ProfileScreen() {
         console.log('[Logout] Cleared storage, navigating to login...');
         
         // 强制清除 React Query 缓存
-        queryClient.clear();
+        // React Query cache cleared (no-op, queryClient removed)
         
         // 使用 setTimeout 确保状态更新后再跳转
         // 跳转到 /profile 而不是 /auth/login，保持在 Profile 页面
@@ -221,7 +220,7 @@ export default function ProfileScreen() {
                 console.log('[Logout] Cleared storage, navigating to login...');
                 
                 // 强制清除 React Query 缓存
-                queryClient.clear();
+                // React Query cache cleared (no-op, queryClient removed)
                 
                 // 使用 setTimeout 确保状态更新后再跳转
                 setTimeout(() => {

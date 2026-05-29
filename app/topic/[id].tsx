@@ -42,7 +42,7 @@ export default function TopicDetailPage() {
     const action = topic.isFollowing ? 'unfollow' : 'follow';
     
     try {
-      await toggleFollow.mutateAsync({ topicId: id!, action });
+      await toggleFollow.mutate({ topicId: id!, action });
       Toast.show({
         type: 'success',
         text1: topic.isFollowing ? t('topic.unfollowed') : t('topic.followed')

@@ -9,7 +9,8 @@ export default function TagsPage() {
   const router = useRouter()
   const { i18n, t } = useTranslation()
   const isZh = i18n.language === 'zh'
-  const { data: tags = [], isLoading } = useTags()
+  const { data: tagsRaw, isLoading } = useTags()
+  const tags = tagsRaw ?? []
 
   const sorted = useMemo(
     () => [...tags].sort((a, b) => (b.recipesCount ?? 0) - (a.recipesCount ?? 0)),
