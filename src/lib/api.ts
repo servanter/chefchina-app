@@ -1812,12 +1812,14 @@ export interface NutritionProgress {
 }
 
 export interface IntakeRecord {
-  id: number;
-  recipeName: string;
+  id: string;
+  recipeName: string;  // 由前端从 recipe.titleZh/titleEn 适配
   mealType: string;
   servings: number;
   calories: number;
   protein: number;
+  fat?: number;
+  carbs?: number;
   createdAt: string;
 }
 
@@ -1835,12 +1837,41 @@ export const healthAPI = {
   },
 
   // 获取每日营养数据
+  // 后端返回 { date, goal, current, meals[] }，这里适配为前端使用的格式
   getDailyNutrition: async (): Promise<{
     nutrition: NutritionProgress;
     intakes: IntakeRecord[];
   }> => {
     const res = await apiClient.get('/health/daily');
-    return res.data.data;
+    const d = res.data.data;
+    // 适配 nutrition 字段（后端用 goal+current，前端期望 calories/protein/sodium 的 current/target）
+    const nutrition: NutritionProgress = {
+      calories: {
+        current: d.current?.calories ?? 0,
+        target: d.goal?.calories ?? 2000,
+      },
+      protein: {
+        current: d.current?.protein ?? 0,
+        target: d.goal?.protein ?? 150,
+      },
+      sodium: {
+        current: d.current?.sodium ?? 0,
+        target: d.goal?.sodium ?? 2300,
+      },
+    };
+    // 适配 intakes（后端 meals[]，每条里有 recipe.titleZh/titleEn）
+    const intakes: IntakeRecord[] = (d.meals || []).map((m: any) => ({
+      id: m.id,
+      recipeName: m.recipe?.titleZh || m.recipe?.titleEn || '未知菜谱',
+      mealType: m.mealType,
+      servings: m.servings,
+      calories: m.calories,
+      protein: m.protein,
+      fat: m.fat,
+      carbs: m.carbs,
+      createdAt: m.createdAt,
+    }));
+    return { nutrition, intakes };
   },
 
   // 记录摄入
