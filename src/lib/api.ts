@@ -1854,7 +1854,7 @@ export const healthAPI = {
   },
 
   // 获取周报告
-  getWeeklyReport: async (): Promise<{
+  getWeeklyReport: async (language: 'zh' | 'en' = 'zh'): Promise<{
     summary: {
       daysOnTrack: number;
       avgCalories: number;
@@ -1868,9 +1868,14 @@ export const healthAPI = {
       protein: number;
       onTrack: boolean;
     }>;
-    aiSuggestions: string[];
+    aiSuggestions: Array<{
+      content: string;
+      source: string;
+      premiumRequired?: boolean;
+    }>;
+    isPremium: boolean;
   }> => {
-    const res = await apiClient.get('/health/report');
+    const res = await apiClient.get(`/health/report?lang=${language}`);
     return res.data.data;
   },
 };

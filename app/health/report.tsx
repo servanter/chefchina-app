@@ -30,7 +30,12 @@ interface WeeklyReport {
     protein: number
     onTrack: boolean
   }>
-  aiSuggestions: string[]
+  aiSuggestions: Array<{
+    content: string
+    source: string
+    premiumRequired?: boolean
+  }>
+  isPremium: boolean
 }
 
 export default function WeeklyReportScreen() {
@@ -44,11 +49,12 @@ export default function WeeklyReportScreen() {
 
   useEffect(() => {
     loadReport()
-  }, [])
+  }, [i18n.language])
 
   const loadReport = async () => {
     try {
-      const data = await healthAPI.getWeeklyReport()
+      const lang = i18n.language === 'zh' ? 'zh' : 'en'
+      const data = await healthAPI.getWeeklyReport(lang)
       setReport(data)
     } catch (error) {
       console.error('Failed to load report:', error)
@@ -165,8 +171,10 @@ export default function WeeklyReportScreen() {
             <>
               {aiSuggestions.map((suggestion, index) => (
                 <View key={index} style={styles.suggestionItem}>
-                  <Text style={styles.suggestionIcon}>📊</Text>
-                  <Text style={styles.suggestionText}>{suggestion}</Text>
+                  <Text style={styles.suggestionIcon}>
+                    {suggestion.source === 'ai' ? '🤖' : '📊'}
+                  </Text>
+                  <Text style={styles.suggestionText}>{suggestion.content}</Text>
                 </View>
               ))}
               
