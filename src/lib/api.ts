@@ -1845,7 +1845,7 @@ export const healthAPI = {
 
   // 记录摄入
   logIntake: async (data: {
-    recipeId: number;
+    recipeId: number | string;  // recipe id 是 string (rec_xxx)，后端 toString() 处理
     mealType: string;
     servings: number;
   }): Promise<{ intake: IntakeRecord }> => {
