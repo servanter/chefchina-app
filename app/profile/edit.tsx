@@ -43,7 +43,8 @@ interface ValidationStatus {
 }
 
 export default function EditProfileScreen() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const isZh = i18n.language === 'zh';
   const router = useRouter();
   const { user, updateProfile } = useAuth();
   const { colors } = useTheme();
@@ -78,10 +79,10 @@ export default function EditProfileScreen() {
       return t('validation.required', { field: t('profile.nickname') });
     }
     if (value.length < 2) {
-      return '昵称长度需在 2-20 字符之间';
+      return t('profile.nameTooShort');
     }
     if (value.length > 20) {
-      return '昵称长度需在 2-20 字符之间';
+      return t('profile.nameTooLong');
     }
     return undefined;
   };
@@ -89,7 +90,7 @@ export default function EditProfileScreen() {
   // REQ-18.2: 实时验证 - 简介
   const validateBio = (value: string): string | undefined => {
     if (value.length > 500) {
-      return '简介最多 500 字符';
+      return t('profile.bioTooLong');
     }
     return undefined;
   };
@@ -123,7 +124,7 @@ export default function EditProfileScreen() {
       if (status !== 'granted') {
         Toast.show({ 
           type: 'error', 
-          text1: '需要相册权限才能上传头像' 
+          text1: t('profile.permissionDenied')
         });
         return;
       }
@@ -153,14 +154,14 @@ export default function EditProfileScreen() {
 
         Toast.show({ 
           type: 'success', 
-          text1: '头像已选择，保存后生效' 
+          text1: t('profile.avatarSelected')
         });
       }
     } catch (error) {
       setUploadingAvatar(false);
       Toast.show({ 
         type: 'error', 
-        text1: '头像上传失败，请重试' 
+        text1: t('profile.avatarUploadFailed')
       });
     }
   };
@@ -175,7 +176,7 @@ export default function EditProfileScreen() {
       setErrors({
         nickname: nicknameError,
         bio: bioError,
-        form: '请修正表单错误后再提交',
+        form: t('common.error'),
       });
       return;
     }
@@ -214,7 +215,7 @@ export default function EditProfileScreen() {
         
         Toast.show({ 
           type: 'success', 
-          text1: '头像上传成功' 
+          text1: t('profile.avatarUploadSuccess')
         });
       }
 
@@ -227,12 +228,12 @@ export default function EditProfileScreen() {
 
       Toast.show({ 
         type: 'success', 
-        text1: '个人资料已更新', 
+        text1: t('profile.profileUpdated'),
         visibilityTime: 1800 
       });
       router.back();
     } catch (error: any) {
-      const errorMessage = error?.message || '保存失败，请重试';
+      const errorMessage = error?.message || t('common.error');
       setErrors({ form: errorMessage });
       Toast.show({ 
         type: 'error', 
@@ -294,7 +295,7 @@ export default function EditProfileScreen() {
                 <Ionicons name="camera" size={16} color="#FFF" />
               </View>
             </TouchableOpacity>
-            <Text style={styles.avatarHint}>点击上传头像</Text>
+            <Text style={styles.avatarHint}>{t('profile.avatarHint')}</Text>
           </View>
 
           {/* REQ-18.1: 昵称 */}
@@ -309,7 +310,7 @@ export default function EditProfileScreen() {
               <Ionicons name="person-outline" size={18} color="#999" style={styles.inputIcon} />
               <TextInput
                 style={styles.input}
-                placeholder="请输入昵称 (2-20字符)"
+                placeholder={t('profile.nicknamePlaceholder')}
                 placeholderTextColor="#BBB"
                 value={nickname}
                 onChangeText={(text) => {
@@ -345,7 +346,7 @@ export default function EditProfileScreen() {
             ]}>
               <TextInput
                 style={[styles.input, styles.textArea]}
-                placeholder="介绍一下自己吧~"
+                placeholder={t('profile.bioPlaceholderEdit')}
                 placeholderTextColor="#BBB"
                 value={bio}
                 onChangeText={(text) => {
@@ -373,12 +374,13 @@ export default function EditProfileScreen() {
 
           {/* REQ-18.1: 所在地 */}
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>所在地</Text>
+
+            <Text style={styles.label}>{t('profile.locationLabel')}</Text>
             <View style={styles.inputWrap}>
               <Ionicons name="location-outline" size={18} color="#999" style={styles.inputIcon} />
               <TextInput
                 style={styles.input}
-                placeholder="选填"
+                placeholder={t('profile.locationPlaceholder')}
                 placeholderTextColor="#BBB"
                 value={location}
                 onChangeText={setLocation}
@@ -390,13 +392,13 @@ export default function EditProfileScreen() {
 
           {/* REQ-18.1: 性别 */}
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>性别</Text>
+            <Text style={styles.label}>{t('profile.genderLabel')}</Text>
             <View style={styles.genderRow}>
               {[
-                { value: 'MALE' as const, label: '男', icon: 'male' },
-                { value: 'FEMALE' as const, label: '女', icon: 'female' },
-                { value: 'OTHER' as const, label: '其他', icon: 'transgender' },
-                { value: 'PRIVATE' as const, label: '保密', icon: 'eye-off' },
+                { value: 'MALE' as const, label: isZh ? '男' : 'Male', icon: 'male' },
+                { value: 'FEMALE' as const, label: isZh ? '女' : 'Female', icon: 'female' },
+                { value: 'OTHER' as const, label: isZh ? '其他' : 'Other', icon: 'transgender' },
+                { value: 'PRIVATE' as const, label: isZh ? '保密' : 'Private', icon: 'eye-off' },
               ].map((option) => (
                 <TouchableOpacity
                   key={option.value}

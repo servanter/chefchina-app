@@ -9,11 +9,13 @@ import {
 import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { config } from '@/config/env';
+import { useTranslation } from 'react-i18next';
 
 const API_URL = config.API_URL;
 
 export default function CheckoutSuccessScreen() {
   const { session_id } = useLocalSearchParams<{ session_id: string }>();
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(true);
   const [status, setStatus] = useState<'success' | 'error'>('success');
   const [message, setMessage] = useState('');
@@ -33,15 +35,15 @@ export default function CheckoutSuccessScreen() {
 
       if (response.ok && data.status === 'complete') {
         setStatus('success');
-        setMessage('订阅成功！您现在是 Premium 会员了。');
+        setMessage(t('payment.subscribeSuccess'));
       } else {
         setStatus('error');
-        setMessage('支付验证失败，请联系客服。');
+        setMessage(t('payment.verifyFailed'));
       }
     } catch (error) {
       console.error('Verify checkout error:', error);
       setStatus('error');
-      setMessage('验证失败，请稍后再试。');
+      setMessage(t('payment.verifyError'));
     } finally {
       setLoading(false);
     }
@@ -55,7 +57,7 @@ export default function CheckoutSuccessScreen() {
     return (
       <View style={styles.container}>
         <ActivityIndicator size="large" color="#f97316" />
-        <Text style={styles.loadingText}>正在验证支付...</Text>
+        <Text style={styles.loadingText}>{t('payment.verifying')}</Text>
       </View>
     );
   }
@@ -77,31 +79,38 @@ export default function CheckoutSuccessScreen() {
         </View>
 
         <Text style={styles.title}>
-          {status === 'success' ? '支付成功！' : '支付失败'}
+          {status === 'success' ? t('payment.success') : t('payment.failed')}
         </Text>
         <Text style={styles.message}>{message}</Text>
 
         {status === 'success' && (
           <View style={styles.features}>
-            <Text style={styles.featuresTitle}>您现在可以享受：</Text>
+            <Text style={styles.featuresTitle}>{t('payment.enjoy')}</Text>
             <View style={styles.featureItem}>
               <Ionicons name="checkmark-circle" size={20} color="#10b981" />
-              <Text style={styles.featureText}>AI 个性化营养建议</Text>
+
             </View>
             <View style={styles.featureItem}>
               <Ionicons name="checkmark-circle" size={20} color="#10b981" />
-              <Text style={styles.featureText}>无限收藏菜谱</Text>
+              <Text style={styles.featureText}>{t('payment.feature1')}</Text>
             </View>
             <View style={styles.featureItem}>
               <Ionicons name="checkmark-circle" size={20} color="#10b981" />
-              <Text style={styles.featureText}>永久数据保留</Text>
+            </View>
+            <View style={styles.featureItem}>
+              <Ionicons name="checkmark-circle" size={20} color="#10b981" />
+              <Text style={styles.featureText}>{t('payment.feature2')}</Text>
+            </View>
+            <View style={styles.featureItem}>
+              <Ionicons name="checkmark-circle" size={20} color="#10b981" />
+              <Text style={styles.featureText}>{t('payment.feature3')}</Text>
             </View>
           </View>
         )}
 
         <TouchableOpacity style={styles.button} onPress={handleGoHome}>
           <Text style={styles.buttonText}>
-            {status === 'success' ? '开始使用' : '返回首页'}
+            {status === 'success' ? t('payment.getStarted') : t('payment.goHome')}
           </Text>
         </TouchableOpacity>
       </View>

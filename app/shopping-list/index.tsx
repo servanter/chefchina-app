@@ -20,6 +20,7 @@ import { Stack, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { format } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
+import { useTranslation } from 'react-i18next';
 
 import {
   useShoppingList,
@@ -32,6 +33,7 @@ import EmptyShoppingList from '../../components/EmptyShoppingList';
 
 export default function ShoppingListScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const [showAddModal, setShowAddModal] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -50,12 +52,12 @@ export default function ShoppingListScreen() {
   // 重新生成
   const handleRegenerate = () => {
     Alert.alert(
-      '重新生成购物清单',
-      '将根据您收藏的菜谱重新生成购物清单，保留手动添加的食材。',
+      t('shoppingList.regenerateTitle'),
+      t('shoppingList.regenerateMessage'),
       [
-        { text: '取消', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: '确定',
+          text: t('common.confirm'),
           onPress: () => {
             generateMutation.mutate({ keepManual: true });
           },
@@ -66,10 +68,10 @@ export default function ShoppingListScreen() {
 
   // 清空已购
   const handleClearChecked = () => {
-    Alert.alert('清空已购', '确定要删除所有已勾选的食材吗？', [
-      { text: '取消', style: 'cancel' },
+    Alert.alert(t('shoppingList.clearTitle'), t('shoppingList.clearMessage'), [
+      { text: t('common.cancel'), style: 'cancel' },
       {
-        text: '确定',
+        text: t('common.confirm'),
         style: 'destructive',
         onPress: () => {
           clearMutation.mutate({ clearAll: false, keepManual: false });
@@ -80,10 +82,10 @@ export default function ShoppingListScreen() {
 
   // 清空全部
   const handleClearAll = () => {
-    Alert.alert('清空全部', '确定要删除所有食材吗？（包括手动添加的）', [
-      { text: '取消', style: 'cancel' },
+    Alert.alert(t('shoppingList.clearAllTitle'), t('shoppingList.clearAllMessage'), [
+      { text: t('common.cancel'), style: 'cancel' },
       {
-        text: '确定',
+        text: t('common.confirm'),
         style: 'destructive',
         onPress: () => {
           clearMutation.mutate({ clearAll: true, keepManual: false });
@@ -155,8 +157,8 @@ export default function ShoppingListScreen() {
       <View style={styles.centerContainer}>
         <Stack.Screen
           options={{
-            title: '购物清单',
-            headerBackTitle: '返回',
+            title: t('shoppingList.title'),
+            headerBackTitle: t('common.back'),
           }}
         />
         <ActivityIndicator size="large" color="#FF6B6B" />
@@ -170,13 +172,13 @@ export default function ShoppingListScreen() {
       <View style={styles.centerContainer}>
         <Stack.Screen
           options={{
-            title: '购物清单',
-            headerBackTitle: '返回',
+            title: t('shoppingList.title'),
+            headerBackTitle: t('common.back'),
           }}
         />
-        <Text style={styles.errorText}>加载失败</Text>
+        <Text style={styles.errorText}>{t('shoppingList.loadError')}</Text>
         <TouchableOpacity style={styles.retryButton} onPress={() => refetch()}>
-          <Text style={styles.retryText}>重试</Text>
+          <Text style={styles.retryText}>{t('common.retry')}</Text>
         </TouchableOpacity>
       </View>
     );
@@ -188,8 +190,8 @@ export default function ShoppingListScreen() {
       <>
         <Stack.Screen
           options={{
-            title: '购物清单',
-            headerBackTitle: '返回',
+            title: t('shoppingList.title'),
+            headerBackTitle: t('common.back'),
           }}
         />
         <EmptyShoppingList onNavigate={() => router.push('/(tabs)/favorites')} />
@@ -201,8 +203,8 @@ export default function ShoppingListScreen() {
     <>
       <Stack.Screen
         options={{
-          title: '购物清单',
-          headerBackTitle: '返回',
+          title: t('shoppingList.title'),
+          headerBackTitle: t('common.back'),
           headerRight: () => (
             <View style={styles.headerRight}>
               <TouchableOpacity onPress={handleExport} style={styles.headerButton}>
@@ -231,7 +233,7 @@ export default function ShoppingListScreen() {
           >
             <Ionicons name="arrow-back" size={24} color="#333" />
           </TouchableOpacity>
-          <Text style={styles.title}>购物清单</Text>
+          <Text style={styles.title}>{t('shoppingList.title')}</Text>
           <View style={{ width: 24 }} />
         </View>
 
@@ -260,7 +262,7 @@ export default function ShoppingListScreen() {
           onPress={() => setShowAddModal(true)}
         >
           <Ionicons name="add-circle-outline" size={24} color="#FF6B6B" />
-          <Text style={styles.addButtonText}>添加食材</Text>
+          <Text style={styles.addButtonText}>{t('shoppingList.addIngredient')}</Text>
         </TouchableOpacity>
 
         {/* 操作按钮 */}
@@ -273,7 +275,7 @@ export default function ShoppingListScreen() {
             {generateMutation.isPending ? (
               <ActivityIndicator size="small" color="#FF6B6B" />
             ) : (
-              <Text style={styles.actionButtonText}>重新生成</Text>
+              <Text style={styles.actionButtonText}>{t('shoppingList.regenerate')}</Text>
             )}
           </TouchableOpacity>
 
@@ -285,7 +287,7 @@ export default function ShoppingListScreen() {
             {clearMutation.isPending ? (
               <ActivityIndicator size="small" color="#666" />
             ) : (
-              <Text style={styles.actionButtonText}>清空已购</Text>
+              <Text style={styles.actionButtonText}>{t('shoppingList.clearPurchased')}</Text>
             )}
           </TouchableOpacity>
 
@@ -295,7 +297,7 @@ export default function ShoppingListScreen() {
             disabled={clearMutation.isPending}
           >
             <Text style={[styles.actionButtonText, styles.dangerButtonText]}>
-              清空全部
+              {t('shoppingList.clearAll')}
             </Text>
           </TouchableOpacity>
         </View>

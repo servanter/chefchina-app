@@ -34,7 +34,8 @@ interface WeeklyReport {
 }
 
 export default function WeeklyReportScreen() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
+  const isZh = i18n.language === 'zh'
   const { user } = useAuth()
   const { data: subscriptionStatus } = useSubscriptionStatus(user?.id)
   const [loading, setLoading] = useState(true)
@@ -129,13 +130,13 @@ export default function WeeklyReportScreen() {
             <View style={styles.dayBadge}>
               <Text style={styles.dayBadgeLabel}>{t('common.best', { defaultValue: '最佳' })}</Text>
               <Text style={styles.dayBadgeValue}>
-                {formatDate(summary.bestDay)}
+                {formatDate(summary.bestDay, isZh)}
               </Text>
             </View>
             <View style={[styles.dayBadge, styles.worstBadge]}>
               <Text style={styles.dayBadgeLabel}>{t('common.needImprove', { defaultValue: '需改进' })}</Text>
               <Text style={styles.dayBadgeValue}>
-                {formatDate(summary.worstDay)}
+                {formatDate(summary.worstDay, isZh)}
               </Text>
             </View>
           </View>
@@ -173,7 +174,7 @@ export default function WeeklyReportScreen() {
               {aiSuggestions.length > 0 && (
                 <View style={styles.legend}>
                   <Text style={styles.legendText}>
-                    🤖 AI生成 | 📊 规则分析
+                    {isZh ? '🤖 AI生成 | 📊 规则分析' : '🤖 AI-generated | 📊 Rule-based'}
                   </Text>
                 </View>
               )}
@@ -188,12 +189,12 @@ export default function WeeklyReportScreen() {
               <View style={styles.lockIconCircle}>
                 <Ionicons name="lock-closed" size={24} color="#E85D26" />
               </View>
-              <Text style={styles.premiumPromptTitle}>升级到 Premium 解锁 AI 营养师</Text>
+              <Text style={styles.premiumPromptTitle}>{isZh ? '升级到 Premium 解锁 AI 营养师' : 'Unlock AI Nutrition Coach with Premium'}</Text>
               <Text style={styles.premiumPromptDesc}>
-                获取个性化营养建议、饮食优化方案
+                {isZh ? '获取个性化营养建议、饮食优化方案' : 'Get personalized nutrition advice and diet optimization'}
               </Text>
               <View style={styles.premiumPromptButton}>
-                <Text style={styles.premiumPromptButtonText}>立即升级</Text>
+                <Text style={styles.premiumPromptButtonText}>{isZh ? '立即升级' : 'Upgrade Now'}</Text>
                 <Ionicons name="arrow-forward" size={16} color="#E85D26" />
               </View>
             </TouchableOpacity>
@@ -283,9 +284,13 @@ function WeeklyChart({ data }: WeeklyChartProps) {
   )
 }
 
-function formatDate(dateStr: string): string {
+function formatDate(dateStr: string, isZh?: boolean): string {
   const date = new Date(dateStr)
-  const weekdays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
+  if (isZh) {
+    const weekdays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
+    return `${weekdays[date.getDay()]} ${date.getMonth() + 1}/${date.getDate()}`
+  }
+  const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
   return `${weekdays[date.getDay()]} ${date.getMonth() + 1}/${date.getDate()}`
 }
 

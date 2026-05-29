@@ -9,11 +9,13 @@ import {
 import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { usePaymentPolling } from '@/hooks/usePaymentPolling';
+import { useTranslation } from 'react-i18next';
 
 export default function PaymentResultScreen() {
   const { sessionId } = useLocalSearchParams<{ sessionId: string }>();
   const { polling, result, subscription, errorMessage, pollPaymentStatus } =
     usePaymentPolling();
+  const { t } = useTranslation();
 
   useEffect(() => {
     if (sessionId) {
@@ -36,8 +38,8 @@ export default function PaymentResultScreen() {
       <View style={styles.container}>
         <View style={styles.content}>
           <ActivityIndicator size="large" color="#f97316" />
-          <Text style={styles.loadingTitle}>正在确认支付...</Text>
-          <Text style={styles.loadingSubtitle}>请稍候，这可能需要几秒钟</Text>
+          <Text style={styles.loadingTitle}>{t('payment.verifying')}</Text>
+          <Text style={styles.loadingSubtitle}>{t('payment.pleaseWait')}</Text>
         </View>
       </View>
     );
@@ -52,27 +54,27 @@ export default function PaymentResultScreen() {
             <Ionicons name="checkmark-circle" size={80} color="#10b981" />
           </View>
 
-          <Text style={styles.title}>支付成功！</Text>
-          <Text style={styles.message}>您现在是 Premium 会员了</Text>
+          <Text style={styles.title}>{t('payment.success')}</Text>
+          <Text style={styles.message}>{t('payment.nowPremium')}</Text>
 
           <View style={styles.features}>
-            <Text style={styles.featuresTitle}>您现在可以享受：</Text>
+            <Text style={styles.featuresTitle}>{t('payment.enjoy')}</Text>
             <View style={styles.featureItem}>
               <Ionicons name="checkmark-circle" size={20} color="#10b981" />
-              <Text style={styles.featureText}>AI 个性化营养建议</Text>
+              <Text style={styles.featureText}>{t('payment.feature1')}</Text>
             </View>
             <View style={styles.featureItem}>
               <Ionicons name="checkmark-circle" size={20} color="#10b981" />
-              <Text style={styles.featureText}>无限收藏菜谱</Text>
+              <Text style={styles.featureText}>{t('payment.feature2')}</Text>
             </View>
             <View style={styles.featureItem}>
               <Ionicons name="checkmark-circle" size={20} color="#10b981" />
-              <Text style={styles.featureText}>永久数据保留</Text>
+              <Text style={styles.featureText}>{t('payment.feature3')}</Text>
             </View>
           </View>
 
           <TouchableOpacity style={styles.successButton} onPress={handleGoHome}>
-            <Text style={styles.buttonText}>开始使用</Text>
+            <Text style={styles.buttonText}>{t('payment.getStarted')}</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -88,12 +90,12 @@ export default function PaymentResultScreen() {
             <Ionicons name="time-outline" size={80} color="#f59e0b" />
           </View>
 
-          <Text style={styles.title}>验证超时</Text>
+          <Text style={styles.title}>{t('payment.timeout')}</Text>
           <Text style={styles.message}>{errorMessage}</Text>
 
           <View style={styles.buttonContainer}>
             <TouchableOpacity style={styles.secondaryButton} onPress={handleGoHome}>
-              <Text style={styles.secondaryButtonText}>返回首页</Text>
+              <Text style={styles.secondaryButtonText}>{t('payment.goHome')}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -110,15 +112,15 @@ export default function PaymentResultScreen() {
             <Ionicons name="close-circle" size={80} color="#ef4444" />
           </View>
 
-          <Text style={styles.title}>支付失败</Text>
-          <Text style={styles.message}>{errorMessage || '支付未成功，请重试'}</Text>
+          <Text style={styles.title}>{t('payment.failed')}</Text>
+          <Text style={styles.message}>{errorMessage || t('payment.failedMsg')}</Text>
 
           <View style={styles.buttonContainer}>
             <TouchableOpacity style={styles.primaryButton} onPress={handleRetry}>
-              <Text style={styles.buttonText}>重试</Text>
+              <Text style={styles.buttonText}>{t('common.retry')}</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.secondaryButton} onPress={handleGoHome}>
-              <Text style={styles.secondaryButtonText}>返回首页</Text>
+              <Text style={styles.secondaryButtonText}>{t('payment.goHome')}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -130,9 +132,9 @@ export default function PaymentResultScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.content}>
-        <Text style={styles.title}>处理中...</Text>
+        <Text style={styles.title}>{t('payment.processing')}</Text>
         <TouchableOpacity style={styles.secondaryButton} onPress={handleGoHome}>
-          <Text style={styles.secondaryButtonText}>返回首页</Text>
+          <Text style={styles.secondaryButtonText}>{t('payment.goHome')}</Text>
         </TouchableOpacity>
       </View>
     </View>
