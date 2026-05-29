@@ -12,9 +12,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../../src/contexts/ThemeContext';
+import { useTranslation } from 'react-i18next';
 
 export default function AIGenerateEditScreen() {
   const { colors } = useTheme();
+  const { t } = useTranslation();
   const router = useRouter();
   const styles = getStyles(colors);
 
@@ -24,14 +26,14 @@ export default function AIGenerateEditScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
-        <Text style={styles.title}>编辑菜谱</Text>
+        <Text style={styles.title}>{t('recipe_create.edit_title')}</Text>
         <View style={{ width: 24 }} />
       </View>
 
       <View style={styles.content}>
         <Ionicons name="construct-outline" size={64} color={colors.subText} />
-        <Text style={styles.placeholder}>编辑功能即将上线</Text>
-        <Text style={styles.placeholderSub}>暂时请直接发布或重新生成</Text>
+        <Text style={styles.placeholder}>{t('aiGenerate.edit.comingSoon')}</Text>
+        <Text style={styles.placeholderSub}>{t('aiGenerate.edit.comingSoonHint')}</Text>
       </View>
     </SafeAreaView>
   );

@@ -12,13 +12,13 @@ export default function NotFoundScreen() {
   return (
     <View style={[styles.container, { backgroundColor: colors.bg }]}>
       <Ionicons name="help-circle-outline" size={80} color="#CCC" />
-      <Text style={[styles.title, { color: colors.text }]}>页面走丢了</Text>
-      <Text style={[styles.subtitle, { color: colors.subText }]}>你访问的页面不存在</Text>
+      <Text style={[styles.title, { color: colors.text }]}>{t('common.notFound')}</Text>
+      <Text style={[styles.subtitle, { color: colors.subText }]}>{t('common.notFoundDesc')}</Text>
       <TouchableOpacity
         style={[styles.button, { backgroundColor: colors.tint }]}
         onPress={() => router.replace('/(tabs)')}
       >
-        <Text style={styles.buttonText}>返回首页</Text>
+        <Text style={styles.buttonText}>{t('common.backHome')}</Text>
       </TouchableOpacity>
     </View>
   );

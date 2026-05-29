@@ -4,8 +4,10 @@ import { WebView } from 'react-native-webview';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { usePaymentPolling } from '@/hooks/usePaymentPolling';
+import { useTranslation } from 'react-i18next';
 
 export default function StripeCheckoutScreen() {
+  const { t } = useTranslation();
   const { url, sessionId } = useLocalSearchParams<{ url: string; sessionId: string }>();
   const webViewRef = useRef<WebView>(null);
   const { pollPaymentStatus } = usePaymentPolling();
@@ -59,7 +61,7 @@ export default function StripeCheckoutScreen() {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#f97316" />
-        <Text style={styles.loadingText}>正在跳转到支付结果页面...</Text>
+        <Text style={styles.loadingText}>{t('payment.redirecting')}</Text>
       </View>
     );
   }
@@ -67,9 +69,9 @@ export default function StripeCheckoutScreen() {
   if (!url) {
     return (
       <View style={styles.errorContainer}>
-        <Text style={styles.errorText}>缺少支付链接</Text>
+        <Text style={styles.errorText}>{t('payment.noPaymentLink')}</Text>
         <TouchableOpacity style={styles.button} onPress={handleGoBack}>
-          <Text style={styles.buttonText}>返回</Text>
+          <Text style={styles.buttonText}>{t('payment.back')}</Text>
         </TouchableOpacity>
       </View>
     );
@@ -82,7 +84,7 @@ export default function StripeCheckoutScreen() {
         <TouchableOpacity onPress={handleGoBack} style={styles.backButton}>
           <Ionicons name="close" size={28} color="#333" />
         </TouchableOpacity>
-        <Text style={styles.title}>安全支付</Text>
+        <Text style={styles.title}>{t('payment.securePayment')}</Text>
         <View style={styles.placeholder} />
       </View>
 
@@ -96,7 +98,7 @@ export default function StripeCheckoutScreen() {
         renderLoading={() => (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color="#f97316" />
-            <Text style={styles.loadingText}>正在加载支付页面...</Text>
+            <Text style={styles.loadingText}>{t('payment.loadingPage')}</Text>
           </View>
         )}
         // 允许 JavaScript

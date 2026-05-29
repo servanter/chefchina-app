@@ -13,6 +13,7 @@ import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '@/hooks/useAuth';
 import { config } from '@/config/env';
+import { useTranslation } from 'react-i18next';
 
 const API_URL = config.API_URL;
 
@@ -28,63 +29,66 @@ interface PricingPlan {
   trial: string;
 }
 
-const plans: PricingPlan[] = [
-  {
-    id: 'first-month',
-    name: 'Premium (首月)',
-    price: '$2.99',
-    period: '首月',
-    popular: true,
-    trial: '立即开始，无需绑卡',
-  },
-  {
-    id: 'monthly',
-    name: 'Premium (月付)',
-    price: '$4.99',
-    period: '每月',
-    trial: '14 天免费试用',
-  },
-  {
-    id: 'yearly',
-    name: 'Premium (年付)',
-    price: '$49.99',
-    period: '每年',
-    savings: '节省 $10',
-    trial: '14 天免费试用',
-  },
-];
-
-const features = {
-  free: [
-    { text: '基础菜谱浏览', included: true },
-    { text: '收藏上限 20 条', included: true },
-    { text: '历史数据保留 30 天', included: true },
-    { text: 'AI 营养建议', included: false },
-    { text: '无限收藏', included: false },
-    { text: '永久数据保留', included: false },
-  ],
-  premium: [
-    { text: '所有免费功能', included: true },
-    { text: 'AI 个性化营养建议', included: true },
-    { text: '无限收藏菜谱', included: true },
-    { text: '永久数据保留', included: true },
-    { text: '优先客服支持', included: true },
-    { text: '更多功能持续更新', included: true },
-  ],
-};
 
 export default function PricingScreen() {
   const { user } = useAuth();
   const [loading, setLoading] = useState<PlanType | null>(null);
+  const { t, i18n } = useTranslation();
+  const isZh = i18n.language === 'zh';
+
+  const plans: PricingPlan[] = [
+    {
+      id: 'first-month',
+      name: t('pricing.firstMonthName'),
+      price: '$2.99',
+      period: t('pricing.firstMonth'),
+      popular: true,
+      trial: t('pricing.trialInfo'),
+    },
+    {
+      id: 'monthly',
+      name: t('pricing.monthlyName'),
+      price: '$4.99',
+      period: t('pricing.monthly'),
+      trial: t('pricing.trialInfo'),
+    },
+    {
+      id: 'yearly',
+      name: t('pricing.yearlyName'),
+      price: '$49.99',
+      period: t('pricing.yearly'),
+      savings: isZh ? '节省 $10' : 'Save $10',
+      trial: t('pricing.trialInfo'),
+    },
+  ];
+
+  const features = {
+    free: [
+      { text: isZh ? '基础菜谱浏览' : 'Basic recipe browsing', included: true },
+      { text: isZh ? '收藏上限 20 条' : 'Up to 20 saved recipes', included: true },
+      { text: isZh ? '历史数据保留 30 天' : '30-day data retention', included: true },
+      { text: isZh ? 'AI 营养建议' : 'AI nutrition advice', included: false },
+      { text: isZh ? '无限收藏' : 'Unlimited saves', included: false },
+      { text: isZh ? '永久数据保留' : 'Permanent data retention', included: false },
+    ],
+    premium: [
+      { text: isZh ? '所有免费功能' : 'All free features', included: true },
+      { text: isZh ? 'AI 个性化营养建议' : 'AI-powered nutrition advice', included: true },
+      { text: isZh ? '无限收藏菜谱' : 'Unlimited recipe saves', included: true },
+      { text: isZh ? '永久数据保留' : 'Permanent data retention', included: true },
+      { text: isZh ? '优先客服支持' : 'Priority support', included: true },
+      { text: isZh ? '更多功能持续更新' : 'Continuous new features', included: true },
+    ],
+  };
 
   const handleSubscribe = async (planType: PlanType) => {
     if (!user) {
-      Alert.alert('提示', '请先登录', [
+      Alert.alert(t('common.error'), t('pricing.loginRequired'), [
         {
-          text: '去登录',
+          text: t('pricing.goLogin'),
           onPress: () => router.push('/auth/login'),
         },
-        { text: '取消', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
       ]);
       return;
     }
@@ -119,7 +123,7 @@ export default function PricingScreen() {
           
           const win = window.open(data.url, '_blank');
           if (!win) {
-            Alert.alert('错误', '无法打开支付页面，请检查浏览器弹窗设置');
+            Alert.alert(t('common.error'), t('pricing.errorOpenPayment'));
             // 清理 localStorage
             if (typeof window !== 'undefined') {
               window.localStorage.removeItem('pendingSessionId');
@@ -156,11 +160,11 @@ export default function PricingScreen() {
           });
         }
       } else {
-        Alert.alert('错误', '支付链接无效');
+        Alert.alert(t('common.error'), t('pricing.errorInvalidLink'));
       }
     } catch (error) {
       console.error('Subscription error:', error);
-      Alert.alert('错误', '创建订阅失败，请稍后再试');
+      Alert.alert(t('common.error'), t('pricing.errorCreateFailed'));
     } finally {
       setLoading(null);
     }
@@ -174,16 +178,14 @@ export default function PricingScreen() {
           <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
             <Ionicons name="arrow-back" size={24} color="#333" />
           </TouchableOpacity>
-          <Text style={styles.title}>升级 Premium</Text>
+          <Text style={styles.title}>{t('pricing.title')}</Text>
           <View style={styles.placeholder} />
         </View>
 
         {/* Hero Section */}
         <View style={styles.hero}>
-          <Text style={styles.heroTitle}>解锁全部功能</Text>
-          <Text style={styles.heroSubtitle}>
-            获得 AI 营养师的专业建议，无限收藏你喜欢的菜谱
-          </Text>
+          <Text style={styles.heroTitle}>{t('pricing.heroTitle')}</Text>
+          <Text style={styles.heroSubtitle}>{t('pricing.heroSubtitle')}</Text>
         </View>
 
         {/* Pricing Plans */}
@@ -195,7 +197,7 @@ export default function PricingScreen() {
             >
               {plan.popular && (
                 <View style={styles.popularBadge}>
-                  <Text style={styles.popularText}>最受欢迎</Text>
+                  <Text style={styles.popularText}>{t('pricing.popular')}</Text>
                 </View>
               )}
               <Text style={styles.planName}>{plan.name}</Text>
@@ -224,7 +226,7 @@ export default function PricingScreen() {
                       plan.popular && styles.subscribeButtonTextPrimary,
                     ]}
                   >
-                    开始试用
+                    {t('pricing.startTrial')}
                   </Text>
                 )}
               </TouchableOpacity>
@@ -234,12 +236,12 @@ export default function PricingScreen() {
 
         {/* Feature Comparison */}
         <View style={styles.comparisonContainer}>
-          <Text style={styles.comparisonTitle}>功能对比</Text>
+          <Text style={styles.comparisonTitle}>{t('pricing.comparison')}</Text>
 
           <View style={styles.comparisonTable}>
             <View style={styles.comparisonHeader}>
-              <Text style={styles.comparisonHeaderText}>免费版</Text>
-              <Text style={styles.comparisonHeaderText}>Premium</Text>
+              <Text style={styles.comparisonHeaderText}>{t('pricing.free')}</Text>
+              <Text style={styles.comparisonHeaderText}>{t('pricing.premium')}</Text>
             </View>
 
             {features.free.map((feature, index) => (
@@ -270,34 +272,27 @@ export default function PricingScreen() {
 
         {/* FAQ */}
         <View style={styles.faqContainer}>
-          <Text style={styles.faqTitle}>常见问题</Text>
+          <Text style={styles.faqTitle}>{t('pricing.faq')}</Text>
 
           <View style={styles.faqItem}>
-            <Text style={styles.faqQuestion}>如何取消订阅？</Text>
-            <Text style={styles.faqAnswer}>
-              您可以随时在账户设置中取消订阅，取消后将在当前计费周期结束时生效。
-            </Text>
+            <Text style={styles.faqQuestion}>{t('pricing.cancelSubscription')}</Text>
+            <Text style={styles.faqAnswer}>{t('pricing.cancelAnswer')}</Text>
           </View>
 
           <View style={styles.faqItem}>
-            <Text style={styles.faqQuestion}>14 天免费试用如何工作？</Text>
-            <Text style={styles.faqAnswer}>
-              订阅后的前 14
-              天完全免费，试用期结束前会收到提醒。如果不想继续，可以随时取消。
-            </Text>
+            <Text style={styles.faqQuestion}>{t('pricing.faqTrialTitle')}</Text>
+            <Text style={styles.faqAnswer}>{t('pricing.faqTrialAnswer')}</Text>
           </View>
 
           <View style={styles.faqItem}>
-            <Text style={styles.faqQuestion}>支持哪些支付方式？</Text>
-            <Text style={styles.faqAnswer}>
-              我们支持所有主流信用卡、借记卡，以及 Apple Pay 等支付方式。
-            </Text>
+            <Text style={styles.faqQuestion}>{t('pricing.faqPaymentTitle')}</Text>
+            <Text style={styles.faqAnswer}>{t('pricing.faqPaymentAnswer')}</Text>
           </View>
         </View>
 
         <View style={styles.footer}>
           <Text style={styles.footerText}>
-            订阅即表示您同意我们的服务条款和隐私政策
+            {t('pricing.footerNote')}
           </Text>
         </View>
       </ScrollView>

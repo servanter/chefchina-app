@@ -16,6 +16,7 @@ import { Ionicons } from '@expo/vector-icons';
 import Toast from 'react-native-toast-message';
 import { useTheme } from '../../src/contexts/ThemeContext';
 import { apiClient as api } from '@/lib/api';
+import { useTranslation } from 'react-i18next';
 
 interface HistoryItem {
   id: string;
@@ -30,6 +31,8 @@ interface HistoryItem {
 
 export default function AIGenerateHistoryScreen() {
   const { colors } = useTheme();
+  const { t, i18n } = useTranslation();
+  const isZh = i18n.language === 'zh';
   const router = useRouter();
   const [items, setItems] = useState<HistoryItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -50,7 +53,7 @@ export default function AIGenerateHistoryScreen() {
       console.error('[AI History] Load error:', error);
       Toast.show({
         type: 'error',
-        text1: '加载失败',
+        text1: t('aiGenerate.history.loadFailed'),
       });
     } finally {
       setIsLoading(false);
@@ -73,10 +76,10 @@ export default function AIGenerateHistoryScreen() {
       ? '#adb5bd'
       : colors.tint;
     const statusText = item.isPublished
-      ? '已发布'
+      ? t('aiGenerate.history.statusPublished')
       : item.isExpired
-      ? '已过期'
-      : '草稿';
+      ? t('aiGenerate.history.statusExpired')
+      : t('aiGenerate.history.statusDraft');
 
     return (
       <TouchableOpacity onPress={() => handleItemPress(item)} style={styles.item}>
@@ -108,10 +111,10 @@ export default function AIGenerateHistoryScreen() {
   const renderEmpty = () => (
     <View style={styles.emptyContainer}>
       <Ionicons name="sparkles-outline" size={64} color={colors.subText} />
-      <Text style={styles.emptyTitle}>还没有生成过菜谱</Text>
-      <Text style={styles.emptyText}>立即体验 AI 菜谱生成器</Text>
+      <Text style={styles.emptyTitle}>{t('aiGenerate.history.empty')}</Text>
+      <Text style={styles.emptyText}>{t('aiGenerate.history.emptyHint')}</Text>
       <TouchableOpacity onPress={() => router.back()} style={styles.emptyButton}>
-        <Text style={styles.emptyButtonText}>开始生成</Text>
+        <Text style={styles.emptyButtonText}>{t('aiGenerate.history.startButton')}</Text>
       </TouchableOpacity>
     </View>
   );
@@ -122,7 +125,7 @@ export default function AIGenerateHistoryScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
-        <Text style={styles.title}>生成历史</Text>
+        <Text style={styles.title}>{t('aiGenerate.history.title')}</Text>
         <View style={{ width: 24 }} />
       </View>
 

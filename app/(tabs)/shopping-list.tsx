@@ -22,6 +22,7 @@ import { format } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../../src/contexts/ThemeContext';
+import { useTranslation } from 'react-i18next';
 
 import {
   useShoppingList,
@@ -36,6 +37,7 @@ import { useAuth } from '../../src/hooks/useAuth';
 export default function ShoppingListTab() {
   const router = useRouter();
   const { colors } = useTheme();
+  const { t } = useTranslation();
   const [showAddModal, setShowAddModal] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -57,12 +59,12 @@ export default function ShoppingListTab() {
 
   const handleRegenerate = () => {
     Alert.alert(
-      '重新生成购物清单',
-      '将根据您收藏的菜谱重新生成购物清单，保留手动添加的食材。',
+      t('shoppingList.regenerateTitle'),
+      t('shoppingList.regenerateMessage'),
       [
-        { text: '取消', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: '确定',
+          text: t('common.confirm'),
           onPress: () => {
             generateMutation.mutate({ keepManual: true });
           },
@@ -72,10 +74,10 @@ export default function ShoppingListTab() {
   };
 
   const handleClearChecked = () => {
-    Alert.alert('清空已购', '确定要删除所有已勾选的食材吗？', [
-      { text: '取消', style: 'cancel' },
+    Alert.alert(t('shoppingList.clearTitle'), t('shoppingList.clearMessage'), [
+      { text: t('common.cancel'), style: 'cancel' },
       {
-        text: '确定',
+        text: t('common.confirm'),
         style: 'destructive',
         onPress: () => {
           clearMutation.mutate({ clearAll: false, keepManual: false });
@@ -85,10 +87,10 @@ export default function ShoppingListTab() {
   };
 
   const handleClearAll = () => {
-    Alert.alert('清空全部', '确定要删除所有食材吗？（包括手动添加的）', [
-      { text: '取消', style: 'cancel' },
+    Alert.alert(t('shoppingList.clearAllTitle'), t('shoppingList.clearAllMessage'), [
+      { text: t('common.cancel'), style: 'cancel' },
       {
-        text: '确定',
+        text: t('common.confirm'),
         style: 'destructive',
         onPress: () => {
           clearMutation.mutate({ clearAll: true, keepManual: false });
@@ -147,16 +149,16 @@ export default function ShoppingListTab() {
       <SafeAreaView style={styles.centerContainer} edges={['top']}>
         <Ionicons name="list-outline" size={64} color={colors.tabInactive} />
         <Text style={[styles.errorText, { marginTop: 16, fontSize: 18, fontWeight: '600' }]}>
-          登录后查看购物清单
+          {t('shoppingList.loginPrompt')}
         </Text>
         <Text style={[styles.errorText, { marginTop: 8, fontSize: 14, opacity: 0.6 }]}>
-          登录即可管理您的购物清单，随时随地轻松备料
+          {t('shoppingList.emptyHint')}
         </Text>
         <TouchableOpacity
           style={[styles.retryButton, { marginTop: 24, paddingHorizontal: 32, backgroundColor: colors.tint }]}
           onPress={() => router.push('/auth/login')}
         >
-          <Text style={[styles.retryText, { color: '#fff' }]}>立即登录</Text>
+          <Text style={[styles.retryText, { color: '#fff' }]}>{t('shoppingList.loginButton')}</Text>
         </TouchableOpacity>
       </SafeAreaView>
     );
@@ -175,9 +177,9 @@ export default function ShoppingListTab() {
   if (error) {
     return (
       <SafeAreaView style={styles.centerContainer} edges={['top']}>
-        <Text style={styles.errorText}>加载失败</Text>
+        <Text style={styles.errorText}>{t('shoppingList.loadError')}</Text>
         <TouchableOpacity style={styles.retryButton} onPress={() => refetch()}>
-          <Text style={styles.retryText}>重试</Text>
+          <Text style={styles.retryText}>{t('common.retry')}</Text>
         </TouchableOpacity>
       </SafeAreaView>
     );
@@ -188,7 +190,7 @@ export default function ShoppingListTab() {
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
         <View style={styles.header}>
-          <Text style={styles.title}>购物清单</Text>
+          <Text style={styles.title}>{t('shoppingList.title')}</Text>
           <TouchableOpacity onPress={handleExport} style={styles.headerButton}>
             <Ionicons name="share-outline" size={22} color={colors.text} />
           </TouchableOpacity>
@@ -202,7 +204,7 @@ export default function ShoppingListTab() {
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Header - 无返回按钮（tab 首屏） */}
       <View style={styles.header}>
-        <Text style={styles.title}>购物清单</Text>
+        <Text style={styles.title}>{t('shoppingList.title')}</Text>
         <View style={styles.headerRight}>
           <TouchableOpacity onPress={handleExport} style={styles.headerButton}>
             <Ionicons name="share-outline" size={22} color={colors.text} />
@@ -238,7 +240,7 @@ export default function ShoppingListTab() {
           onPress={() => setShowAddModal(true)}
         >
           <Ionicons name="add-circle-outline" size={24} color={colors.tint} />
-          <Text style={styles.addButtonText}>添加食材</Text>
+          <Text style={styles.addButtonText}>{t('shoppingList.addIngredient')}</Text>
         </TouchableOpacity>
 
         {/* 操作按钮 */}
@@ -251,7 +253,7 @@ export default function ShoppingListTab() {
             {generateMutation.isPending ? (
               <ActivityIndicator size="small" color={colors.tint} />
             ) : (
-              <Text style={styles.actionButtonText}>重新生成</Text>
+              <Text style={styles.actionButtonText}>{t('shoppingList.regenerate')}</Text>
             )}
           </TouchableOpacity>
 
@@ -263,7 +265,7 @@ export default function ShoppingListTab() {
             {clearMutation.isPending ? (
               <ActivityIndicator size="small" color="#666" />
             ) : (
-              <Text style={styles.actionButtonText}>清空已购</Text>
+              <Text style={styles.actionButtonText}>{t('shoppingList.clearPurchased')}</Text>
             )}
           </TouchableOpacity>
 
@@ -273,7 +275,7 @@ export default function ShoppingListTab() {
             disabled={clearMutation.isPending}
           >
             <Text style={[styles.actionButtonText, styles.dangerButtonText]}>
-              清空全部
+              {t('shoppingList.clearAll')}
             </Text>
           </TouchableOpacity>
         </View>
