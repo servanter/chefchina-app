@@ -56,7 +56,7 @@ export default function HomeScreen() {
   const effectiveWidth = Math.min(width, 390);
   const isZh = i18n.language === 'zh';
 
-  const { user, isLoading: authLoading } = useAuth();
+  const { user, isLoading: authLoading, isLoggedIn } = useAuth();
   const userId = user?.id ?? null;
 
   const [searchText, setSearchText] = useState('');
@@ -216,6 +216,31 @@ export default function HomeScreen() {
               />
             )}
           />
+        )}
+
+        {/* ─── Follow Feed Entry (logged-in users only) ────── */}
+        {isLoggedIn && (
+          <TouchableOpacity
+            style={[
+              styles.followFeedCard,
+              { backgroundColor: themeColors.card, borderColor: themeColors.border },
+            ]}
+            onPress={() => router.push('/follow-feed')}
+            activeOpacity={0.82}
+          >
+            <View style={[styles.followFeedIconWrap, { backgroundColor: themeColors.chipBg }]}>
+              <Ionicons name="people" size={22} color={themeColors.tint} />
+            </View>
+            <View style={styles.followFeedText}>
+              <Text style={[styles.followFeedTitle, { color: themeColors.text }]}>
+                {t('home.followFeed')}
+              </Text>
+              <Text style={[styles.followFeedDesc, { color: themeColors.subText }]}>
+                {t('home.followFeedDesc')}
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={themeColors.subText} />
+          </TouchableOpacity>
         )}
 
         {/* ─── Weekly Hot Ranking (REQ-3) ──────────────────── */}
@@ -483,5 +508,35 @@ const styles = StyleSheet.create({
     color: COLORS.text,
     paddingHorizontal: 8,
     paddingVertical: 6,
+  },
+  // Follow Feed entry card
+  followFeedCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: 20,
+    marginTop: 16,
+    marginBottom: 4,
+    padding: 14,
+    borderRadius: 14,
+    borderWidth: 1,
+  },
+  followFeedIconWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  followFeedText: {
+    flex: 1,
+  },
+  followFeedTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    marginBottom: 2,
+  },
+  followFeedDesc: {
+    fontSize: 12,
   },
 });

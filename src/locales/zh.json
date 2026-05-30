@@ -36,7 +36,9 @@
     "whatToEatSubtitle": "摇一摇或点击试试手气",
     "whatToEatTapDetails": "点击查看详情 →",
     "whatToEatTryAgain": "再来一次",
-    "seeAll": "查看全部"
+    "seeAll": "查看全部",
+    "followFeed": "关注动态",
+    "followFeedDesc": "查看你关注的人最新动态"
   },
   "ranking": {
     "title": "🏆 每周热榜"
