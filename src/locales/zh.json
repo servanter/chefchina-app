@@ -222,6 +222,8 @@
     "forgotPasswordTitle": "重置密码",
     "forgotPasswordMsg": "密码重置功能尚未开放，请联系客服 support@chefchina.app。",
     "contactSupport": "好的",
+    "passwordTooShort": "密码至少需要8位",
+    "passwordWeak": "密码需包含至少一个字母和一个数字",
     "passwordStrength": {
       "weak": "弱",
       "medium": "中",
@@ -739,5 +741,28 @@
     "featurePrioritySupport": "优先客服支持",
     "featureMoreUpdates": "更多功能持续更新",
     "savingsLabel": "节省 $10"
+  },
+  "forgotPassword": {
+    "title": "重置密码",
+    "step1Desc": "输入您的账号邮箱，我们将发送一个6位数字验证码。",
+    "step2Desc": "请输入发送至 {{email}} 的6位验证码，并设置新密码。",
+    "sendCode": "发送验证码",
+    "codeLabel": "验证码",
+    "codePlaceholder": "请输入6位验证码",
+    "codeError": "请输入有效的6位验证码",
+    "newPasswordLabel": "新密码",
+    "newPasswordPlaceholder": "至少8位，包含字母和数字",
+    "confirmPasswordLabel": "确认新密码",
+    "confirmPasswordPlaceholder": "再次输入新密码",
+    "confirmPasswordRequired": "请确认您的新密码",
+    "passwordMismatch": "两次输入的密码不一致",
+    "resetButton": "重置密码",
+    "resendCode": "未收到验证码？返回重新发送",
+    "codeSentTitle": "验证码已发送",
+    "codeSentMsg": "请查收邮件中的6位验证码",
+    "resetSuccessTitle": "密码已重置",
+    "resetSuccessMsg": "密码更新成功，请重新登录。",
+    "invalidCode": "验证码无效或已过期",
+    "rememberPassword": "想起密码了？"
   }
 }

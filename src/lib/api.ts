@@ -2138,3 +2138,32 @@ export const clearShoppingList = async (data?: {
   const res = await apiClient.delete('/shopping-list', { data });
   return res.data.data;
 };
+
+// ─── 忘记密码 / 重置密码 ─────────────────────────────────────────────────────
+
+/**
+ * 请求发送密码重置验证码
+ * POST /api/auth/forgot-password
+ * 无论邮箱是否存在都返回成功（防止邮箱枚举）
+ */
+export const forgotPassword = async (email: string): Promise<{ message: string }> => {
+  const res = await apiClient.post('/auth/forgot-password', { email });
+  return res.data.data;
+};
+
+/**
+ * 使用验证码重置密码
+ * POST /api/auth/reset-password
+ */
+export const resetPassword = async (
+  email: string,
+  code: string,
+  newPassword: string,
+): Promise<{ message: string }> => {
+  const res = await apiClient.post('/auth/reset-password', {
+    email,
+    code,
+    newPassword,
+  });
+  return res.data.data;
+};
