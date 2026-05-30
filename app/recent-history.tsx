@@ -46,8 +46,10 @@ export default function RecentHistoryScreen() {
 
   // items 直接来自 useViewHistory hook，无需再 memoize
 
-  const handleRemove = async (historyId: string, recipeId: string) => {
-    await deleteMutation.mutate({ historyId, recipeId });
+  const handleRemove = (historyId: string, recipeId: string) => {
+    deleteMutation.mutate({ historyId, recipeId }).catch(() => {
+      // errors are non-critical; item removal failure is silent
+    });
   };
 
   const handleClear = () => {
@@ -56,8 +58,10 @@ export default function RecentHistoryScreen() {
       {
         text: t('recentHistory.clearAction'),
         style: 'destructive',
-        onPress: async () => {
-          await clearMutation.mutate();
+        onPress: () => {
+          clearMutation.mutate().catch(() => {
+            // errors are non-critical; clear failure is silent
+          });
         },
       },
     ]);

@@ -121,7 +121,10 @@
     "sharing": "正在生成分享卡片...",
     "shareSuccess": "分享卡片已生成",
     "shareFailed": "分享失败，请稍后再试",
-    "shareUnavailable": "当前设备不支持分享"
+    "shareUnavailable": "当前设备不支持分享",
+    "favoriteLimitTitle": "收藏已达上限",
+    "favoriteLimitMessage": "免费版最多收藏 20 个菜谱，升级 Premium 享受无限收藏",
+    "favoriteLimitUpgrade": "升级"
   },
   "favorites": {
     "title": "我的收藏",

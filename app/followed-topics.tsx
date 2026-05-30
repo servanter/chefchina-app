@@ -26,19 +26,20 @@ export default function FollowedTopicsPage() {
 
   const isZh = i18n.language === 'zh';
 
-  const handleUnfollow = async (topicId: string) => {
-    try {
-      await toggleFollow.mutate({ topicId, action: 'unfollow' });
-      Toast.show({
-        type: 'success',
-        text1: isZh ? '已取消关注' : 'Unfollowed'
+  const handleUnfollow = (topicId: string) => {
+    toggleFollow.mutate({ topicId, action: 'unfollow' })
+      .then(() => {
+        Toast.show({
+          type: 'success',
+          text1: isZh ? '已取消关注' : 'Unfollowed'
+        });
+      })
+      .catch(() => {
+        Toast.show({
+          type: 'error',
+          text1: t('common.error')
+        });
       });
-    } catch (error) {
-      Toast.show({
-        type: 'error',
-        text1: t('common.error')
-      });
-    }
   };
 
   return (

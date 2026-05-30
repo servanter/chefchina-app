@@ -297,11 +297,11 @@ export default function RecipeDetailScreen() {
       const currentFavorites = user?.favorites_count ?? 0;
       if (currentFavorites >= 20) {
         Alert.alert(
-          '收藏已达上限',
-          '免费版最多收藏 20 个菜谱，升级 Premium 享受无限收藏',
+          t('recipe.favoriteLimitTitle'),
+          t('recipe.favoriteLimitMessage'),
           [
             { text: t('common.cancel'), style: 'cancel' },
-            { text: '升级', onPress: () => router.push('/pricing') },
+            { text: t('recipe.favoriteLimitUpgrade'), onPress: () => router.push('/pricing') },
           ]
         );
         return;
@@ -564,70 +564,79 @@ export default function RecipeDetailScreen() {
     // ✅ FIX: 立即显示 loading（用户点击后立刻反馈）
     setIsAnalyzing(true);
     
-    try {
-      // ✅ FIX: 传递用户语言设置
-      const language = i18n.language === 'zh' ? 'zh' : 'en';
-      
-      // 串行请求：先查配额，再调用分析
-      await refetchQuota();
-      const analysisResult = await analyzeRecipeMutation.mutate({ 
+    // ✅ FIX: 传递用户语言设置
+    const language = i18n.language === 'zh' ? 'zh' : 'en';
+    
+    // 串行请求：先查配额，再调用分析
+    refetchQuota().then(() => {
+      analyzeRecipeMutation.mutate({ 
         recipeId: recipe.id, 
         language 
-      });
+      })
+        .then((analysisResult) => {
+          setIsAnalyzing(false);
+          // 分析成功
+          if (analysisResult) {
+            setAiAnalysisResult(analysisResult);
+            setShowQuotaPrompt(false);
+            triggerHaptic('success');
+            Toast.show({
+              type: 'success',
+              text1: isZh ? 'AI 营养分析完成' : 'AI Nutrition Analysis Complete',
+              text2: isZh ? '已为您生成个性化建议' : 'Personalized recommendations ready',
+              visibilityTime: 2000,
+            });
+          }
+        })
+        .catch((error: any) => {
+          setIsAnalyzing(false);
+          triggerHaptic('error');
 
-      // 分析成功（mutate 失败时会 throw，走 catch）
-      if (analysisResult) {
-        setAiAnalysisResult(analysisResult);
-        setShowQuotaPrompt(false);
-        triggerHaptic('success');
-        Toast.show({
-          type: 'success',
-          text1: isZh ? 'AI 营养分析完成' : 'AI Nutrition Analysis Complete',
-          text2: isZh ? '已为您生成个性化建议' : 'Personalized recommendations ready',
-          visibilityTime: 2000,
+          // 处理各种错误
+          if (error.message === 'QUOTA_EXCEEDED') {
+            // 配额已用完，显示 Premium 引导
+            setShowQuotaPrompt(true);
+          } else if (error.message === 'PROFILE_REQUIRED') {
+            Alert.alert(
+              isZh ? '未设置健康档案' : 'Health Profile Required',
+              isZh
+                ? '请先完成健康档案设置，让 AI 为你提供个性化建议。'
+                : 'Please set up your health profile first for personalized recommendations.',
+              [
+                { text: t('common.cancel'), style: 'cancel' },
+                {
+                  text: isZh ? '去设置' : 'Go to Settings',
+                  onPress: () => router.push('/profile/edit'),
+                },
+              ]
+            );
+          } else if (error.message === 'NUTRITION_DATA_MISSING') {
+            Alert.alert(
+              isZh ? '无法分析' : 'Cannot Analyze',
+              isZh
+                ? '该菜谱缺少完整的营养数据。'
+                : 'This recipe lacks complete nutrition data.',
+              [{ text: t('common.ok') }]
+            );
+          } else {
+            Toast.show({
+              type: 'error',
+              text1: isZh ? '分析失败' : 'Analysis Failed',
+              text2: error.message || t('common.error'),
+              visibilityTime: 2000,
+            });
+          }
         });
-      }
-    } catch (error: any) {
-      triggerHaptic('error');
-
-      // 处理各种错误
-      if (error.message === 'QUOTA_EXCEEDED') {
-        // 配额已用完，显示 Premium 引导
-        setShowQuotaPrompt(true);
-      } else if (error.message === 'PROFILE_REQUIRED') {
-        Alert.alert(
-          isZh ? '未设置健康档案' : 'Health Profile Required',
-          isZh
-            ? '请先完成健康档案设置，让 AI 为你提供个性化建议。'
-            : 'Please set up your health profile first for personalized recommendations.',
-          [
-            { text: t('common.cancel'), style: 'cancel' },
-            {
-              text: isZh ? '去设置' : 'Go to Settings',
-              onPress: () => router.push('/profile/edit'),
-            },
-          ]
-        );
-      } else if (error.message === 'NUTRITION_DATA_MISSING') {
-        Alert.alert(
-          isZh ? '无法分析' : 'Cannot Analyze',
-          isZh
-            ? '该菜谱缺少完整的营养数据。'
-            : 'This recipe lacks complete nutrition data.',
-          [{ text: t('common.ok') }]
-        );
-      } else {
-        Toast.show({
-          type: 'error',
-          text1: isZh ? '分析失败' : 'Analysis Failed',
-          text2: error.message || t('common.error'),
-          visibilityTime: 2000,
-        });
-      }
-    } finally {
-      // 关闭 loading
+    }).catch((error: any) => {
       setIsAnalyzing(false);
-    }
+      triggerHaptic('error');
+      Toast.show({
+        type: 'error',
+        text1: isZh ? '配额查询失败' : 'Quota check failed',
+        text2: error.message || t('common.error'),
+        visibilityTime: 2000,
+      });
+    });
   }, [
     recipe,
     userId,
@@ -813,14 +822,15 @@ export default function RecipeDetailScreen() {
                         { text: t('common.cancel'), style: 'cancel' },
                         {
                           text: isZh ? '下架' : 'Unpublish',
-                          onPress: async () => {
-                            try {
-                              await unpublishRecipeMutation.mutate(recipe.id);
-                              Toast.show({ type: 'success', text1: isZh ? '菜谱已下架' : 'Recipe unpublished' });
-                              await refetchRecipeDetail();
-                            } catch {
-                              Toast.show({ type: 'error', text1: t('common.error') });
-                            }
+                          onPress: () => {
+                            unpublishRecipeMutation.mutate(recipe.id)
+                              .then(() => {
+                                Toast.show({ type: 'success', text1: isZh ? '菜谱已下架' : 'Recipe unpublished' });
+                                refetchRecipeDetail();
+                              })
+                              .catch(() => {
+                                Toast.show({ type: 'error', text1: t('common.error') });
+                              });
                           },
                         },
                       ],
@@ -841,14 +851,15 @@ export default function RecipeDetailScreen() {
                         {
                           text: isZh ? '删除' : 'Delete',
                           style: 'destructive',
-                          onPress: async () => {
-                            try {
-                              await deleteRecipeMutation.mutate(recipe.id);
-                              Toast.show({ type: 'success', text1: isZh ? '菜谱已删除' : 'Recipe deleted' });
-                              router.replace('/my-recipes');
-                            } catch {
-                              Toast.show({ type: 'error', text1: t('common.error') });
-                            }
+                          onPress: () => {
+                            deleteRecipeMutation.mutate(recipe.id)
+                              .then(() => {
+                                Toast.show({ type: 'success', text1: isZh ? '菜谱已删除' : 'Recipe deleted' });
+                                router.replace('/my-recipes');
+                              })
+                              .catch(() => {
+                                Toast.show({ type: 'error', text1: t('common.error') });
+                              });
                           },
                         },
                       ],

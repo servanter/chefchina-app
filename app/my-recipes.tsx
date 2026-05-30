@@ -54,24 +54,28 @@ export default function MyRecipesScreen() {
         {
           text: t('myRecipes.actions.delete'),
           style: 'destructive',
-          onPress: async () => {
-            try {
-              await deleteMutation.mutate(item.id);
-            } catch (error: any) {
-              Alert.alert(t('common.error'), error?.message || t('common.operationFailed'));
-            }
+          onPress: () => {
+            deleteMutation.mutate(item.id)
+              .then(() => {
+                // success — list will refresh via query
+              })
+              .catch((error: any) => {
+                Alert.alert(t('common.error'), error?.message || t('common.operationFailed'));
+              });
           },
         },
       ],
     );
   };
 
-  const handleRepublish = async (item: Recipe) => {
-    try {
-      await republishMutation.mutate(item.id);
-    } catch (error: any) {
-      Alert.alert(t('common.error'), error?.message || t('common.operationFailed'));
-    }
+  const handleRepublish = (item: Recipe) => {
+    republishMutation.mutate(item.id)
+      .then(() => {
+        // success — list will refresh via query
+      })
+      .catch((error: any) => {
+        Alert.alert(t('common.error'), error?.message || t('common.operationFailed'));
+      });
   };
 
   const handleUnpublish = (item: Recipe) => {
@@ -82,12 +86,14 @@ export default function MyRecipesScreen() {
         { text: t('common.cancel'), style: 'cancel' },
         {
           text: t('myRecipes.actions.unpublish'),
-          onPress: async () => {
-            try {
-              await unpublishMutation.mutate(item.id);
-            } catch (error: any) {
-              Alert.alert(t('common.error'), error?.message || t('common.operationFailed'));
-            }
+          onPress: () => {
+            unpublishMutation.mutate(item.id)
+              .then(() => {
+                // success — list will refresh via query
+              })
+              .catch((error: any) => {
+                Alert.alert(t('common.error'), error?.message || t('common.operationFailed'));
+              });
           },
         },
       ],
