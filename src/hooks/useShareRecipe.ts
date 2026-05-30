@@ -4,26 +4,8 @@ import type { RefObject } from 'react';
 import type { View } from 'react-native';
 import { recordShare, Recipe } from '../lib/api';
 import { getUserId } from '../lib/storage';
-
-// Dynamic requires so the app still builds if these peer deps are not yet
-// installed. The hook returns `shareAvailable: false` when this is the case.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-let captureRef: any = null;
-try {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  captureRef = require('react-native-view-shot').captureRef;
-} catch {
-  captureRef = null;
-}
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-let Sharing: any = null;
-try {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  Sharing = require('expo-sharing');
-} catch {
-  Sharing = null;
-}
+import { captureRef } from 'react-native-view-shot';
+import * as Sharing from 'expo-sharing';
 
 export const DEFAULT_WEB_SHARE_BASE =
   'https://chefchina.app/s'; // swap for env-driven value in production
@@ -45,7 +27,7 @@ export interface UseShareRecipeResult {
 
 export function useShareRecipe(): UseShareRecipeResult {
   const [sharing, setSharing] = useState(false);
-  const shareAvailable = !!captureRef && !!Sharing;
+  const shareAvailable = true;
 
   const buildDeepLink = useCallback(
     (recipeId: string) => `chefchina://recipe/${recipeId}`,

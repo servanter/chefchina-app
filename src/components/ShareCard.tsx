@@ -7,16 +7,7 @@ import {
   ImageSourcePropType,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
-// ⚠️ Requires `react-native-qrcode-svg`. If not installed, the share card falls
-// back to a text-only URL block instead of a QR code.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-let QRCode: any = null;
-try {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  QRCode = require('react-native-qrcode-svg').default;
-} catch {
-  QRCode = null;
-}
+import QRCode from 'react-native-qrcode-svg';
 
 import type { Recipe } from '../lib/api';
 
@@ -124,20 +115,12 @@ export const ShareCard = forwardRef<View, ShareCardProps>(
           </View>
 
           <View style={styles.qrWrap}>
-            {QRCode ? (
-              <QRCode
-                value={deepLink}
-                size={200}
-                color="#1A1A1A"
-                backgroundColor="#FFFFFF"
-              />
-            ) : (
-              <View style={styles.qrFallback}>
-                <Text style={styles.qrFallbackText} numberOfLines={3}>
-                  {deepLink}
-                </Text>
-              </View>
-            )}
+            <QRCode
+              value={deepLink}
+              size={200}
+              color="#1A1A1A"
+              backgroundColor="#FFFFFF"
+            />
             <Text style={styles.scanText}>{t('share.scanToCook')}</Text>
           </View>
         </View>
