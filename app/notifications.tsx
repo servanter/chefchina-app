@@ -119,6 +119,7 @@ export default function NotificationsScreen() {
     setRefreshing(false);
   }, [refetch]);
 
+  // REQ-08: 触发加载下一页（距底部 0.3 屏时自动调用）
   const handleLoadMore = useCallback(() => {
     if (!isFetchingNextPage && hasNextPage) {
       fetchNextPage();
@@ -194,22 +195,9 @@ export default function NotificationsScreen() {
     }
   }, [markAllRead, t]);
 
+  // REQ-08: 将所有已加载分页的通知合并为单一列表
   const items = useMemo(() => (data?.pages ?? []).flatMap((p) => p.data), [data]);
   const unread = unreadCounts?.all ?? data?.pages?.[0]?.unreadCount ?? 0;
-
-  // DEBUG: 调试日志
-  useEffect(() => {
-    console.log('[Notifications Debug]', {
-      userId,
-      resolvedAuth,
-      isLoading,
-      isFetching,
-      hasData: !!data,
-      pagesCount: data?.pages?.length,
-      itemsLength: items.length,
-      error: error?.message,
-    });
-  }, [userId, resolvedAuth, isLoading, isFetching, data, items, error]);
 
   const styles = useMemo(
     () =>
