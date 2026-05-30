@@ -222,6 +222,8 @@
     "forgotPasswordTitle": "Reset Password",
     "forgotPasswordMsg": "Password reset is not yet available. Please contact support at support@chefchina.app.",
     "contactSupport": "OK",
+    "passwordTooShort": "Password must be at least 8 characters",
+    "passwordWeak": "Password must contain at least one letter and one number",
     "passwordStrength": {
       "weak": "Weak",
       "medium": "Medium",
@@ -739,5 +741,28 @@
     "featurePrioritySupport": "Priority support",
     "featureMoreUpdates": "Continuous new features",
     "savingsLabel": "Save $10"
+  },
+  "forgotPassword": {
+    "title": "Reset Password",
+    "step1Desc": "Enter your account email address and we'll send you a 6-digit verification code.",
+    "step2Desc": "Enter the 6-digit code sent to {{email}} and set your new password.",
+    "sendCode": "Send Reset Code",
+    "codeLabel": "Verification Code",
+    "codePlaceholder": "Enter 6-digit code",
+    "codeError": "Please enter a valid 6-digit code",
+    "newPasswordLabel": "New Password",
+    "newPasswordPlaceholder": "At least 8 characters, letters and numbers",
+    "confirmPasswordLabel": "Confirm New Password",
+    "confirmPasswordPlaceholder": "Re-enter your new password",
+    "confirmPasswordRequired": "Please confirm your new password",
+    "passwordMismatch": "Passwords do not match",
+    "resetButton": "Reset Password",
+    "resendCode": "Didn't receive the code? Go back and resend",
+    "codeSentTitle": "Code Sent",
+    "codeSentMsg": "Please check your email for the 6-digit code",
+    "resetSuccessTitle": "Password Reset",
+    "resetSuccessMsg": "Your password has been updated. Please log in.",
+    "invalidCode": "Invalid or expired verification code",
+    "rememberPassword": "Remember your password?"
   }
 }
