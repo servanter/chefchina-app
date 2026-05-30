@@ -31,11 +31,7 @@ import {
   HomeInitData,
   RecipeDetailFullData,
 } from '../lib/api';
-import { MOCK_RECIPES, MOCK_COMMENTS } from '../lib/mockData';
 import { useInfiniteList } from './useInfiniteList';
-
-// Toggle to use mock data when backend is unavailable
-const USE_MOCK = false;
 
 // ─── Recipes ──────────────────────────────────────────────────────────────────
 
@@ -53,28 +49,8 @@ export const useRecipes = (params?: {
   const load = useCallback(async () => {
     setIsLoading(true);
     try {
-      if (USE_MOCK) {
-        let d = [...MOCK_RECIPES];
-        if (params?.category && params.category !== 'all') {
-          d = d.filter((r) => r.category === params.category);
-        }
-        if (params?.difficulty && params.difficulty !== 'all') {
-          d = d.filter((r) => r.difficulty === params.difficulty);
-        }
-        if (params?.search) {
-          const q = params.search.toLowerCase();
-          d = d.filter(
-            (r) =>
-              r.title.toLowerCase().includes(q) ||
-              r.title_zh.includes(q) ||
-              r.description.toLowerCase().includes(q),
-          );
-        }
-        setData({ data: d, page: 1, limit: 20, total: d.length, hasMore: false });
-      } else {
-        const result = await fetchRecipes(params);
-        setData(result);
-      }
+      const result = await fetchRecipes(params);
+      setData(result);
       setError(null);
     } catch (e) {
       setError(e as Error);
@@ -117,24 +93,7 @@ export const useInfiniteRecipes = (params?: {
         setIsFetchingNextPage(true);
       }
       try {
-        let page: any;
-        if (USE_MOCK) {
-          let d = [...MOCK_RECIPES];
-          if (params?.category && params.category !== 'all')
-            d = d.filter((r) => r.category === params.category);
-          if (params?.difficulty && params.difficulty !== 'all')
-            d = d.filter((r) => r.difficulty === params.difficulty);
-          if (params?.search) {
-            const q = params.search.toLowerCase();
-            d = d.filter((r) => r.title.toLowerCase().includes(q) || r.title_zh.includes(q));
-          }
-          page = {
-            data: d,
-            pagination: { page: nextPage, pageSize: PAGE_SIZE, total: d.length, totalPages: 1 },
-          };
-        } else {
-          page = await fetchRecipes({ ...params, page: nextPage, pageSize: PAGE_SIZE });
-        }
+        const page = await fetchRecipes({ ...params, page: nextPage, pageSize: PAGE_SIZE });
         pageRef.current = nextPage;
         setPages((prev) => (reset ? [page] : [...prev, page]));
         setHasNextPage(page.pagination.page < page.pagination.totalPages);
@@ -169,8 +128,7 @@ export const useFeaturedRecipes = () => {
   const load = useCallback(async () => {
     setIsLoading(true);
     try {
-      if (USE_MOCK) setData(MOCK_RECIPES.slice(0, 3));
-      else setData(await fetchFeaturedRecipes());
+      setData(await fetchFeaturedRecipes());
       setError(null);
     } catch (e) {
       setError(e as Error);
@@ -193,13 +151,7 @@ export const useRecipeById = (id: string) => {
     if (!id) return;
     setIsLoading(true);
     try {
-      if (USE_MOCK) {
-        const found = MOCK_RECIPES.find((r) => r.id === id);
-        if (!found) throw new Error('Recipe not found');
-        setData(found);
-      } else {
-        setData(await fetchRecipeById(id));
-      }
+      setData(await fetchRecipeById(id));
       setError(null);
     } catch (e) {
       setError(e as Error);
@@ -394,8 +346,7 @@ export const useFavorites = (userId: string) => {
     if (!userId) return;
     setIsLoading(true);
     try {
-      if (USE_MOCK) setData(MOCK_RECIPES.slice(0, 2));
-      else setData(await fetchFavorites(userId));
+      setData(await fetchFavorites(userId));
       setError(null);
     } catch (e) {
       setError(e as Error);
@@ -432,13 +383,7 @@ export const useInfiniteFavorites = (userId: string) => {
         setIsFetchingNextPage(true);
       }
       try {
-        let page: any;
-        if (USE_MOCK) {
-          const d = MOCK_RECIPES.slice(0, 2);
-          page = { data: d, pagination: { page: nextPage, pageSize: PAGE_SIZE, total: d.length, totalPages: 1 } };
-        } else {
-          page = await fetchFavoritesPaged(userId, nextPage, PAGE_SIZE);
-        }
+        const page = await fetchFavoritesPaged(userId, nextPage, PAGE_SIZE);
         pageRef.current = nextPage;
         setPages((prev) => (reset ? [page] : [...prev, page]));
         setHasNextPage(page.pagination.page < page.pagination.totalPages);
@@ -472,10 +417,6 @@ export const useInfiniteFavoritesList = (userId: string) => {
   const list = useInfiniteList<Recipe>({
     enabled,
     queryFn: async (page: number) => {
-      if (USE_MOCK) {
-        const data = MOCK_RECIPES.slice(0, 2);
-        return { data, pagination: { page, pageSize: PAGE_SIZE, total: data.length, totalPages: 1 } };
-      }
       const res = await fetchFavoritesPaged(userId, page, PAGE_SIZE);
       setTotal(res.pagination.total);
       return res;
@@ -557,8 +498,7 @@ export const useComments = (recipeId: string) => {
     if (!recipeId) return;
     setIsLoading(true);
     try {
-      if (USE_MOCK) setData(MOCK_COMMENTS.filter((c) => c.recipe_id === recipeId) as Comment[]);
-      else setData(await fetchComments(recipeId));
+      setData(await fetchComments(recipeId));
       setError(null);
     } catch (e) {
       setError(e as Error);
@@ -594,13 +534,7 @@ export const useInfiniteComments = (recipeId: string) => {
         setIsFetchingNextPage(true);
       }
       try {
-        let page: any;
-        if (USE_MOCK) {
-          const d = MOCK_COMMENTS.filter((c) => c.recipe_id === recipeId) as Comment[];
-          page = { data: d, pagination: { page: nextPage, pageSize: PAGE_SIZE, total: d.length, totalPages: 1 } };
-        } else {
-          page = await fetchCommentsPaged(recipeId, nextPage, PAGE_SIZE);
-        }
+        const page = await fetchCommentsPaged(recipeId, nextPage, PAGE_SIZE);
         pageRef.current = nextPage;
         setPages((prev) => (reset ? [page] : [...prev, page]));
         setHasNextPage(page.pagination.page < page.pagination.totalPages);

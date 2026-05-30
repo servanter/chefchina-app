@@ -1,7 +1,3 @@
-/**
- * 添加食材弹窗
- */
-
 import React, { useState } from 'react';
 import {
   View,
@@ -16,6 +12,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Picker } from '@react-native-picker/picker';
+import { useTranslation } from 'react-i18next';
 
 import { useAddShoppingListItem } from '../src/hooks/useShoppingList';
 
@@ -27,6 +24,7 @@ interface Props {
 const COMMON_UNITS = ['g', 'kg', 'ml', 'L', '个', '瓶', '包', '袋', '适量', '少许'];
 
 export default function AddIngredientModal({ visible, onClose }: Props) {
+  const { t } = useTranslation();
   const [name, setName] = useState('');
   const [amount, setAmount] = useState('');
   const [unit, setUnit] = useState('g');
@@ -36,7 +34,7 @@ export default function AddIngredientModal({ visible, onClose }: Props) {
   const handleAdd = () => {
     // 验证
     if (!name.trim()) {
-      Alert.alert('提示', '请输入食材名称');
+      Alert.alert(t('shoppingList.alertTitle'), t('shoppingList.nameRequired'));
       return;
     }
 
@@ -50,20 +48,20 @@ export default function AddIngredientModal({ visible, onClose }: Props) {
     if (unit === '适量' || unit === '少许') {
       addMutation.mutate({ name: name.trim(), amount: 0, unit })
         .then(() => { resetForm(); onClose(); })
-        .catch((error: any) => Alert.alert('添加失败', error.message || '请稍后重试'));
+        .catch((error: any) => Alert.alert(t('shoppingList.addFailed'), error.message || t('shoppingList.addRetry')));
       return;
     }
 
     // 验证数量
     const amountNum = parseFloat(amount);
     if (!amount || isNaN(amountNum) || amountNum <= 0) {
-      Alert.alert('提示', '请输入有效的数量');
+      Alert.alert(t('shoppingList.alertTitle'), t('shoppingList.amountRequired'));
       return;
     }
 
     addMutation.mutate({ name: name.trim(), amount: amountNum, unit })
       .then(() => { resetForm(); onClose(); })
-      .catch((error: any) => Alert.alert('添加失败', error.message || '请稍后重试'));
+      .catch((error: any) => Alert.alert(t('shoppingList.addFailed'), error.message || t('shoppingList.addRetry')));
   };
 
   const handleClose = () => {
@@ -88,7 +86,7 @@ export default function AddIngredientModal({ visible, onClose }: Props) {
 
         <View style={styles.modal}>
           <View style={styles.header}>
-            <Text style={styles.title}>添加食材</Text>
+            <Text style={styles.title}>{t('shoppingList.addTitle')}</Text>
             <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
               <Ionicons name="close" size={24} color="#333" />
             </TouchableOpacity>
@@ -97,12 +95,12 @@ export default function AddIngredientModal({ visible, onClose }: Props) {
           <View style={styles.form}>
             {/* 食材名称 */}
             <View style={styles.field}>
-              <Text style={styles.label}>食材名称</Text>
+              <Text style={styles.label}>{t('shoppingList.nameLabel')}</Text>
               <TextInput
                 style={styles.input}
                 value={name}
                 onChangeText={setName}
-                placeholder="例如：鸡胸肉"
+                placeholder={t('shoppingList.namePlaceholder')}
                 placeholderTextColor="#999"
                 autoFocus
               />
@@ -111,12 +109,12 @@ export default function AddIngredientModal({ visible, onClose }: Props) {
             {/* 数量 */}
             {unit !== '适量' && unit !== '少许' && (
               <View style={styles.field}>
-                <Text style={styles.label}>数量</Text>
+                <Text style={styles.label}>{t('shoppingList.amountLabel')}</Text>
                 <TextInput
                   style={styles.input}
                   value={amount}
                   onChangeText={setAmount}
-                  placeholder="例如：200"
+                  placeholder={t('shoppingList.amountPlaceholder')}
                   placeholderTextColor="#999"
                   keyboardType="numeric"
                 />
@@ -125,7 +123,7 @@ export default function AddIngredientModal({ visible, onClose }: Props) {
 
             {/* 单位 */}
             <View style={styles.field}>
-              <Text style={styles.label}>单位</Text>
+              <Text style={styles.label}>{t('shoppingList.unitLabel')}</Text>
               <View style={styles.pickerContainer}>
                 <Picker
                   selectedValue={unit}
@@ -145,7 +143,7 @@ export default function AddIngredientModal({ visible, onClose }: Props) {
               style={[styles.button, styles.cancelButton]}
               onPress={handleClose}
             >
-              <Text style={styles.cancelButtonText}>取消</Text>
+              <Text style={styles.cancelButtonText}>{t('shoppingList.cancelButton')}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -154,7 +152,7 @@ export default function AddIngredientModal({ visible, onClose }: Props) {
               disabled={addMutation.isPending}
             >
               <Text style={styles.addButtonText}>
-                {addMutation.isPending ? '添加中...' : '添加'}
+                {addMutation.isPending ? t('shoppingList.addingButton') : t('shoppingList.addButton')}
               </Text>
             </TouchableOpacity>
           </View>

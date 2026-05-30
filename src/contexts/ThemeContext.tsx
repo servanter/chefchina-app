@@ -60,7 +60,7 @@ const DARK: ThemeColors = {
   card: '#1E1C19',
   tint: '#FF7A43',
   border: '#2A2723',
-  tabBg: '#17151211',
+  tabBg: '#171512',
   tabBorder: '#2A2723',
   tabInactive: '#6A635B',
   statusBar: 'light',

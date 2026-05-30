@@ -1,6 +1,7 @@
 import React from 'react'
 import { View, Text, StyleSheet } from 'react-native'
 import Svg, { Rect, Text as SvgText } from 'react-native-svg'
+import { useTranslation } from 'react-i18next'
 
 interface NutritionBarChartProps {
   current: { protein: number; fat: number; carbs: number }
@@ -15,6 +16,7 @@ export default function NutritionBarChart({
   width = 350,
   height = 200,
 }: NutritionBarChartProps) {
+  const { t } = useTranslation()
   const padding = 40
   const barWidth = (width - 2 * padding - 40) / 3
   const maxValue = Math.max(
@@ -30,21 +32,21 @@ export default function NutritionBarChart({
 
   const bars = [
     {
-      label: '蛋白质',
+      label: t('nutrition.protein'),
       currentVal: current.protein,
       targetVal: target.protein,
       color: '#4CAF50',
       x: padding,
     },
     {
-      label: '脂肪',
+      label: t('nutrition.fat'),
       currentVal: current.fat,
       targetVal: target.fat,
       color: '#FFC107',
       x: padding + barWidth + 20,
     },
     {
-      label: '碳水',
+      label: t('nutrition.carbs'),
       currentVal: current.carbs,
       targetVal: target.carbs,
       color: '#2196F3',
@@ -99,7 +101,7 @@ export default function NutritionBarChart({
                 fill="#999"
                 textAnchor="middle"
               >
-                目标 {Math.round(bar.targetVal)}g
+              {t('nutrition.target')} {Math.round(bar.targetVal)}g
               </SvgText>
             </React.Fragment>
           )

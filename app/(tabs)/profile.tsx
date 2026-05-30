@@ -475,7 +475,6 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: COLORS.background,
   },
   header: {
     paddingHorizontal: 20,
@@ -485,7 +484,6 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 26,
     fontWeight: '800',
-    color: COLORS.text,
     letterSpacing: -0.5,
   },
   avatarSection: {
@@ -502,7 +500,6 @@ const styles = StyleSheet.create({
     height: 88,
     borderRadius: 44,
     borderWidth: 3,
-    borderColor: COLORS.primary,
   },
   avatarBadge: {
     position: 'absolute',
@@ -511,11 +508,9 @@ const styles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: '#FFF',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 2,
-    borderColor: COLORS.border,
   },
   avatarBadgeText: {
     fontSize: 14,
@@ -523,12 +518,10 @@ const styles = StyleSheet.create({
   displayName: {
     fontSize: 20,
     fontWeight: '700',
-    color: COLORS.text,
     marginBottom: 4,
   },
   bio: {
     fontSize: 13,
-    color: COLORS.textSecondary,
     marginBottom: 4,
     textAlign: 'center',
   },
@@ -540,7 +533,6 @@ const styles = StyleSheet.create({
   statsRow: {
     flexDirection: 'row',
     marginHorizontal: 20,
-    backgroundColor: COLORS.cardBg,
     borderRadius: 16,
     padding: 18,
     marginBottom: 16,
@@ -558,15 +550,12 @@ const styles = StyleSheet.create({
   statValue: {
     fontSize: 22,
     fontWeight: '800',
-    color: COLORS.text,
   },
   statLabel: {
     fontSize: 12,
-    color: COLORS.textSecondary,
   },
   statDivider: {
     width: 1,
-    backgroundColor: COLORS.border,
     marginVertical: 4,
   },
   loginBanner: {
@@ -576,21 +565,17 @@ const styles = StyleSheet.create({
     padding: 16,
     marginBottom: 16,
     borderLeftWidth: 4,
-    borderLeftColor: COLORS.primary,
   },
   loginBannerText: {
     fontSize: 13,
-    color: COLORS.text,
     marginBottom: 6,
   },
   loginBannerBtn: {
     fontSize: 14,
     fontWeight: '700',
-    color: COLORS.primary,
   },
   section: {
     marginHorizontal: 20,
-    backgroundColor: COLORS.cardBg,
     borderRadius: 16,
     overflow: 'hidden',
     marginBottom: 12,
@@ -607,7 +592,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 14,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
   },
   menuLeft: {
     flexDirection: 'row',
@@ -627,12 +611,9 @@ const styles = StyleSheet.create({
   },
   menuLabel: {
     fontSize: 15,
-    color: COLORS.text,
     fontWeight: '500',
   },
-  menuLabelDestructive: {
-    color: COLORS.primary,
-  },
+  menuLabelDestructive: {},
   langToggleRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -641,7 +622,6 @@ const styles = StyleSheet.create({
   langLabel: {
     fontSize: 12,
     fontWeight: '600',
-    color: COLORS.textSecondary,
     width: 18,
     textAlign: 'center',
   },
@@ -734,6 +714,5 @@ const styles = StyleSheet.create({
   editProfileText: {
     fontSize: 13,
     fontWeight: '600',
-    color: COLORS.primary,
   },
 });

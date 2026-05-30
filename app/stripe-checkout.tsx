@@ -24,7 +24,7 @@ export default function StripeCheckoutScreen() {
     }
   }, [sessionId]);
 
-  const handleNavigationStateChange = (navState: any) => {
+  const handleNavigationStateChange = (navState: { nativeEvent: { loading?: boolean; url?: string; [key: string]: any } }) => {
     const currentUrl = navState.url;
     console.log('[Stripe WebView] URL changed:', currentUrl);
 

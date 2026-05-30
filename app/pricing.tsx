@@ -33,8 +33,7 @@ interface PricingPlan {
 export default function PricingScreen() {
   const { user } = useAuth();
   const [loading, setLoading] = useState<PlanType | null>(null);
-  const { t, i18n } = useTranslation();
-  const isZh = i18n.language === 'zh';
+  const { t } = useTranslation();
 
   const plans: PricingPlan[] = [
     {
@@ -57,27 +56,27 @@ export default function PricingScreen() {
       name: t('pricing.yearlyName'),
       price: '$49.99',
       period: t('pricing.yearly'),
-      savings: isZh ? '节省 $10' : 'Save $10',
+      savings: t('pricing.savingsLabel'),
       trial: t('pricing.trialInfo'),
     },
   ];
 
   const features = {
     free: [
-      { text: isZh ? '基础菜谱浏览' : 'Basic recipe browsing', included: true },
-      { text: isZh ? '收藏上限 20 条' : 'Up to 20 saved recipes', included: true },
-      { text: isZh ? '历史数据保留 30 天' : '30-day data retention', included: true },
-      { text: isZh ? 'AI 营养建议' : 'AI nutrition advice', included: false },
-      { text: isZh ? '无限收藏' : 'Unlimited saves', included: false },
-      { text: isZh ? '永久数据保留' : 'Permanent data retention', included: false },
+      { text: t('pricing.featureBasicBrowsing'), included: true },
+      { text: t('pricing.featureSaveLimit'), included: true },
+      { text: t('pricing.featureDataRetention30'), included: true },
+      { text: t('pricing.featureAiNutrition'), included: false },
+      { text: t('pricing.featureUnlimitedSaves'), included: false },
+      { text: t('pricing.featurePermanentData'), included: false },
     ],
     premium: [
-      { text: isZh ? '所有免费功能' : 'All free features', included: true },
-      { text: isZh ? 'AI 个性化营养建议' : 'AI-powered nutrition advice', included: true },
-      { text: isZh ? '无限收藏菜谱' : 'Unlimited recipe saves', included: true },
-      { text: isZh ? '永久数据保留' : 'Permanent data retention', included: true },
-      { text: isZh ? '优先客服支持' : 'Priority support', included: true },
-      { text: isZh ? '更多功能持续更新' : 'Continuous new features', included: true },
+      { text: t('pricing.featureAllFree'), included: true },
+      { text: t('pricing.featureAiPersonalized'), included: true },
+      { text: t('pricing.featureUnlimitedRecipes'), included: true },
+      { text: t('pricing.featurePermanentData'), included: true },
+      { text: t('pricing.featurePrioritySupport'), included: true },
+      { text: t('pricing.featureMoreUpdates'), included: true },
     ],
   };
 

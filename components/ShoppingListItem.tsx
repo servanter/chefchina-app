@@ -6,6 +6,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Checkbox from 'expo-checkbox';
+import { useTranslation } from 'react-i18next';
 
 import { ShoppingListItem as Item } from '../src/lib/api';
 import {
@@ -18,6 +19,7 @@ interface Props {
 }
 
 export default function ShoppingListItem({ item }: Props) {
+  const { t } = useTranslation();
   const updateMutation = useUpdateShoppingListItem();
   const deleteMutation = useDeleteShoppingListItem();
 
@@ -26,16 +28,20 @@ export default function ShoppingListItem({ item }: Props) {
   };
 
   const handleDelete = () => {
-    Alert.alert('删除食材', `确定要删除 ${item.name} 吗？`, [
-      { text: '取消', style: 'cancel' },
-      {
-        text: '删除',
-        style: 'destructive',
-        onPress: () => {
-          deleteMutation.mutate(item.id);
+    Alert.alert(
+      t('shoppingList.deleteItem'),
+      t('shoppingList.deleteConfirm', { name: item.name }),
+      [
+        { text: t('shoppingList.cancel'), style: 'cancel' },
+        {
+          text: t('shoppingList.delete'),
+          style: 'destructive',
+          onPress: () => {
+            deleteMutation.mutate(item.id);
+          },
         },
-      },
-    ]);
+      ]
+    );
   };
 
   const amountStr = item.amount === 0 ? item.unit : `${item.amount}${item.unit}`;
@@ -60,7 +66,7 @@ export default function ShoppingListItem({ item }: Props) {
             </Text>
             {item.isManual && (
               <View style={styles.manualBadge}>
-                <Text style={styles.manualBadgeText}>手动添加</Text>
+                <Text style={styles.manualBadgeText}>{t('shoppingList.manualAdd')}</Text>
               </View>
             )}
           </View>
@@ -71,8 +77,8 @@ export default function ShoppingListItem({ item }: Props) {
               <Ionicons name="location-outline" size={14} color="#999" />
               <Text style={styles.recipeText} numberOfLines={1}>
                 {item.recipeIds.length === 1
-                  ? '来自 1 个菜谱'
-                  : `来自 ${item.recipeIds.length} 个菜谱`}
+                  ? t('shoppingList.recipeSource1')
+                  : t('shoppingList.recipeSourceN', { count: item.recipeIds.length })}
               </Text>
             </View>
           )}
