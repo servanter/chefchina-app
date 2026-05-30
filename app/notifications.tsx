@@ -127,17 +127,51 @@ export default function NotificationsScreen() {
 
   const handleItemPress = useCallback(
     async (n: Notification) => {
-      if (!n.read) {
-        try {
-          await markRead.mutateAsync(n.id);
-        } catch {
-          // ignore — UI updates after invalidation/polling
-        }
+      // 无论是否已读，点击都标记为已读
+      try {
+        await markRead.mutateAsync(n.id);
+      } catch {
+        // ignore — UI updates after invalidation/polling
       }
 
-      const recipeId = n.payload?.recipeId as string | undefined;
-      if (recipeId) {
-        router.push(`/recipe/${recipeId}`);
+      // 根据通知类型跳转到对应页面
+      switch (n.type) {
+        case 'COMMENT_REPLY':
+        case 'RECIPE_LIKED':
+        case 'RECIPE_COMMENTED': {
+          const recipeId = n.payload?.recipeId as string | undefined;
+          if (recipeId) {
+            router.push(`/recipe/${recipeId}`);
+          }
+          break;
+        }
+        case 'NEW_FOLLOWER': {
+          const followerId = n.payload?.followerId as string | undefined;
+          if (followerId) {
+            router.push(`/user/${followerId}`);
+          }
+          break;
+        }
+        case 'RECIPE_FAVORITED': {
+          const recipeId = n.payload?.recipeId as string | undefined;
+          if (recipeId) {
+            router.push(`/recipe/${recipeId}`);
+          }
+          break;
+        }
+        case 'SUBMISSION_APPROVED': {
+          const recipeId = n.payload?.recipeId as string | undefined;
+          if (recipeId) {
+            router.push(`/recipe/${recipeId}`);
+          } else {
+            router.push('/');
+          }
+          break;
+        }
+        case 'SYSTEM':
+        default:
+          // 系统通知或未知类型不跳转
+          break;
       }
     },
     [markRead, router],
@@ -436,7 +470,7 @@ export default function NotificationsScreen() {
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.listContent}
           onEndReached={handleLoadMore}
-          onEndReachedThreshold={0.5}
+          onEndReachedThreshold={0.3}
           ListFooterComponent={
             <ListFooter
               isFetchingNextPage={isFetchingNextPage}

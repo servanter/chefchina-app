@@ -1,7 +1,14 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
 import { apiClient } from '../lib/api'
 
-export type NotificationType = 'COMMENT_REPLY' | 'RECIPE_LIKED' | 'RECIPE_FAVORITED' | 'SUBMISSION_APPROVED' | 'SYSTEM'
+export type NotificationType =
+  | 'COMMENT_REPLY'
+  | 'RECIPE_LIKED'
+  | 'RECIPE_FAVORITED'
+  | 'RECIPE_COMMENTED'
+  | 'NEW_FOLLOWER'
+  | 'SUBMISSION_APPROVED'
+  | 'SYSTEM'
 
 export interface Notification {
   id: string
@@ -15,6 +22,7 @@ export interface Notification {
     recipeId?: string
     commentId?: string
     fromUserId?: string
+    followerId?: string
     [key: string]: any
   }
 }
@@ -139,21 +147,40 @@ export function useMarkRead(_userId: string | null) {
   return { mutateAsync, isPending }
 }
 
-// REQ-16.2: 批量标记已读
-export function useMarkAllRead(userId: string | null, tab: TabType = 'all') {
+// REQ-16.2: 批量标记已读（含乐观更新）
+export function useMarkAllRead(
+  userId: string | null,
+  tab: TabType = 'all',
+  opts?: {
+    /** 请求发出前立即调用，执行乐观更新；返回快照数据供回滚 */
+    onOptimistic?: () => unknown
+    /** 请求失败时调用，传入 onOptimistic 返回的快照以便回滚 */
+    onRollback?: (snapshot: unknown) => void
+  },
+) {
   const [isPending, setIsPending] = useState(false)
 
   const mutateAsync = useCallback(async () => {
     if (!userId) throw new Error('userId is required')
     setIsPending(true)
+
+    // 乐观更新：先在本地把所有通知标记为已读
+    const snapshot = opts?.onOptimistic?.()
+
     try {
       const res = await apiClient.post('/notifications/mark-all-read', null, {
         params: { userId, type: tab },
       })
       return res.data
+    } catch (e) {
+      // 请求失败 → 回滚到快照
+      opts?.onRollback?.(snapshot)
+      throw e
     } finally {
       setIsPending(false)
     }
+  // opts 是内联对象，不应放进 deps，用 ref 避免 stale closure
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId, tab])
 
   return { mutateAsync, isPending }
