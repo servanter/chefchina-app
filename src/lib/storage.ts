@@ -109,6 +109,22 @@ export const ONBOARDING_DONE_KEY = KEYS.ONBOARDING_DONE;
 export const getOnboardingDone = () => getString(KEYS.ONBOARDING_DONE);
 export const setOnboardingDone = () => storeString(KEYS.ONBOARDING_DONE, 'true');
 
+// ─── 用户偏好（REQ-07）────────────────────────────────────────────────────────
+// 存储格式：{ categories: string[] }
+// key: 'user_preferences'（由 Onboarding 页写入，此处只读）
+
+export interface UserPreferences {
+  categories: string[];
+}
+
+export const getUserPreferences = async (): Promise<UserPreferences> => {
+  const data = await getJSON<UserPreferences>('user_preferences');
+  if (data && Array.isArray(data.categories)) {
+    return data;
+  }
+  return { categories: [] };
+};
+
 // ─── 设置页：主题 / 字体大小 / i18n ───────────────────────────────────────
 export type ThemePref = 'light' | 'dark' | 'system';
 export type FontSizePref = 'small' | 'medium' | 'large';

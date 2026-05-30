@@ -1537,8 +1537,17 @@ export const fetchRankingRecipes = async (
 export const fetchRandomRecipe = async (params?: {
   categoryId?: string;
   difficulty?: string;
+  preferredCategories?: string[];
 }): Promise<Recipe> => {
-  const res = await apiClient.get('/recipes/random', { params });
+  // Build query params, serialising the preferredCategories array as a
+  // comma-separated string so it travels cleanly over the wire.
+  const queryParams: Record<string, string> = {};
+  if (params?.categoryId) queryParams.categoryId = params.categoryId;
+  if (params?.difficulty) queryParams.difficulty = params.difficulty;
+  if (params?.preferredCategories && params.preferredCategories.length > 0) {
+    queryParams.preferredCategories = params.preferredCategories.join(',');
+  }
+  const res = await apiClient.get('/recipes/random', { params: queryParams });
   const wrapper = res.data.data as { recipes: BackendRecipe[] };
   const arr = wrapper.recipes ?? [];
   if (arr.length === 0) throw new Error('No random recipe found');
