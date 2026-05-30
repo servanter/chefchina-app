@@ -1,7 +1,7 @@
 // app/(tabs)/ai-generate.tsx
 // AI 菜谱生成器 - Tab 入口，直接渲染内容（保留 tab bar）
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -21,6 +21,7 @@ import { useTheme } from '../../src/contexts/ThemeContext';
 import { apiClient as api } from '@/lib/api';
 import { useAuth } from '../../src/hooks/useAuth';
 import { useSubscriptionStatus } from '../../src/hooks/useSubscription';
+import { useAIQuota } from '../../src/hooks/useAIAnalysis';
 
 const MAX_INGREDIENTS = 10;
 
@@ -38,7 +39,12 @@ export default function AIGenerateTab() {
   const [servings, setServings] = useState<number>(2);
   const [dietaryRestrictions, setDietaryRestrictions] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [quotaInfo, setQuotaInfo] = useState<{ used: number; limit: number } | null>(null);
+
+  // BUG-02 fix: use real AI quota from API instead of hardcoded fake data
+  const { data: aiQuotaData } = useAIQuota({ enabled: !!user });
+  const quotaInfo = aiQuotaData
+    ? { used: aiQuotaData.generator.used, limit: aiQuotaData.generator.limit }
+    : null;
 
   const styles = getStyles(colors);
 
@@ -61,10 +67,6 @@ export default function AIGenerateTab() {
     { key: 'vegetarian', label: t('aiGenerate.form.restrictionOptions.vegetarian') },
     { key: 'lowFat', label: t('aiGenerate.form.restrictionOptions.lowFat') },
   ];
-
-  useEffect(() => {
-    setQuotaInfo({ used: 2, limit: 5 });
-  }, []);
 
   const addIngredient = () => {
     if (ingredients.length < MAX_INGREDIENTS) {

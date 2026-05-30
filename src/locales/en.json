@@ -129,7 +129,10 @@
     "sharing": "Preparing card...",
     "shareSuccess": "Card ready to share",
     "shareFailed": "Could not share right now",
-    "shareUnavailable": "Sharing isn't available on this device"
+    "shareUnavailable": "Sharing isn't available on this device",
+    "favoriteLimitTitle": "Favorites limit reached",
+    "favoriteLimitMessage": "Free plan allows up to 20 saved recipes. Upgrade to Premium for unlimited favorites.",
+    "favoriteLimitUpgrade": "Upgrade"
   },
   "favorites": {
     "title": "My Favorites",

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { login as apiLogin, register as apiRegister, updateUser, User } from '../lib/api';
+import { login as apiLogin, register as apiRegister, updateUser, fetchUser, User } from '../lib/api';
 import {
   getUserId,
   saveUserId,
@@ -41,22 +41,34 @@ export const useAuth = () => {
         const avatar = await getUserAvatar();
 
         if (userId && email) {
-          setState({
-            user: {
-              id: userId,
-              email,
-              name: name ?? email.split('@')[0],
-              avatar_url: avatar && avatar.length > 0
-                ? avatar
-                : `https://i.pravatar.cc/150?u=${userId}`,
-              bio: bio ?? DEFAULT_BIO,
-              favorites_count: 0,
-              comments_count: 0,
-              recipes_count: 0,  // REQ-4.1
-            },
-            isLoading: false,
-            isLoggedIn: true,
-          });
+          // BUG-03 fix: fetch real user data (including counts) from API
+          // instead of hardcoding zeros for favorites/comments/recipes counts
+          try {
+            const apiUser = await fetchUser(userId);
+            setState({
+              user: apiUser,
+              isLoading: false,
+              isLoggedIn: true,
+            });
+          } catch {
+            // If API call fails, fall back to locally-stored data with zero counts
+            setState({
+              user: {
+                id: userId,
+                email,
+                name: name ?? email.split('@')[0],
+                avatar_url: avatar && avatar.length > 0
+                  ? avatar
+                  : `https://i.pravatar.cc/150?u=${userId}`,
+                bio: bio ?? DEFAULT_BIO,
+                favorites_count: 0,
+                comments_count: 0,
+                recipes_count: 0,  // REQ-4.1
+              },
+              isLoading: false,
+              isLoggedIn: true,
+            });
+          }
         } else {
           setState({ user: null, isLoading: false, isLoggedIn: false });
         }

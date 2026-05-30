@@ -36,23 +36,24 @@ export default function TopicDetailPage() {
   const topicName = topic ? (isZh ? topic.nameZh : topic.nameEn) : '';
   const topicDesc = topic ? (isZh ? topic.descZh : topic.descEn) : '';
 
-  const handleToggleFollow = async () => {
+  const handleToggleFollow = () => {
     if (!topic) return;
 
     const action = topic.isFollowing ? 'unfollow' : 'follow';
     
-    try {
-      await toggleFollow.mutate({ topicId: id!, action });
-      Toast.show({
-        type: 'success',
-        text1: topic.isFollowing ? t('topic.unfollowed') : t('topic.followed')
+    toggleFollow.mutate({ topicId: id!, action })
+      .then(() => {
+        Toast.show({
+          type: 'success',
+          text1: topic.isFollowing ? t('topic.unfollowed') : t('topic.followed')
+        });
+      })
+      .catch(() => {
+        Toast.show({
+          type: 'error',
+          text1: t('common.error')
+        });
       });
-    } catch (error) {
-      Toast.show({
-        type: 'error',
-        text1: t('common.error')
-      });
-    }
   };
 
   const handleRefresh = async () => {
