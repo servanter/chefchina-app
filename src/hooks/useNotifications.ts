@@ -96,7 +96,38 @@ export function useInfiniteNotifications(userId: string | null, tab: TabType = '
   // Expose pages for backward compat
   const data = pages.length > 0 ? { pages } : undefined
 
-  return { data, isLoading, isFetching, isFetchingNextPage, hasNextPage, error, refetch, fetchNextPage }
+  /** 乐观更新：立即把所有已加载页的通知 read 设为 true，返回旧快照供回滚 */
+  const optimisticMarkAllRead = useCallback((): NotificationPage[] => {
+    const snapshot = pages
+    setPages((prev) =>
+      prev.map((p) => ({
+        ...p,
+        unreadCount: 0,
+        data: p.data.map((n) => ({ ...n, read: true })),
+      })),
+    )
+    return snapshot
+  // pages 会造成 stale closure，这里故意依赖 setPages（稳定引用）
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  /** 回滚乐观更新：恢复到快照 */
+  const rollbackMarkAllRead = useCallback((snapshot: NotificationPage[]) => {
+    setPages(snapshot)
+  }, [])
+
+  return {
+    data,
+    isLoading,
+    isFetching,
+    isFetchingNextPage,
+    hasNextPage,
+    error,
+    refetch,
+    fetchNextPage,
+    optimisticMarkAllRead,
+    rollbackMarkAllRead,
+  }
 }
 
 // 标记单条通知为已读
