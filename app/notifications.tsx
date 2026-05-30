@@ -103,9 +103,14 @@ export default function NotificationsScreen() {
     hasNextPage,
     isFetchingNextPage,
     error,
+    optimisticMarkAllRead,
+    rollbackMarkAllRead,
   } = useInfiniteNotifications(userId, activeTab);
   const markRead = useMarkRead(userId);
-  const markAllRead = useMarkAllRead(userId, activeTab);
+  const markAllRead = useMarkAllRead(userId, activeTab, {
+    onOptimistic: optimisticMarkAllRead,
+    onRollback: (snapshot) => rollbackMarkAllRead(snapshot as Parameters<typeof rollbackMarkAllRead>[0]),
+  });
   const { data: unreadCounts } = useUnreadCount(userId);
 
   const onRefresh = useCallback(async () => {
