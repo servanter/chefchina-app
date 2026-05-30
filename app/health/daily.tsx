@@ -14,6 +14,7 @@ import { Ionicons } from '@expo/vector-icons'
 import Svg, { Circle, Text as SvgText } from 'react-native-svg'
 import { healthAPI, type IntakeRecord } from '@/lib/api'
 import MealLogger from '@/components/MealLogger'
+import { useTheme } from '@/contexts/ThemeContext'
 
 interface NutritionProgress {
   calories: { current: number; target: number }
@@ -23,6 +24,7 @@ interface NutritionProgress {
 
 export default function DailyNutritionScreen() {
   const { t } = useTranslation()
+  const { colors } = useTheme()
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [showLogger, setShowLogger] = useState(false)
@@ -72,20 +74,23 @@ export default function DailyNutritionScreen() {
 
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
+      <View style={[styles.loadingContainer, { backgroundColor: colors.bg }]}>
         <ActivityIndicator size="large" color="#FF6B35" />
       </View>
     )
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.bg }]}>
       {/* Header with Back Button */}
-      <View style={styles.headerRow}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={20} color="#333" />
+      <View style={[styles.headerRow, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
+        <TouchableOpacity
+          style={[styles.backBtn, { backgroundColor: colors.inputBg }]}
+          onPress={() => router.back()}
+        >
+          <Ionicons name="arrow-back" size={20} color={colors.text} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>{t('health.dailyLog')}</Text>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>{t('health.dailyLog')}</Text>
         <View style={{ width: 36 }} />
       </View>
 
@@ -93,12 +98,12 @@ export default function DailyNutritionScreen() {
         style={styles.scrollView}
         contentContainerStyle={styles.content}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
+          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.tint} />
         }
       >
         {/* 营养进度环 */}
-        <View style={styles.progressSection}>
-          <Text style={styles.sectionTitle}>{t('health.todayProgress')}</Text>
+        <View style={[styles.progressSection, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('health.todayProgress')}</Text>
           <View style={styles.progressContainer}>
             <CircularProgress
               current={nutrition.calories.current}
@@ -107,6 +112,7 @@ export default function DailyNutritionScreen() {
               unit="kcal"
               color="#FF6B35"
               size={120}
+              subTextColor={colors.subText}
             />
             <CircularProgress
               current={nutrition.protein.current}
@@ -115,6 +121,7 @@ export default function DailyNutritionScreen() {
               unit="g"
               color="#4CAF50"
               size={100}
+              subTextColor={colors.subText}
             />
             <CircularProgress
               current={nutrition.sodium.current}
@@ -123,39 +130,40 @@ export default function DailyNutritionScreen() {
               unit="mg"
               color="#2196F3"
               size={100}
+              subTextColor={colors.subText}
             />
           </View>
         </View>
 
         {/* 摄入记录列表 */}
-        <View style={styles.listSection}>
-          <Text style={styles.sectionTitle}>{t('health.mealHistory')}</Text>
+        <View style={[styles.listSection, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('health.mealHistory')}</Text>
           {intakes.length === 0 ? (
             <View style={styles.emptyState}>
-              <Text style={styles.emptyText}>{t('health.noData')}</Text>
-              <Text style={styles.emptyHint}>{t('health.startLogging')}</Text>
+              <Text style={[styles.emptyText, { color: colors.subText }]}>{t('health.noData')}</Text>
+              <Text style={[styles.emptyHint, { color: colors.subText }]}>{t('health.startLogging')}</Text>
             </View>
           ) : (
             intakes.map((intake) => (
-              <View key={intake.id} style={styles.intakeItem}>
+              <View key={intake.id} style={[styles.intakeItem, { borderBottomColor: colors.border }]}>
                 <View style={styles.intakeHeader}>
-                  <Text style={styles.recipeName}>
+                  <Text style={[styles.recipeName, { color: colors.text }]}>
                     {intake.recipeName}
                   </Text>
                   <Text style={styles.mealType}>{getMealTypeLabel(intake.mealType)}</Text>
                 </View>
                 <View style={styles.intakeStats}>
-                  <Text style={styles.intakeStat}>
+                  <Text style={[styles.intakeStat, { color: colors.subText }]}>
                     {intake.calories} kcal
                   </Text>
-                  <Text style={styles.intakeStat}>
+                  <Text style={[styles.intakeStat, { color: colors.subText }]}>
                     {t('health.protein')} {intake.protein}g
                   </Text>
-                  <Text style={styles.intakeStat}>
+                  <Text style={[styles.intakeStat, { color: colors.subText }]}>
                     {intake.servings}{t('common.servings', { defaultValue: '份' })}
                   </Text>
                 </View>
-                <Text style={styles.intakeTime}>
+                <Text style={[styles.intakeTime, { color: colors.subText }]}>
                   {new Date(intake.createdAt).toLocaleTimeString('zh-CN', {
                     hour: '2-digit',
                     minute: '2-digit',
@@ -168,7 +176,7 @@ export default function DailyNutritionScreen() {
       </ScrollView>
 
       {/* 记录按钮 */}
-      <View style={styles.footer}>
+      <View style={[styles.footer, { backgroundColor: colors.card, borderTopColor: colors.border }]}>
         <TouchableOpacity style={styles.logButton} onPress={handleLogMeal}>
           <Text style={styles.logButtonText}>+ {t('health.logMeal')}</Text>
         </TouchableOpacity>
@@ -194,6 +202,7 @@ interface CircularProgressProps {
   unit: string
   color: string
   size: number
+  subTextColor: string
 }
 
 function CircularProgress({
@@ -203,6 +212,7 @@ function CircularProgress({
   unit,
   color,
   size,
+  subTextColor,
 }: CircularProgressProps) {
   const strokeWidth = 8
   const radius = (size - strokeWidth) / 2
@@ -240,8 +250,8 @@ function CircularProgress({
         <Text style={[styles.progressValue, { color }]}>
           {Math.round(current)}
         </Text>
-        <Text style={styles.progressTarget}>/ {target}</Text>
-        <Text style={styles.progressLabel}>{label}</Text>
+        <Text style={[styles.progressTarget, { color: subTextColor }]}>/ {target}</Text>
+        <Text style={[styles.progressLabel, { color: subTextColor }]}>{label}</Text>
       </View>
     </View>
   )
@@ -260,7 +270,6 @@ function getMealTypeLabel(type: string): string {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F5F5',
   },
   headerRow: {
     flexDirection: 'row',
@@ -269,20 +278,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 12,
     paddingBottom: 8,
-    backgroundColor: '#FFF',
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
   backBtn: {
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: '#F5F2EE',
     alignItems: 'center',
     justifyContent: 'center',
   },
   headerTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#333',
     flex: 1,
     textAlign: 'center',
   },
@@ -290,7 +297,6 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#F5F5F5',
   },
   scrollView: {
     flex: 1,
@@ -299,15 +305,14 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   progressSection: {
-    backgroundColor: '#FFF',
     borderRadius: 12,
     padding: 16,
     marginBottom: 16,
+    borderWidth: StyleSheet.hairlineWidth,
   },
   sectionTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#333',
     marginBottom: 16,
   },
   progressContainer: {
@@ -330,17 +335,15 @@ const styles = StyleSheet.create({
   },
   progressTarget: {
     fontSize: 12,
-    color: '#999',
   },
   progressLabel: {
     fontSize: 12,
-    color: '#666',
     marginTop: 2,
   },
   listSection: {
-    backgroundColor: '#FFF',
     borderRadius: 12,
     padding: 16,
+    borderWidth: StyleSheet.hairlineWidth,
   },
   emptyState: {
     alignItems: 'center',
@@ -348,17 +351,14 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 16,
-    color: '#999',
     marginBottom: 8,
   },
   emptyHint: {
     fontSize: 14,
-    color: '#BBB',
   },
   intakeItem: {
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
   },
   intakeHeader: {
     flexDirection: 'row',
@@ -369,7 +369,6 @@ const styles = StyleSheet.create({
   recipeName: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#333',
     flex: 1,
   },
   mealType: {
@@ -383,18 +382,14 @@ const styles = StyleSheet.create({
   },
   intakeStat: {
     fontSize: 14,
-    color: '#666',
     marginRight: 16,
   },
   intakeTime: {
     fontSize: 12,
-    color: '#999',
   },
   footer: {
     padding: 16,
-    backgroundColor: '#FFF',
     borderTopWidth: 1,
-    borderTopColor: '#E0E0E0',
   },
   logButton: {
     backgroundColor: '#FF6B35',

@@ -13,6 +13,7 @@ import { Ionicons } from '@expo/vector-icons'
 import Toast from 'react-native-toast-message'
 import { healthAPI } from '@/lib/api'
 import Slider from '@react-native-community/slider'
+import { useTheme } from '@/contexts/ThemeContext'
 
 type Goal = 'weight_loss' | 'muscle_gain' | 'maintain'
 
@@ -30,6 +31,7 @@ interface HealthProfile {
 
 export default function HealthProfileScreen() {
   const { t } = useTranslation()
+  const { colors } = useTheme()
   
   const GOAL_OPTIONS = [
     { value: 'weight_loss' as Goal, label: t('health.goals.weight_loss'), emoji: '🔥' },
@@ -112,20 +114,23 @@ export default function HealthProfileScreen() {
 
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
+      <View style={[styles.loadingContainer, { backgroundColor: colors.bg }]}>
         <ActivityIndicator size="large" color="#FF6B35" />
       </View>
     )
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.bg }]}>
       {/* Header with Back Button */}
-      <View style={styles.headerRow}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={20} color="#333" />
+      <View style={[styles.headerRow, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
+        <TouchableOpacity
+          style={[styles.backBtn, { backgroundColor: colors.inputBg }]}
+          onPress={() => router.back()}
+        >
+          <Ionicons name="arrow-back" size={20} color={colors.text} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>{t('health.profile')}</Text>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>{t('health.profile')}</Text>
         <View style={{ width: 36 }} />
       </View>
 
@@ -133,14 +138,14 @@ export default function HealthProfileScreen() {
         {/* 快捷入口 */}
         <View style={styles.quickActions}>
           <TouchableOpacity
-            style={styles.quickActionButton}
+            style={[styles.quickActionButton, { backgroundColor: colors.card, borderColor: colors.border }]}
             onPress={() => router.push('/health/daily' as any)}
           >
             <Text style={styles.quickActionEmoji}>📊</Text>
             <Text style={styles.quickActionLabel}>{t('health.dailyLog')}</Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={styles.quickActionButton}
+            style={[styles.quickActionButton, { backgroundColor: colors.card, borderColor: colors.border }]}
             onPress={() => router.push('/health/report' as any)}
           >
             <Text style={styles.quickActionEmoji}>🤖</Text>
@@ -149,14 +154,15 @@ export default function HealthProfileScreen() {
         </View>
 
         {/* 健康目标 */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{t('health.goal')}</Text>
+        <View style={[styles.section, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('health.goal')}</Text>
           <View style={styles.goalContainer}>
             {GOAL_OPTIONS.map((option) => (
               <TouchableOpacity
                 key={option.value}
                 style={[
                   styles.goalButton,
+                  { borderColor: colors.border, backgroundColor: colors.card },
                   goal === option.value && styles.goalButtonActive,
                 ]}
                 onPress={() => setGoal(option.value)}
@@ -165,6 +171,7 @@ export default function HealthProfileScreen() {
                 <Text
                   style={[
                     styles.goalLabel,
+                    { color: colors.subText },
                     goal === option.value && styles.goalLabelActive,
                   ]}
                 >
@@ -176,8 +183,8 @@ export default function HealthProfileScreen() {
         </View>
 
         {/* 每日热量 */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{t('health.dailyCalories')}</Text>
+        <View style={[styles.section, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('health.dailyCalories')}</Text>
           <View style={styles.sliderContainer}>
             <Text style={styles.calorieValue}>{dailyCalories} {t('health.caloriesUnit')}</Text>
             <Slider
@@ -188,24 +195,24 @@ export default function HealthProfileScreen() {
               value={dailyCalories}
               onValueChange={setDailyCalories}
               minimumTrackTintColor="#FF6B35"
-              maximumTrackTintColor="#E0E0E0"
+              maximumTrackTintColor={colors.border}
               thumbTintColor="#FF6B35"
             />
             <View style={styles.sliderLabels}>
-              <Text style={styles.sliderLabel}>1200</Text>
-              <Text style={styles.sliderLabel}>3000</Text>
+              <Text style={[styles.sliderLabel, { color: colors.subText }]}>1200</Text>
+              <Text style={[styles.sliderLabel, { color: colors.subText }]}>3000</Text>
             </View>
           </View>
         </View>
 
         {/* 营养比例 */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{t('health.macroRatio')}</Text>
+        <View style={[styles.section, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('health.macroRatio')}</Text>
           
           {/* 蛋白质 */}
           <View style={styles.macroItem}>
             <View style={styles.macroHeader}>
-              <Text style={styles.macroLabel}>🥩 {t('health.protein')}</Text>
+              <Text style={[styles.macroLabel, { color: colors.text }]}>🥩 {t('health.protein')}</Text>
               <Text style={styles.macroValue}>{proteinPercent}%</Text>
             </View>
             <Slider
@@ -221,7 +228,7 @@ export default function HealthProfileScreen() {
                 setCarbsPercent(Math.max(20, carbsPercent - diff))
               }}
               minimumTrackTintColor="#4CAF50"
-              maximumTrackTintColor="#E0E0E0"
+              maximumTrackTintColor={colors.border}
               thumbTintColor="#4CAF50"
             />
           </View>
@@ -229,7 +236,7 @@ export default function HealthProfileScreen() {
           {/* 脂肪 */}
           <View style={styles.macroItem}>
             <View style={styles.macroHeader}>
-              <Text style={styles.macroLabel}>🥑 {t('health.fat')}</Text>
+              <Text style={[styles.macroLabel, { color: colors.text }]}>🥑 {t('health.fat')}</Text>
               <Text style={styles.macroValue}>{fatPercent}%</Text>
             </View>
             <Slider
@@ -245,7 +252,7 @@ export default function HealthProfileScreen() {
                 setCarbsPercent(Math.max(20, carbsPercent - diff))
               }}
               minimumTrackTintColor="#FFC107"
-              maximumTrackTintColor="#E0E0E0"
+              maximumTrackTintColor={colors.border}
               thumbTintColor="#FFC107"
             />
           </View>
@@ -253,7 +260,7 @@ export default function HealthProfileScreen() {
           {/* 碳水化合物 */}
           <View style={styles.macroItem}>
             <View style={styles.macroHeader}>
-              <Text style={styles.macroLabel}>🍚 {t('health.carbs')}</Text>
+              <Text style={[styles.macroLabel, { color: colors.text }]}>🍚 {t('health.carbs')}</Text>
               <Text style={styles.macroValue}>{carbsPercent}%</Text>
             </View>
             <Slider
@@ -271,14 +278,14 @@ export default function HealthProfileScreen() {
                 setFatPercent(Math.round(remaining * (1 - ratio) / 5) * 5)
               }}
               minimumTrackTintColor="#2196F3"
-              maximumTrackTintColor="#E0E0E0"
+              maximumTrackTintColor={colors.border}
               thumbTintColor="#2196F3"
             />
           </View>
 
           {/* 总计显示 */}
-          <View style={styles.totalContainer}>
-            <Text style={styles.totalLabel}>{t('common.all')}</Text>
+          <View style={[styles.totalContainer, { borderTopColor: colors.border }]}>
+            <Text style={[styles.totalLabel, { color: colors.text }]}>{t('common.all')}</Text>
             <Text
               style={[
                 styles.totalValue,
@@ -294,7 +301,7 @@ export default function HealthProfileScreen() {
       </ScrollView>
 
       {/* 保存按钮 */}
-      <View style={styles.footer}>
+      <View style={[styles.footer, { backgroundColor: colors.card, borderTopColor: colors.border }]}>
         <TouchableOpacity
           style={[styles.saveButton, saving && styles.saveButtonDisabled]}
           onPress={handleSave}
@@ -314,7 +321,6 @@ export default function HealthProfileScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F5F5',
   },
   headerRow: {
     flexDirection: 'row',
@@ -323,20 +329,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 12,
     paddingBottom: 8,
-    backgroundColor: '#FFF',
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
   backBtn: {
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: '#F5F2EE',
     alignItems: 'center',
     justifyContent: 'center',
   },
   headerTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#333',
     flex: 1,
     textAlign: 'center',
   },
@@ -344,7 +348,6 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#F5F5F5',
   },
   scrollView: {
     flex: 1,
@@ -359,12 +362,10 @@ const styles = StyleSheet.create({
   },
   quickActionButton: {
     flex: 1,
-    backgroundColor: '#FFF',
     borderRadius: 12,
     padding: 16,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#FFD4B8',
   },
   quickActionEmoji: {
     fontSize: 32,
@@ -376,15 +377,14 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   section: {
-    backgroundColor: '#FFF',
     borderRadius: 12,
     padding: 16,
     marginBottom: 16,
+    borderWidth: StyleSheet.hairlineWidth,
   },
   sectionTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#333',
     marginBottom: 16,
   },
   goalContainer: {
@@ -398,8 +398,6 @@ const styles = StyleSheet.create({
     marginHorizontal: 4,
     borderRadius: 12,
     borderWidth: 2,
-    borderColor: '#E0E0E0',
-    backgroundColor: '#FFF',
   },
   goalButtonActive: {
     borderColor: '#FF6B35',
@@ -411,7 +409,6 @@ const styles = StyleSheet.create({
   },
   goalLabel: {
     fontSize: 14,
-    color: '#666',
     fontWeight: '500',
   },
   goalLabelActive: {
@@ -439,7 +436,6 @@ const styles = StyleSheet.create({
   },
   sliderLabel: {
     fontSize: 12,
-    color: '#999',
   },
   macroItem: {
     marginBottom: 20,
@@ -452,7 +448,6 @@ const styles = StyleSheet.create({
   },
   macroLabel: {
     fontSize: 16,
-    color: '#333',
     fontWeight: '500',
   },
   macroValue: {
@@ -467,12 +462,10 @@ const styles = StyleSheet.create({
     marginTop: 12,
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: '#E0E0E0',
   },
   totalLabel: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#333',
   },
   totalValue: {
     fontSize: 20,
@@ -486,9 +479,7 @@ const styles = StyleSheet.create({
   },
   footer: {
     padding: 16,
-    backgroundColor: '#FFF',
     borderTopWidth: 1,
-    borderTopColor: '#E0E0E0',
   },
   saveButton: {
     backgroundColor: '#FF6B35',

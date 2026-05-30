@@ -36,7 +36,9 @@
     "whatToEatSubtitle": "Shake or tap to try your luck",
     "whatToEatTapDetails": "Tap for details →",
     "whatToEatTryAgain": "Try again",
-    "seeAll": "See all"
+    "seeAll": "See all",
+    "followFeed": "Following Feed",
+    "followFeedDesc": "See the latest from people you follow"
   },
   "ranking": {
     "title": "🏆 Weekly Ranking"
