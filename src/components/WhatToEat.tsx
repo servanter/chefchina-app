@@ -15,6 +15,8 @@ import { LazyImage } from './LazyImage';
 import { useShakeDetection } from '../hooks/useShakeDetection';
 import { triggerHaptic } from '../lib/haptics';
 import { useTheme } from '../contexts/ThemeContext';
+import { useAuth } from '../hooks/useAuth';
+import { getUserPreferences } from '../lib/storage';
 
 interface WhatToEatProps {
   tintColor?: string;
@@ -27,6 +29,7 @@ export const WhatToEatButton: React.FC<WhatToEatProps> = ({
   const router = useRouter();
   const isZh = i18n.language === 'zh';
   const { colors } = useTheme();
+  const { isLoggedIn } = useAuth();
 
   const [showResult, setShowResult] = useState(false);
   const [resultRecipe, setResultRecipe] = useState<Recipe | null>(null);
@@ -49,7 +52,18 @@ export const WhatToEatButton: React.FC<WhatToEatProps> = ({
     triggerHaptic('medium');
 
     try {
-      const recipe = await fetchRandomRecipe();
+      // REQ-07: 若用户已登录则读取偏好分类，传给 fetchRandomRecipe 做个性化推荐
+      let preferredCategories: string[] | undefined;
+      if (isLoggedIn) {
+        const prefs = await getUserPreferences();
+        if (prefs.categories.length > 0) {
+          preferredCategories = prefs.categories;
+        }
+      }
+
+      const recipe = await fetchRandomRecipe(
+        preferredCategories ? { preferredCategories } : undefined,
+      );
       if (recipe) {
         // Card flip animation
         flipAnim.setValue(0);
@@ -80,7 +94,7 @@ export const WhatToEatButton: React.FC<WhatToEatProps> = ({
     } finally {
       setLoading(false);
     }
-  }, [loading, flipAnim]);
+  }, [loading, flipAnim, isLoggedIn]);
 
   handleRollRef.current = handleRoll;
 
