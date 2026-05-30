@@ -31,6 +31,11 @@
     "weeklyHot": "🔥 This Week's Hot",
     "whatToEat": "What to Eat Today? 🎲",
     "whatToEatHint": "Tap or shake to discover",
+    "whatToEatTitle": "What's for dinner?",
+    "whatToEatPicking": "Picking...",
+    "whatToEatSubtitle": "Shake or tap to try your luck",
+    "whatToEatTapDetails": "Tap for details →",
+    "whatToEatTryAgain": "Try again",
     "seeAll": "See all"
   },
   "ranking": {
@@ -80,7 +85,10 @@
     "suggestedCategories": "You might like",
     "resultsFor": "Results for \"{{query}}\"",
     "clearQuery": "Clear",
-    "tryTrending": "Try trending searches"
+    "tryTrending": "Try trending searches",
+    "trending": "Trending",
+    "history": "Search History",
+    "clearHistory": "Clear"
   },
   "recipe": {
     "ingredients": "Ingredients",
@@ -164,7 +172,10 @@
     "profileUpdated": "Profile updated",
     "nameTooShort": "Name must be 2-20 characters",
     "nameTooLong": "Name must be 2-20 characters",
-    "bioTooLong": "Bio must be under 500 characters"
+    "bioTooLong": "Bio must be under 500 characters",
+    "createRecipe": "Create Recipe",
+    "nutritionProfile": "Nutrition Profile",
+    "statPublished": "Recipes"
   },
   "auth": {
     "title": "Welcome to ChefChina",
@@ -607,9 +618,37 @@
       "comingSoonHint": "Please publish or regenerate for now"
     }
   },
+  "nutrition": {
+    "protein": "Protein",
+    "fat": "Fat",
+    "carbs": "Carbs",
+    "target": "Target"
+  },
   "shoppingList": {
     "title": "Shopping List",
     "addIngredient": "Add Ingredient",
+    "emptyAlert": "Shopping list is empty",
+    "alertTitle": "Notice",
+    "deleteItem": "Delete Item",
+    "deleteConfirm": "Delete {{name}} from the list?",
+    "delete": "Delete",
+    "cancel": "Cancel",
+    "manualAdd": "Manually added",
+    "recipeSource1": "From 1 recipe",
+    "recipeSourceN": "From {{count}} recipes",
+    "addTitle": "Add Ingredient",
+    "nameLabel": "Ingredient name",
+    "namePlaceholder": "e.g. Chicken breast",
+    "amountLabel": "Amount",
+    "amountPlaceholder": "e.g. 200",
+    "unitLabel": "Unit",
+    "addButton": "Add",
+    "addingButton": "Adding...",
+    "cancelButton": "Cancel",
+    "nameRequired": "Please enter an ingredient name",
+    "amountRequired": "Please enter a valid amount",
+    "addFailed": "Failed to add",
+    "addRetry": "Please try again later",
     "regenerate": "Regenerate",
     "clearPurchased": "Clear Purchased",
     "clearAll": "Clear All",
@@ -682,6 +721,18 @@
     "goLogin": "Log In",
     "errorOpenPayment": "Unable to open payment page. Please check your browser popup settings.",
     "errorInvalidLink": "Invalid payment link",
-    "errorCreateFailed": "Failed to create subscription, please try again"
+    "errorCreateFailed": "Failed to create subscription, please try again",
+    "featureBasicBrowsing": "Basic recipe browsing",
+    "featureSaveLimit": "Up to 20 saved recipes",
+    "featureDataRetention30": "30-day data retention",
+    "featureAiNutrition": "AI nutrition advice",
+    "featureUnlimitedSaves": "Unlimited saves",
+    "featurePermanentData": "Permanent data retention",
+    "featureAllFree": "All free features",
+    "featureAiPersonalized": "AI-powered nutrition advice",
+    "featureUnlimitedRecipes": "Unlimited recipe saves",
+    "featurePrioritySupport": "Priority support",
+    "featureMoreUpdates": "Continuous new features",
+    "savingsLabel": "Save $10"
   }
 }

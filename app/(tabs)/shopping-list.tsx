@@ -101,7 +101,7 @@ export default function ShoppingListTab() {
 
   const handleExport = () => {
     if (!data || data.items.length === 0) {
-      Alert.alert('提示', '购物清单为空');
+      Alert.alert(t('shoppingList.alertTitle'), t('shoppingList.emptyAlert'));
       return;
     }
 

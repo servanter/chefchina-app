@@ -1,5 +1,5 @@
 import React, { useRef, useCallback } from 'react';
-import { Animated, TouchableOpacity, StyleSheet, Text } from 'react-native';
+import { Animated, TouchableOpacity, StyleSheet, Text, ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { triggerHaptic } from '../lib/haptics';
 
@@ -10,10 +10,10 @@ interface AnimatedFavoriteButtonProps {
   disabled?: boolean;
   tintColor?: string;
   size?: number;
-  style?: any;
-  labelStyle?: any;
-  activeStyle?: any;
-  activeLabelStyle?: any;
+  style?: ViewStyle | undefined;
+  labelStyle?: ViewStyle | undefined;
+  activeStyle?: ViewStyle | undefined;
+  activeLabelStyle?: ViewStyle | undefined;
 }
 
 export const AnimatedFavoriteButton: React.FC<AnimatedFavoriteButtonProps> = ({

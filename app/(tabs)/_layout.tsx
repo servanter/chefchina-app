@@ -78,7 +78,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="ai-generate"
         options={{
-          title: t('tabs.aiGenerate') || 'AI 生成',
+          title: t('tabs.aiGenerate', { defaultValue: 'AI 生成' }),
           tabBarIcon: ({ color, focused }) => (
             <Ionicons name={focused ? 'sparkles' : 'sparkles-outline'} size={24} color={color} />
           ),
@@ -87,7 +87,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="shopping-list"
         options={{
-          title: t('tabs.shoppingList') || '购物清单',
+          title: t('tabs.shoppingList', { defaultValue: '购物清单' }),
           tabBarIcon: ({ color, focused }) => (
             <Ionicons name={focused ? 'cart' : 'cart-outline'} size={24} color={color} />
           ),

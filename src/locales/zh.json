@@ -31,6 +31,11 @@
     "weeklyHot": "🔥 本周热榜",
     "whatToEat": "今天吃什么？🎲",
     "whatToEatHint": "点击或摇一摇发现美食",
+    "whatToEatTitle": "今天吃什么？",
+    "whatToEatPicking": "正在选择...",
+    "whatToEatSubtitle": "摇一摇或点击试试手气",
+    "whatToEatTapDetails": "点击查看详情 →",
+    "whatToEatTryAgain": "再来一次",
     "seeAll": "查看全部"
   },
   "ranking": {
@@ -80,7 +85,10 @@
     "suggestedCategories": "你可能喜欢",
     "resultsFor": "\"{{query}}\" 的搜索结果",
     "clearQuery": "清除",
-    "tryTrending": "试试热门搜索"
+    "tryTrending": "试试热门搜索",
+    "trending": "热门搜索",
+    "history": "搜索历史",
+    "clearHistory": "清空"
   },
   "recipe": {
     "ingredients": "食材",
@@ -164,7 +172,10 @@
     "profileUpdated": "个人资料已更新",
     "nameTooShort": "昵称长度需在 2-20 字符之间",
     "nameTooLong": "昵称长度需在 2-20 字符之间",
-    "bioTooLong": "简介最多 500 字符"
+    "bioTooLong": "简介最多 500 字符",
+    "createRecipe": "创建菜谱",
+    "nutritionProfile": "营养档案",
+    "statPublished": "发布"
   },
   "auth": {
     "title": "欢迎来到 ChefChina",
@@ -607,9 +618,37 @@
       "comingSoonHint": "暂时请直接发布或重新生成"
     }
   },
+  "nutrition": {
+    "protein": "蛋白质",
+    "fat": "脂肪",
+    "carbs": "碳水",
+    "target": "目标"
+  },
   "shoppingList": {
     "title": "购物清单",
     "addIngredient": "添加食材",
+    "emptyAlert": "购物清单为空",
+    "alertTitle": "提示",
+    "deleteItem": "删除食材",
+    "deleteConfirm": "确定要删除 {{name}} 吗？",
+    "delete": "删除",
+    "cancel": "取消",
+    "manualAdd": "手动添加",
+    "recipeSource1": "来自 1 个菜谱",
+    "recipeSourceN": "来自 {{count}} 个菜谱",
+    "addTitle": "添加食材",
+    "nameLabel": "食材名称",
+    "namePlaceholder": "例如：鸡胸肉",
+    "amountLabel": "数量",
+    "amountPlaceholder": "例如：200",
+    "unitLabel": "单位",
+    "addButton": "添加",
+    "addingButton": "添加中...",
+    "cancelButton": "取消",
+    "nameRequired": "请输入食材名称",
+    "amountRequired": "请输入有效的数量",
+    "addFailed": "添加失败",
+    "addRetry": "请稍后重试",
     "regenerate": "重新生成",
     "clearPurchased": "清空已购",
     "clearAll": "清空全部",
@@ -682,6 +721,18 @@
     "goLogin": "去登录",
     "errorOpenPayment": "无法打开支付页面，请检查浏览器弹窗设置",
     "errorInvalidLink": "支付链接无效",
-    "errorCreateFailed": "创建订阅失败，请稍后再试"
+    "errorCreateFailed": "创建订阅失败，请稍后再试",
+    "featureBasicBrowsing": "基础菜谱浏览",
+    "featureSaveLimit": "收藏上限 20 条",
+    "featureDataRetention30": "历史数据保留 30 天",
+    "featureAiNutrition": "AI 营养建议",
+    "featureUnlimitedSaves": "无限收藏",
+    "featurePermanentData": "永久数据保留",
+    "featureAllFree": "所有免费功能",
+    "featureAiPersonalized": "AI 个性化营养建议",
+    "featureUnlimitedRecipes": "无限收藏菜谱",
+    "featurePrioritySupport": "优先客服支持",
+    "featureMoreUpdates": "更多功能持续更新",
+    "savingsLabel": "节省 $10"
   }
 }

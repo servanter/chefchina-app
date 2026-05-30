@@ -53,7 +53,7 @@ export const SearchPanel: React.FC<SearchPanelProps> = ({ onSelectKeyword, onCle
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>
-            🔥 {isZh ? '热门搜索' : 'Trending'}
+            🔥 {t('search.trending')}
           </Text>
         </View>
 
@@ -81,11 +81,11 @@ export const SearchPanel: React.FC<SearchPanelProps> = ({ onSelectKeyword, onCle
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={[styles.sectionTitle, { color: colors.text }]}>
-              🕒 {isZh ? '搜索历史' : 'Search History'}
+              🕒 {t('search.history')}
             </Text>
             <TouchableOpacity onPress={handleClearHistory}>
               <Text style={[styles.clearText, { color: colors.subText }]}>
-                {isZh ? '清空' : 'Clear'}
+                {t('search.clearHistory')}
               </Text>
             </TouchableOpacity>
           </View>

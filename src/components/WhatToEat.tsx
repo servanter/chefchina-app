@@ -146,14 +146,14 @@ export const WhatToEatButton: React.FC<WhatToEatProps> = ({
               )}
             </View>
             <Text style={styles.tapHint}>
-              {isZh ? '点击查看详情 →' : 'Tap for details →'}
+              {t('home.whatToEatTapDetails')}
             </Text>
           </View>
         </TouchableOpacity>
         <TouchableOpacity style={styles.retryBtn} onPress={handleReset}>
           <Ionicons name="refresh" size={16} color={tintColor} />
           <Text style={[styles.retryText, { color: tintColor }]}>
-            {isZh ? '再来一次' : 'Try again'}
+            {t('home.whatToEatTryAgain')}
           </Text>
         </TouchableOpacity>
       </Animated.View>
@@ -181,12 +181,12 @@ export const WhatToEatButton: React.FC<WhatToEatProps> = ({
         <Text style={styles.diceEmoji}>🎲</Text>
         <View>
           <Text style={[styles.rollTitle, { color: tintColor }]}>
-            {isZh ? '今天吃什么？' : "What's for dinner?"}
+            {t('home.whatToEatTitle')}
           </Text>
           <Text style={[styles.rollSubtitle, { color: colors.subText }]}>
             {loading
-              ? (isZh ? '正在选择...' : 'Picking...')
-              : (isZh ? '摇一摇或点击试试手气' : 'Shake or tap to try your luck')
+              ? t('home.whatToEatPicking')
+              : t('home.whatToEatSubtitle')
             }
           </Text>
         </View>
