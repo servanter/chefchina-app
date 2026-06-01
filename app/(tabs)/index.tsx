@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -26,6 +26,12 @@ import { changeLanguage } from '@/lib/i18n';
 import { triggerHaptic } from '@/lib/haptics';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useAuth } from '@/hooks/useAuth';
+import {
+  getSearchHistory,
+  removeSearchHistoryItem,
+  clearSearchHistory,
+  addSearchHistory,
+} from '@/lib/storage';
 
 // Fallback values used in StyleSheet.create (static, can't use hooks)
 // Dynamic theming applied via inline styles in JSX
@@ -63,6 +69,9 @@ export default function HomeScreen() {
   const [searchModalVisible, setSearchModalVisible] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [refreshing, setRefreshing] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
+  const [history, setHistory] = useState<string[]>([]);
+  const hideHistoryTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const {
     data: homeData,
@@ -95,8 +104,42 @@ export default function HomeScreen() {
 
   const handleSearch = () => {
     if (searchText.trim()) {
+      addSearchHistory(searchText.trim()).then(() =>
+        getSearchHistory().then(setHistory),
+      );
+      setShowHistory(false);
       router.push({ pathname: '/(tabs)/explore', params: { search: searchText } });
     }
+  };
+
+  const handleSearchFocus = () => {
+    if (hideHistoryTimer.current) clearTimeout(hideHistoryTimer.current);
+    getSearchHistory().then((h) => {
+      setHistory(h);
+      setShowHistory(true);
+    });
+  };
+
+  const handleSearchBlur = () => {
+    hideHistoryTimer.current = setTimeout(() => setShowHistory(false), 200);
+  };
+
+  const handleHistoryTap = (item: string) => {
+    setShowHistory(false);
+    setSearchText(item);
+    addSearchHistory(item).then(() => getSearchHistory().then(setHistory));
+    router.push({ pathname: '/(tabs)/explore', params: { search: item } });
+  };
+
+  const handleRemoveHistory = async (item: string) => {
+    const next = await removeSearchHistoryItem(item);
+    setHistory(next);
+  };
+
+  const handleClearHistory = async () => {
+    await clearSearchHistory();
+    setHistory([]);
+    setShowHistory(false);
   };
 
   const handleCategoryPress = (categoryId: string) => {
@@ -143,16 +186,18 @@ export default function HomeScreen() {
         </View>
 
         {/* ─── Search ──────────────────────────────────────── */}
-        <TouchableOpacity style={styles.searchRow} onPress={() => setSearchModalVisible(true)} activeOpacity={0.8}>
-          <View style={styles.searchBox}>
+        <View style={styles.searchRow}>
+          <View style={[styles.searchBox, { backgroundColor: COLORS.inputBg }]}>
             <Ionicons name="search-outline" size={18} color="#999" style={styles.searchIcon} />
             <TextInput
-              style={styles.searchInput}
+              style={[styles.searchInput, { color: COLORS.text }]}
               placeholder={t('common.search')}
               placeholderTextColor="#AAA"
               value={searchText}
               onChangeText={setSearchText}
               onSubmitEditing={handleSearch}
+              onFocus={handleSearchFocus}
+              onBlur={handleSearchBlur}
               returnKeyType="search"
             />
             {searchText.length > 0 && (
@@ -161,7 +206,40 @@ export default function HomeScreen() {
               </TouchableOpacity>
             )}
           </View>
-        </TouchableOpacity>
+          {/* ─── History Panel ───────────────────────────── */}
+          {showHistory && history.length > 0 && (
+            <View style={[styles.historyPanel, { backgroundColor: themeColors.card }]}>
+              <View style={styles.historyHeader}>
+                <Text style={[styles.historyTitle, { color: themeColors.text }]}>
+                  {t('search.recentSearches')}
+                </Text>
+                <TouchableOpacity onPress={handleClearHistory}>
+                  <Text style={[styles.clearBtn, { color: themeColors.tint }]}>
+                    {t('search.clearHistory')}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+              {history.map((item) => (
+                <TouchableOpacity
+                  key={item}
+                  style={styles.historyRow}
+                  onPress={() => handleHistoryTap(item)}
+                >
+                  <Ionicons name="time-outline" size={14} color={themeColors.subText} />
+                  <Text
+                    style={[styles.historyText, { color: themeColors.text }]}
+                    numberOfLines={1}
+                  >
+                    {item}
+                  </Text>
+                  <TouchableOpacity onPress={() => handleRemoveHistory(item)}>
+                    <Ionicons name="close" size={14} color={themeColors.subText} />
+                  </TouchableOpacity>
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
+        </View>
 
         {/* ─── Categories ──────────────────────────────────── */}
         <ScrollView
@@ -412,6 +490,7 @@ const styles = StyleSheet.create({
   searchRow: {
     paddingHorizontal: 20,
     paddingVertical: 12,
+    zIndex: 100,
   },
   searchBox: {
     flexDirection: 'row',
@@ -429,6 +508,47 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: COLORS.text,
     padding: 0,
+  },
+  historyPanel: {
+    position: 'absolute',
+    top: 58,
+    left: 0,
+    right: 0,
+    borderRadius: 8,
+    zIndex: 100,
+    elevation: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+    paddingBottom: 8,
+  },
+  historyHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 14,
+    paddingTop: 12,
+    paddingBottom: 6,
+  },
+  historyTitle: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  clearBtn: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  historyRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    gap: 10,
+  },
+  historyText: {
+    flex: 1,
+    fontSize: 14,
   },
   categoryList: {
     paddingHorizontal: 20,
