@@ -181,6 +181,9 @@ export const clearSearchHistory = async (): Promise<void> => {
   await removeKey(KEYS.SEARCH_HISTORY);
 };
 
+// addSearchHistory is an alias for saveSearchHistory (same semantics)
+export const addSearchHistory = saveSearchHistory;
+
 export interface ViewHistorySnapshot {
   title?: string;
   title_zh?: string;

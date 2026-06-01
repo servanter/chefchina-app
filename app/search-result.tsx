@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -19,7 +19,12 @@ import { useSearch, SearchType, SearchFilters } from '@/hooks/useSearch';
 import { RecipeCard } from '@/components/RecipeCard';
 import { EmptyState } from '@/components/EmptyState';
 import { Image } from 'expo-image';
-import { saveSearchHistory } from '@/lib/storage';
+import {
+  saveSearchHistory,
+  getSearchHistory,
+  removeSearchHistoryItem,
+  clearSearchHistory,
+} from '@/lib/storage';
 
 type TabId = 'recipe' | 'user' | 'topic';
 
@@ -71,6 +76,11 @@ export default function SearchResultScreen() {
     cookTime: '',
   });
 
+  // Search history overlay
+  const [showHistory, setShowHistory] = useState(false);
+  const [history, setHistory] = useState<string[]>([]);
+  const hideHistoryTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const { data, isLoading, error, refetch } = useSearch(
     searchQuery,
     activeTab as SearchType,
@@ -80,8 +90,41 @@ export default function SearchResultScreen() {
   const handleSearch = useCallback(() => {
     if (!inputQuery.trim()) return;
     setSearchQuery(inputQuery.trim());
-    saveSearchHistory(inputQuery.trim());
+    setShowHistory(false);
+    saveSearchHistory(inputQuery.trim()).then(() =>
+      getSearchHistory().then(setHistory),
+    );
   }, [inputQuery]);
+
+  const handleSearchFocus = () => {
+    if (hideHistoryTimer.current) clearTimeout(hideHistoryTimer.current);
+    getSearchHistory().then((h) => {
+      setHistory(h);
+      setShowHistory(true);
+    });
+  };
+
+  const handleSearchBlur = () => {
+    hideHistoryTimer.current = setTimeout(() => setShowHistory(false), 200);
+  };
+
+  const handleHistoryTap = useCallback((item: string) => {
+    setShowHistory(false);
+    setInputQuery(item);
+    setSearchQuery(item);
+    saveSearchHistory(item).then(() => getSearchHistory().then(setHistory));
+  }, []);
+
+  const handleRemoveHistory = useCallback(async (item: string) => {
+    const next = await removeSearchHistoryItem(item);
+    setHistory(next);
+  }, []);
+
+  const handleClearHistory = useCallback(async () => {
+    await clearSearchHistory();
+    setHistory([]);
+    setShowHistory(false);
+  }, []);
 
   const handleTabChange = useCallback((tab: TabId) => {
     setActiveTab(tab);
@@ -122,6 +165,8 @@ export default function SearchResultScreen() {
             value={inputQuery}
             onChangeText={setInputQuery}
             onSubmitEditing={handleSearch}
+            onFocus={handleSearchFocus}
+            onBlur={handleSearchBlur}
             returnKeyType="search"
           />
           {inputQuery.length > 0 && (
@@ -130,6 +175,40 @@ export default function SearchResultScreen() {
             </TouchableOpacity>
           )}
         </View>
+
+        {/* ─── History Panel ─────────────────────────────── */}
+        {showHistory && history.length > 0 && (
+          <View style={[styles.historyPanel, { backgroundColor: colors.card }]}>
+            <View style={styles.historyHeader}>
+              <Text style={[styles.historyTitle, { color: colors.text }]}>
+                {t('search.recentSearches')}
+              </Text>
+              <TouchableOpacity onPress={handleClearHistory}>
+                <Text style={[styles.clearBtn, { color: colors.tint }]}>
+                  {t('search.clearHistory')}
+                </Text>
+              </TouchableOpacity>
+            </View>
+            {history.map((item) => (
+              <TouchableOpacity
+                key={item}
+                style={styles.historyRow}
+                onPress={() => handleHistoryTap(item)}
+              >
+                <Ionicons name="time-outline" size={14} color={colors.subText} />
+                <Text
+                  style={[styles.historyText, { color: colors.text }]}
+                  numberOfLines={1}
+                >
+                  {item}
+                </Text>
+                <TouchableOpacity onPress={() => handleRemoveHistory(item)}>
+                  <Ionicons name="close" size={14} color={colors.subText} />
+                </TouchableOpacity>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
       </View>
 
       {/* Tabs */}
@@ -397,6 +476,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderBottomWidth: 1,
+    zIndex: 100,
+    position: 'relative',
   },
   backButton: {
     padding: 8,
@@ -414,6 +495,47 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     fontSize: 15,
+  },
+  historyPanel: {
+    position: 'absolute',
+    top: 56,
+    left: 56,
+    right: 0,
+    borderRadius: 8,
+    zIndex: 100,
+    elevation: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+    paddingBottom: 8,
+  },
+  historyHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 14,
+    paddingTop: 12,
+    paddingBottom: 6,
+  },
+  historyTitle: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  clearBtn: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  historyRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    gap: 10,
+  },
+  historyText: {
+    flex: 1,
+    fontSize: 14,
   },
   tabs: {
     flexDirection: 'row',
