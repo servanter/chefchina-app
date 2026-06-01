@@ -435,7 +435,14 @@
     "carbs": "碳水化合物(g)",
     "fiber_label": "膳食纤维(g)",
     "sodium_label": "钠(mg)",
-    "sugar_label": "糖(g)"
+    "sugar_label": "糖(g)",
+    "choose_image_source": "选择图片来源",
+    "camera": "拍照",
+    "photo_library": "从相册选择",
+    "step_add_photo": "添加步骤图片",
+    "image_uploading": "图片上传中...",
+    "image_upload_failed": "图片上传失败，请重试",
+    "need_camera_permission": "需要相机访问权限以拍照"
   },
   "collections": {
     "featuredTitle": "📚 精选专题",

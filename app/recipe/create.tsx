@@ -10,6 +10,7 @@ import {
   Platform,
   Image,
   ActivityIndicator,
+  ActionSheetIOS,
 } from 'react-native'
 import { router, useLocalSearchParams } from 'expo-router'
 import { SafeAreaView } from 'react-native-safe-area-context'
@@ -17,7 +18,7 @@ import { Ionicons } from '@expo/vector-icons'
 import * as ImagePicker from 'expo-image-picker'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '@/hooks/useAuth'
-import { createRecipe, updateRecipe, fetchRecipeById, syncRecipeTags } from '@/lib/api'
+import { createRecipe, updateRecipe, fetchRecipeById, syncRecipeTags, uploadRecipeImage } from '@/lib/api'
 import { useCategories, useTags } from '@/hooks/useRecipes'
 import TagInput from '@/components/TagInput'
 import Toast from 'react-native-toast-message'
@@ -82,6 +83,8 @@ export default function CreateRecipePage() {
   const [isLoadingRecipe, setIsLoadingRecipe] = useState(false)
   const [selectedTags, setSelectedTags] = useState<string[]>([])
   const [originalUpdatedAt, setOriginalUpdatedAt] = useState<string | undefined>()
+  const [isCoverUploading, setIsCoverUploading] = useState(false)
+  const [uploadingStepIndex, setUploadingStepIndex] = useState<number | null>(null)
 
   // ─── Pre-fill fields in edit mode ───────────────────────────────
   useEffect(() => {
@@ -175,23 +178,107 @@ export default function CreateRecipePage() {
     }
   }, [categoriesData, categoryId, isEditMode])
 
-  const pickImage = async () => {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync()
-    if (status !== 'granted') {
-      Alert.alert(t('recipe_create.permission_denied'), t('recipe_create.need_photo_permission'))
-      return
+  // ─── 选图并上传（ActionSheet → 相机 or 相册 → 上传到后端）───────────
+  const launchPickerAndUpload = async (
+    source: 'camera' | 'library',
+    onSuccess: (url: string) => void,
+    onLoadingChange: (loading: boolean) => void,
+  ) => {
+    // 请求权限
+    if (source === 'camera') {
+      const { status } = await ImagePicker.requestCameraPermissionsAsync()
+      if (status !== 'granted') {
+        Alert.alert(t('recipe_create.permission_denied'), t('recipe_create.need_camera_permission'))
+        return
+      }
+    } else {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync()
+      if (status !== 'granted') {
+        Alert.alert(t('recipe_create.permission_denied'), t('recipe_create.need_photo_permission'))
+        return
+      }
     }
 
-    const result = await ImagePicker.launchImageLibraryAsync({
+    const pickerOptions: ImagePicker.ImagePickerOptions = {
       mediaTypes: 'images',
       allowsEditing: true,
       aspect: [16, 9],
       quality: 0.8,
-    })
-
-    if (!result.canceled && result.assets[0]) {
-      setCoverImage(result.assets[0].uri)
     }
+
+    const result =
+      source === 'camera'
+        ? await ImagePicker.launchCameraAsync(pickerOptions)
+        : await ImagePicker.launchImageLibraryAsync(pickerOptions)
+
+    if (result.canceled || !result.assets[0]) return
+
+    const localUri = result.assets[0].uri
+    onLoadingChange(true)
+    try {
+      const url = await uploadRecipeImage(localUri)
+      onSuccess(url)
+    } catch {
+      Toast.show({
+        type: 'error',
+        text1: t('recipe_create.image_upload_failed'),
+      })
+    } finally {
+      onLoadingChange(false)
+    }
+  }
+
+  const showImageSourceSheet = (
+    onSuccess: (url: string) => void,
+    onLoadingChange: (loading: boolean) => void,
+  ) => {
+    if (Platform.OS === 'ios') {
+      ActionSheetIOS.showActionSheetWithOptions(
+        {
+          options: [
+            t('recipe_create.camera'),
+            t('recipe_create.photo_library'),
+            t('common.cancel'),
+          ],
+          cancelButtonIndex: 2,
+        },
+        (idx) => {
+          if (idx === 0) launchPickerAndUpload('camera', onSuccess, onLoadingChange)
+          else if (idx === 1) launchPickerAndUpload('library', onSuccess, onLoadingChange)
+        },
+      )
+    } else {
+      // Android: Alert 模拟 ActionSheet
+      Alert.alert(
+        t('recipe_create.choose_image_source'),
+        undefined,
+        [
+          {
+            text: t('recipe_create.camera'),
+            onPress: () => launchPickerAndUpload('camera', onSuccess, onLoadingChange),
+          },
+          {
+            text: t('recipe_create.photo_library'),
+            onPress: () => launchPickerAndUpload('library', onSuccess, onLoadingChange),
+          },
+          { text: t('common.cancel'), style: 'cancel' },
+        ],
+      )
+    }
+  }
+
+  const pickImage = () => {
+    showImageSourceSheet(
+      (url) => setCoverImage(url),
+      (loading) => setIsCoverUploading(loading),
+    )
+  }
+
+  const pickStepImage = (index: number) => {
+    showImageSourceSheet(
+      (url) => updateStep(index, 'image', url),
+      (loading) => setUploadingStepIndex(loading ? index : null),
+    )
   }
 
   const addIngredient = () => {
@@ -410,8 +497,17 @@ export default function CreateRecipePage() {
         {/* 封面图片 */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>{t('recipe_create.cover_image')}</Text>
-          <TouchableOpacity onPress={pickImage} style={styles.imagePickerButton}>
-            {coverImage ? (
+          <TouchableOpacity
+            onPress={pickImage}
+            style={styles.imagePickerButton}
+            disabled={isCoverUploading}
+          >
+            {isCoverUploading ? (
+              <>
+                <ActivityIndicator size="large" color="#FF6B35" />
+                <Text style={styles.imagePickerText}>{t('recipe_create.image_uploading')}</Text>
+              </>
+            ) : coverImage ? (
               <Image source={{ uri: coverImage }} style={styles.coverImagePreview} />
             ) : (
               <>
@@ -737,6 +833,36 @@ export default function CreateRecipePage() {
                 multiline
                 numberOfLines={4}
               />
+              {/* 步骤图片 */}
+              {uploadingStepIndex === index ? (
+                <View style={styles.stepImageUploading}>
+                  <ActivityIndicator size="small" color="#FF6B35" />
+                  <Text style={styles.stepImageUploadingText}>
+                    {t('recipe_create.image_uploading')}
+                  </Text>
+                </View>
+              ) : step.image ? (
+                <View style={styles.stepImageContainer}>
+                  <Image source={{ uri: step.image }} style={styles.stepImagePreview} />
+                  <TouchableOpacity
+                    onPress={() => updateStep(index, 'image', undefined)}
+                    style={styles.stepImageRemove}
+                  >
+                    <Ionicons name="close-circle" size={22} color="#FF4444" />
+                  </TouchableOpacity>
+                </View>
+              ) : (
+                <TouchableOpacity
+                  onPress={() => pickStepImage(index)}
+                  style={styles.stepAddPhotoButton}
+                  disabled={uploadingStepIndex !== null}
+                >
+                  <Ionicons name="image-outline" size={18} color="#FF6B35" />
+                  <Text style={styles.stepAddPhotoText}>
+                    {t('recipe_create.step_add_photo')}
+                  </Text>
+                </TouchableOpacity>
+              )}
             </View>
           ))}
         </View>
@@ -983,5 +1109,54 @@ const styles = StyleSheet.create({
   },
   bottomPadding: {
     height: 40,
+  },
+  stepAddPhotoButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderWidth: 1,
+    borderColor: '#FF6B35',
+    borderRadius: 8,
+    borderStyle: 'dashed',
+    alignSelf: 'flex-start',
+  },
+  stepAddPhotoText: {
+    fontSize: 13,
+    color: '#FF6B35',
+  },
+  stepImageContainer: {
+    marginTop: 8,
+    position: 'relative',
+    alignSelf: 'flex-start',
+  },
+  stepImagePreview: {
+    width: 160,
+    height: 90,
+    borderRadius: 8,
+  },
+  stepImageRemove: {
+    position: 'absolute',
+    top: -8,
+    right: -8,
+    backgroundColor: '#fff',
+    borderRadius: 11,
+  },
+  stepImageUploading: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    backgroundColor: '#FFF5F2',
+    borderRadius: 8,
+    alignSelf: 'flex-start',
+  },
+  stepImageUploadingText: {
+    fontSize: 13,
+    color: '#FF6B35',
   },
 })
