@@ -64,6 +64,7 @@ apiClient.interceptors.request.use(
       url.startsWith('/recipes/') ||  // 菜谱详情、创建、编辑等需要认证
       url.startsWith('/home/') ||  // 首页初始化需要认证
       url.startsWith('/recommend') ||  // 推荐需要认证
+      url.startsWith('/upload/') ||  // 图片上传需要认证
       url.includes('/push-token');
     if (needsAuth) {
       try {
@@ -2166,4 +2167,23 @@ export const resetPassword = async (
     newPassword,
   });
   return res.data.data;
+};
+
+// ─── 菜谱图片上传 ─────────────────────────────────────────────────────────────
+
+/**
+ * 上传菜谱图片（封面图 / 步骤图）
+ * POST /api/upload/recipe-image
+ * 接收本地 URI，返回 CDN URL
+ */
+export const uploadRecipeImage = async (localUri: string): Promise<string> => {
+  const filename = localUri.split('/').pop() || 'photo.jpg';
+  const match = /\.([a-zA-Z]+)$/.exec(filename);
+  const type = match ? `image/${match[1].toLowerCase()}` : 'image/jpeg';
+  const formData = new FormData();
+  formData.append('file', { uri: localUri, name: filename, type } as any);
+  const res = await apiClient.post('/upload/recipe-image', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  return res.data.data.url;
 };
